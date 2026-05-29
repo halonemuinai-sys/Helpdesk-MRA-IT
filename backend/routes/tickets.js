@@ -4,6 +4,27 @@ const { verifyToken } = require('../api/authMiddleware');
 
 const router = express.Router();
 
+// Helper to generate sequential thread-safe Ticket IDs (e.g. MRA-00001, MRA-00002)
+async function generateNextTicketId() {
+  await prisma.$executeRawUnsafe(`CREATE SEQUENCE IF NOT EXISTS ticket_seq START 1`);
+  
+  let exists = true;
+  let ticketId = '';
+  
+  while (exists) {
+    const result = await prisma.$queryRawUnsafe(`SELECT nextval('ticket_seq') as val`);
+    const seqVal = Number(result[0].val);
+    ticketId = `MRA-${String(seqVal).padStart(5, '0')}`;
+    
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId }
+    });
+    exists = !!ticket;
+  }
+  
+  return ticketId;
+}
+
 // SLA limits in milliseconds
 const SLA_LIMITS = {
   HIGH: {
@@ -25,7 +46,7 @@ const SLA_LIMITS = {
 router.get('/', verifyToken, async (req, res, next) => {
   try {
     const { role, id: userId } = req.user;
-    const { status, priority, companyId, search } = req.query;
+    const { status, priority, companyId, search, startDate, endDate, limit, skip } = req.query;
 
     const where = {};
 
@@ -51,9 +72,19 @@ router.get('/', verifyToken, async (req, res, next) => {
         { description: { contains: search, mode: 'insensitive' } }
       ];
     }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
+    const take = limit ? parseInt(limit) : undefined;
+    const skipAmount = skip ? parseInt(skip) : undefined;
 
     const tickets = await prisma.ticket.findMany({
       where,
+      take,
+      skip: skipAmount,
       include: {
         company: true,
         requester: {
@@ -112,7 +143,7 @@ router.get('/:id', verifyToken, async (req, res, next) => {
 // Create a new ticket
 router.post('/', verifyToken, async (req, res, next) => {
   try {
-    const { title, description, category, priority, companyId, requesterId } = req.body;
+    const { title, description, category, subCategory, priority, companyId, requesterId, createdAt, source } = req.body;
     const { role, id: currentUserId, name: currentUserName } = req.user;
 
     if (!title || !description || !category || !priority || !companyId || !requesterId) {
@@ -133,25 +164,31 @@ router.post('/', verifyToken, async (req, res, next) => {
     }
 
     // Calculate SLA Targets
-    const now = new Date();
+    const baseTime = createdAt ? new Date(createdAt) : new Date();
     const limits = SLA_LIMITS[targetPriority];
-    const slaResponseLimit = new Date(now.getTime() + limits.response);
-    const slaResolutionLimit = new Date(now.getTime() + limits.resolution);
+    const slaResponseLimit = new Date(baseTime.getTime() + limits.response);
+    const slaResolutionLimit = new Date(baseTime.getTime() + limits.resolution);
+
+    const ticketId = await generateNextTicketId();
 
     const ticket = await prisma.ticket.create({
       data: {
+        id: ticketId,
         title,
         description,
         category,
+        subCategory: subCategory || '-',
+        source: source || 'Walk-in',
         priority: targetPriority,
         companyId: parseInt(companyId),
         requesterId,
+        createdAt: baseTime,
         slaResponseLimit,
         slaResolutionLimit,
         auditLogs: {
           create: {
             action: 'TICKET_CREATED',
-            details: `Tiket dibuat oleh ${currentUserName} (${role}) dengan prioritas ${targetPriority}.`,
+            details: `Tiket dibuat oleh ${currentUserName} (${role}) dengan prioritas ${targetPriority}${createdAt ? ` secara retroaktif untuk waktu kejadian ${baseTime.toLocaleString('en-US')}` : ''}.`,
             performedBy: currentUserName
           }
         }
@@ -173,7 +210,7 @@ router.post('/', verifyToken, async (req, res, next) => {
 router.patch('/:id/status', verifyToken, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, comment } = req.body;
     const { role, name: currentUserName, id: currentUserId } = req.user;
 
     if (role === 'USER') {
@@ -239,6 +276,11 @@ router.patch('/:id/status', verifyToken, async (req, res, next) => {
       auditLogData.details += ` Tiket diselesaikan. Status SLA: ${isBreached ? 'BREACHED (Overdue)' : 'MET (On-Time)'}.`;
     }
 
+    // Append comment if provided
+    if (comment && comment.trim()) {
+      auditLogData.details += ` Catatan: "${comment.trim()}"`;
+    }
+
     // Perform database updates
     const updatedTicket = await prisma.ticket.update({
       where: { id },
@@ -287,14 +329,37 @@ router.patch('/:id/assign', verifyToken, async (req, res, next) => {
       return res.status(400).json({ error: 'Selected user is not an IT Agent/Admin.' });
     }
 
+    // Retrieve current ticket to check existing assignment (takeover history)
+    const currentTicket = await prisma.ticket.findUnique({
+      where: { id },
+      include: { assignedTo: true }
+    });
+
+    if (!currentTicket) {
+      return res.status(404).json({ error: 'Ticket not found.' });
+    }
+
+    // Build history log details dynamically
+    let logDetails = `Tiket ditugaskan kepada ${agent.name} oleh ${currentUserName}.`;
+    let actionType = 'TICKET_ASSIGNED';
+
+    if (currentTicket.assignedTo) {
+      if (currentTicket.assignedTo.id === agent.id) {
+        logDetails = `Penugasan tiket dikonfirmasi ulang kepada ${agent.name} oleh ${currentUserName}.`;
+      } else {
+        logDetails = `Tiket dialihkan (take over) dari ${currentTicket.assignedTo.name} ke ${agent.name} oleh ${currentUserName}.`;
+        actionType = 'TICKET_TAKEOVER';
+      }
+    }
+
     const ticket = await prisma.ticket.update({
       where: { id },
       data: {
         assignedToId,
         auditLogs: {
           create: {
-            action: 'TICKET_ASSIGNED',
-            details: `Tiket ditugaskan kepada ${agent.name} oleh ${currentUserName}.`,
+            action: actionType,
+            details: logDetails,
             performedBy: currentUserName
           }
         }
@@ -318,7 +383,7 @@ router.patch('/:id/assign', verifyToken, async (req, res, next) => {
 // Create a ticket from public sources (e.g. Google Form)
 router.post('/public', async (req, res, next) => {
   try {
-    const { email, title, description, category, priority } = req.body;
+    const { email, title, description, category, subCategory, priority, source } = req.body;
 
     if (!email || !title || !description || !category) {
       return res.status(400).json({ error: 'Email, title, description, and category are required.' });
@@ -344,11 +409,16 @@ router.post('/public', async (req, res, next) => {
     const slaResponseLimit = new Date(now.getTime() + limits.response);
     const slaResolutionLimit = new Date(now.getTime() + limits.resolution);
 
+    const ticketId = await generateNextTicketId();
+
     const ticket = await prisma.ticket.create({
       data: {
+        id: ticketId,
         title,
         description,
         category,
+        subCategory: subCategory || '-',
+        source: source || 'System Alert',
         priority: targetPriority,
         companyId: requester.companyId,
         requesterId: requester.id,
@@ -375,6 +445,36 @@ router.post('/public', async (req, res, next) => {
       ticketId: ticket.id,
       ticket
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/tickets/:id
+// Delete a ticket and its associated audit logs (ADMIN only)
+router.delete('/:id', verifyToken, async (req, res, next) => {
+  try {
+    const { role } = req.user;
+    const { id } = req.params;
+
+    if (role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Access denied. Only administrators can delete tickets.' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id }
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found.' });
+    }
+
+    await prisma.$transaction([
+      prisma.auditLog.deleteMany({ where: { ticketId: id } }),
+      prisma.ticket.delete({ where: { id } })
+    ]);
+
+    res.json({ message: `Ticket ${id} has been deleted successfully.` });
   } catch (err) {
     next(err);
   }

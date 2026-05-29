@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 
 // Layout Components
 import Sidebar from './components/Sidebar';
+import ReactLoader from './components/ReactLoader';
 
 // Pages
 import Login from './pages/Login';
@@ -12,6 +13,8 @@ import TicketsSummary from './pages/TicketsSummary';
 import Reports from './pages/Reports';
 import AgentPerformance from './pages/AgentPerformance';
 import Users from './pages/Users';
+import ResetPassword from './pages/ResetPassword';
+import Guideline from './pages/Guideline';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -69,9 +72,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
-        <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <ReactLoader size="lg" text="MRA IT Helpdesk" fullscreen={true} />
     );
   }
 
@@ -94,7 +95,7 @@ export default function App() {
             {/* Authenticated Routes */}
             <Route
               path="/dashboard"
-              element={user ? <Dashboard user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={user ? <Dashboard user={user} token={token} darkMode={darkMode} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="/input-ticket"
@@ -106,21 +107,29 @@ export default function App() {
             />
             <Route
               path="/reports"
-              element={user ? <Reports user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={user ? <Reports user={user} token={token} darkMode={darkMode} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="/performance"
-              element={user ? <AgentPerformance user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={user ? <AgentPerformance user={user} token={token} darkMode={darkMode} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="/users"
               element={user ? <Users user={user} token={token} /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/guideline"
+              element={user ? <Guideline user={user} token={token} /> : <Navigate to="/login" replace />}
             />
 
             {/* Unauthenticated Route */}
             <Route
               path="/login"
               element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/dashboard" replace />}
+            />
+            <Route
+              path="/reset-password"
+              element={!user ? <ResetPassword /> : <Navigate to="/dashboard" replace />}
             />
 
             {/* Catch All Redirect */}

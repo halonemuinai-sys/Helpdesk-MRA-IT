@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FilePlus2, CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { FilePlus2, CheckCircle2, AlertCircle, Loader2, ArrowRight, Clock } from 'lucide-react';
+import SearchableSelect from '../components/SearchableSelect';
+import Flatpickr from 'react-flatpickr';
+import 'flatpickr/dist/flatpickr.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -19,12 +22,17 @@ export default function InputTicket({ user, token }) {
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
+  
+  // Custom date/time for retroactive ticket creation (Backdate)
+  const [customCreatedAt, setCustomCreatedAt] = useState(null);
 
   // Ticket Form fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Hardware');
+  const [subCategory, setSubCategory] = useState('');
   const [priority, setPriority] = useState('LOW');
+  const [source, setSource] = useState('Walk-in');
 
   // Page States
   const [loading, setLoading] = useState(false);
@@ -41,7 +49,7 @@ export default function InputTicket({ user, token }) {
       const res = await fetch(`${API_URL}/companies`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error('Gagal mengambil daftar perusahaan.');
+      if (!res.ok) throw new Error('Failed to fetch companies.');
       const data = await res.json();
       setAllCompanies(data);
 
@@ -76,8 +84,8 @@ export default function InputTicket({ user, token }) {
   };
 
   // Dropdown 1: Handle Company Name selection
-  const handleCompanyNameChange = (e) => {
-    const compName = e.target.value;
+  const handleCompanyNameChange = (val) => {
+    const compName = typeof val === 'object' && val?.target ? val.target.value : val;
     setSelectedCompName(compName);
     
     // Reset subordinate selections
@@ -96,8 +104,8 @@ export default function InputTicket({ user, token }) {
   };
 
   // Dropdown 2: Handle Location selection
-  const handleLocationChange = (e) => {
-    const loc = e.target.value;
+  const handleLocationChange = (val) => {
+    const loc = typeof val === 'object' && val?.target ? val.target.value : val;
     setSelectedLocation(loc);
     
     // Reset employee selections
@@ -122,7 +130,7 @@ export default function InputTicket({ user, token }) {
       const res = await fetch(`${API_URL}/companies/${companyId}/employees`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error('Gagal mengambil daftar karyawan.');
+      if (!res.ok) throw new Error('Failed to fetch employees.');
       const data = await res.json();
       setEmployees(data);
     } catch (err) {
@@ -131,8 +139,8 @@ export default function InputTicket({ user, token }) {
   };
 
   // Dropdown 3: Handle Employee selection
-  const handleEmployeeChange = (e) => {
-    const empId = e.target.value;
+  const handleEmployeeChange = (val) => {
+    const empId = typeof val === 'object' && val?.target ? val.target.value : val;
     setSelectedEmployeeId(empId);
     setSelectedDepartment('');
 
@@ -147,7 +155,7 @@ export default function InputTicket({ user, token }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !description || !selectedCompanyId || !selectedEmployeeId) {
-      setError('Harap lengkapi semua isian formulir.');
+      setError('Please complete all form fields.');
       return;
     }
 
@@ -165,14 +173,17 @@ export default function InputTicket({ user, token }) {
           title,
           description,
           category,
+          subCategory,
           priority,
+          source,
           companyId: selectedCompanyId,
-          requesterId: selectedEmployeeId
+          requesterId: selectedEmployeeId,
+          createdAt: customCreatedAt ? customCreatedAt.toISOString() : undefined
         })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan tiket baru.');
+      if (!res.ok) throw new Error(data.error || 'Failed to submit new ticket.');
 
       setSuccess(true);
       setTimeout(() => {
@@ -187,16 +198,16 @@ export default function InputTicket({ user, token }) {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+    <div className="max-w-5xl mx-auto space-y-6 py-4 animate-fade-in">
       
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold text-gray-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
-          <FilePlus2 className="w-8 h-8 text-brand-500" />
-          Input Tiket Baru
+        <h1 className="text-2xl font-extrabold text-gray-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
+          <FilePlus2 className="w-7 h-7 text-brand-500" />
+          Create New Ticket
         </h1>
-        <p className="text-gray-500 dark:text-slate-400 mt-1 font-medium">
-          Daftarkan laporan kerusakan atau kebutuhan bantuan IT baru.
+        <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 font-medium">
+          Register a new damage report or IT assistance request.
         </p>
       </div>
 
@@ -205,195 +216,275 @@ export default function InputTicket({ user, token }) {
           <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-10 h-10" />
           </div>
-          <h3 className="text-xl font-bold text-gray-800 dark:text-slate-200">Tiket Berhasil Dibuat!</h3>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-slate-200">Ticket Created Successfully!</h3>
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            Tiket bantuan Anda telah disimpan dan SLA sudah mulai berjalan. Mengalihkan...
+            Your ticket has been submitted. SLA countdown is active. Redirecting...
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="glass-card p-8 rounded-3xl border border-gray-200/50 dark:border-slate-800/30 space-y-6">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           
-          {error && (
-            <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm flex items-center gap-3">
-              <AlertCircle className="w-5 h-5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Cascade Dropdowns Row 1: Company & Location */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Column: Reporter Information & Metadata */}
+          <div className="glass-card p-6 rounded-3xl border border-gray-200/50 dark:border-slate-800/30 space-y-4 flex flex-col justify-between">
             
-            {/* Dropdown 1: Company Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                1. Perusahaan (Company)
-              </label>
-              <select
-                disabled={user.role === 'USER'}
-                value={selectedCompName}
-                onChange={handleCompanyNameChange}
-                className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-sm cursor-pointer disabled:opacity-50"
-              >
-                <option value="">-- Pilih Perusahaan --</option>
-                {uniqueCompanyNames.map(name => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </select>
-            </div>
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200 border-b border-gray-100 dark:border-slate-800 pb-2 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center text-xs font-black">1</span>
+                <span>Reporter & Metadata</span>
+              </h3>
 
-            {/* Dropdown 2: Location */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                2. Lokasi / Cabang (Location)
-              </label>
-              <select
-                disabled={user.role === 'USER' || !selectedCompName}
-                value={selectedLocation}
-                onChange={handleLocationChange}
-                className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-sm cursor-pointer disabled:opacity-50"
-              >
-                <option value="">-- Pilih Lokasi --</option>
-                {locations.map(loc => (
-                  <option key={loc.id} value={loc.location}>{loc.location}</option>
-                ))}
-              </select>
-            </div>
-
-          </div>
-
-          {/* Cascade Dropdowns Row 2: Employee & Department */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Dropdown 3: Employee Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                3. Nama Karyawan (Requester)
-              </label>
-              <select
-                disabled={user.role === 'USER' || !selectedLocation}
-                value={selectedEmployeeId}
-                onChange={handleEmployeeChange}
-                className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-sm cursor-pointer disabled:opacity-50"
-              >
-                <option value="">-- Pilih Karyawan --</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>{emp.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Read-Only: Department */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                4. Departemen
-              </label>
-              <input
-                type="text"
-                readOnly
-                value={selectedDepartment}
-                placeholder="Otomatis terisi..."
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-500 dark:text-slate-400 focus:outline-none text-sm cursor-not-allowed"
-              />
-            </div>
-
-          </div>
-
-          <div className="border-t border-gray-200/50 dark:border-slate-800/50 my-6"></div>
-
-          {/* Ticket Categorization */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Category selection */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                Kategori Gangguan
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-sm cursor-pointer"
-              >
-                <option value="Hardware">Hardware (Perangkat Keras)</option>
-                <option value="Software">Software (Perangkat Lunak)</option>
-                <option value="Network">Network (Jaringan/Internet)</option>
-                <option value="Access">Access / Account (Akun & Sandi)</option>
-              </select>
-            </div>
-
-            {/* Priority selection */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                Skala Prioritas (Urgensi)
-              </label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-sm cursor-pointer"
-              >
-                <option value="LOW">LOW (Rendah - Penanganan Max 24 Jam)</option>
-                <option value="MEDIUM">MEDIUM (Sedang - Penanganan Max 6 Jam)</option>
-                <option value="HIGH">HIGH (Tinggi - Penanganan Max 2 Jam)</option>
-              </select>
-            </div>
-
-          </div>
-
-          {/* Ticket Title */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-              Subjek / Judul Gangguan
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Contoh: Mesin POS Kasir Hang / Tidak Bisa Cetak Struk"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-sm"
-            />
-          </div>
-
-          {/* Ticket Description */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-              Deskripsi Detail Keluhan
-            </label>
-            <textarea
-              required
-              rows={4}
-              placeholder="Harap deskripsikan masalah secara mendetail (misal: kode error, langkah kejadian, atau jenis perangkat yang bermasalah)."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-sm"
-            ></textarea>
-          </div>
-
-          {/* Submit Row */}
-          <div className="pt-2 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/tickets')}
-              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm transition-colors"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-3 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-brand-500/10 flex items-center gap-2 disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Menyimpan...</span>
-                </>
-              ) : (
-                <>
-                  <span>Kirim Tiket</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
+              {error && (
+                <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{error}</span>
+                </div>
               )}
-            </button>
+
+              {/* Company Selection */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
+                  Company
+                </label>
+                <SearchableSelect
+                  disabled={user.role === 'USER'}
+                  value={selectedCompName}
+                  onChange={handleCompanyNameChange}
+                  options={uniqueCompanyNames}
+                  placeholder="-- Select Company --"
+                />
+              </div>
+
+              {/* Location Selection */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
+                  Location / Branch
+                </label>
+                <SearchableSelect
+                  disabled={user.role === 'USER' || !selectedCompName}
+                  value={selectedLocation}
+                  onChange={handleLocationChange}
+                  options={locations}
+                  labelKey="location"
+                  valueKey="location"
+                  placeholder="-- Select Location --"
+                />
+              </div>
+
+              {/* Employee Requester Selection */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
+                  Employee Name (Requester)
+                </label>
+                <SearchableSelect
+                  disabled={user.role === 'USER' || !selectedLocation}
+                  value={selectedEmployeeId}
+                  onChange={handleEmployeeChange}
+                  options={employees}
+                  labelKey="name"
+                  valueKey="id"
+                  placeholder="-- Select Employee --"
+                />
+              </div>
+
+              {/* Read-Only Department field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
+                  Department
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={selectedDepartment}
+                  placeholder="Auto-filled..."
+                  className="w-full px-4 py-2.5 bg-gray-55/60 dark:bg-slate-950/60 border border-gray-250/60 dark:border-slate-800/80 rounded-xl text-gray-550 dark:text-slate-400 focus:outline-none text-xs cursor-not-allowed"
+                />
+              </div>
+
+              {/* Incident Date & Time (Retroactive / Backdate) */}
+              {['AGENT', 'ADMIN'].includes(user.role) && (
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
+                    Incident Date & Time (Retroactive)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Flatpickr
+                      data-enable-time
+                      value={customCreatedAt}
+                      onChange={([date]) => setCustomCreatedAt(date)}
+                      options={{
+                        maxDate: new Date(),
+                        dateFormat: "Y-m-d H:i",
+                        time_24hr: true
+                      }}
+                      className="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs cursor-pointer shadow-sm"
+                      placeholder="Current Time (Now)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCustomCreatedAt(new Date())}
+                      className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 font-bold rounded-xl text-xs transition-colors shadow-sm shrink-0 flex items-center gap-1"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-brand-500" />
+                      <span>Now</span>
+                    </button>
+                    {customCreatedAt && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomCreatedAt(null)}
+                        className="px-2.5 py-2 border border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 rounded-xl text-[10px] font-black transition-colors shrink-0"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <p className="text-[10px] text-gray-450 dark:text-slate-500 font-medium leading-relaxed mt-4 pt-3 border-t border-gray-100 dark:border-slate-800/40">
+              💡 SLA response and resolution target deadlines will automatically be calculated relative to this ticket's creation timestamp.
+            </p>
+          </div>
+
+          {/* Right Column: Issue Details & Subject */}
+          <div className="glass-card p-6 rounded-3xl border border-gray-200/50 dark:border-slate-800/30 space-y-4 flex flex-col justify-between">
+            
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200 border-b border-gray-100 dark:border-slate-800 pb-2 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center text-xs font-black">2</span>
+                <span>Issue & Classification</span>
+              </h3>
+
+              {/* Subject / Issue Title */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
+                  Subject / Issue Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Example: POS Cashier machine froze / cannot print receipt"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 focus:border-brand-500 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none text-xs"
+                />
+              </div>
+
+              {/* Categorization & Priority Grid (3 columns for layout compacting) */}
+              <div className="grid grid-cols-3 gap-3">
+                {/* Category */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Category
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-2 py-2 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 rounded-xl text-gray-850 dark:text-slate-250 focus:outline-none text-xs cursor-pointer font-semibold"
+                  >
+                    <option value="Hardware">Hardware</option>
+                    <option value="Software">Software</option>
+                    <option value="Network">Network</option>
+                    <option value="Access">Access</option>
+                  </select>
+                </div>
+
+                {/* Priority */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Priority
+                  </label>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="w-full px-2 py-2 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 rounded-xl text-gray-850 dark:text-slate-250 focus:outline-none text-xs cursor-pointer font-semibold"
+                  >
+                    <option value="LOW">LOW</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="HIGH">HIGH</option>
+                  </select>
+                </div>
+
+                {/* Source */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Source
+                  </label>
+                  <select
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                    className="w-full px-2 py-2 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 rounded-xl text-gray-850 dark:text-slate-250 focus:outline-none text-xs cursor-pointer font-semibold"
+                  >
+                    <option value="Walk-in">Walk-in</option>
+                    <option value="Email">Email</option>
+                    <option value="Phone Call">Phone</option>
+                    <option value="Instant Messaging">IM</option>
+                    <option value="Direct Instruction">Direct</option>
+                    <option value="On-site Visit">On-site</option>
+                    <option value="System Alert">Alert</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Sub-Category Detail */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
+                  Sub-Category / Detailing
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Epson L3110 Printer / Outlook Webmail / WiFi"
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-255 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs shadow-sm"
+                />
+              </div>
+
+              {/* Detailed Description */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
+                  Detailed Description
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Describe error codes, steps to reproduce, or device type..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-gray-255 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs"
+                ></textarea>
+              </div>
+            </div>
+
+            {/* Submit Action Row */}
+            <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-slate-800/40 mt-4">
+              <button
+                type="button"
+                onClick={() => navigate('/tickets')}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 font-bold rounded-xl text-xs transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-bold rounded-xl text-xs transition-colors shadow-lg shadow-brand-500/10 flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Submit Ticket</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
+
           </div>
 
         </form>

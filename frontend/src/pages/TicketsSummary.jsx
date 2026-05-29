@@ -11,9 +11,13 @@ import {
   AlertTriangle,
   ChevronRight,
   X,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import TicketDetailsModal from '../components/TicketDetailsModal';
+import ReactLoader from '../components/ReactLoader';
+import Swal from 'sweetalert2';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -24,9 +28,36 @@ export default function TicketsSummary({ user, token }) {
   const [error, setError] = useState(null);
 
   // Filters state
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL_ACTIVE');
+  const [activeTab, setActiveTab] = useState('ACTIVE'); // 'ACTIVE' or 'HISTORY'
   const [priorityFilter, setPriorityFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Date range and pagination limits
+  const [monthFilter, setMonthFilter] = useState('ALL');
+  const [limit, setLimit] = useState(100);
+  const [hasMore, setHasMore] = useState(false);
+
+  const getDateRange = (filter) => {
+    const now = new Date();
+    let startDate = null;
+    let endDate = null;
+
+    if (filter === 'THIS_MONTH') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    } else if (filter === 'LAST_MONTH') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).toISOString();
+    } else if (filter === 'LAST_3_MONTHS') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString();
+    }
+
+    return { startDate, endDate };
+  };
+
+  const handleLoadMore = () => {
+    setLimit(prev => prev + 100);
+  };
 
   // Selected ticket for modal detail view
   const [selectedTicketId, setSelectedTicketId] = useState(null);
@@ -41,7 +72,7 @@ export default function TicketsSummary({ user, token }) {
     if (user.role !== 'USER') {
       fetchAgents();
     }
-  }, [statusFilter, priorityFilter]);
+  }, [statusFilter, priorityFilter, monthFilter, limit]);
 
   // SLA countdown timer refresh every minute
   useEffect(() => {
@@ -66,13 +97,33 @@ export default function TicketsSummary({ user, token }) {
       const headers = { 'Authorization': `Bearer ${token}` };
       
       let query = `?search=${searchQuery}`;
-      if (statusFilter !== 'ALL') query += `&status=${statusFilter}`;
+      // Exclude ALL_ACTIVE and ALL_HISTORY from backend status query so we get all to filter on frontend
+      if (statusFilter !== 'ALL' && statusFilter !== 'ALL_ACTIVE' && statusFilter !== 'ALL_HISTORY') {
+        query += `&status=${statusFilter}`;
+      }
       if (priorityFilter) query += `&priority=${priorityFilter}`;
 
+      // Date ranges for History tab
+      if (activeTab === 'HISTORY' && monthFilter !== 'ALL') {
+        const { startDate, endDate } = getDateRange(monthFilter);
+        if (startDate) query += `&startDate=${startDate}`;
+        if (endDate) query += `&endDate=${endDate}`;
+      }
+
+      // Pagination Limit
+      query += `&limit=${limit}`;
+
       const res = await fetch(`${API_URL}/tickets${query}`, { headers });
-      if (!res.ok) throw new Error('Gagal memuat daftar tiket.');
+      if (!res.ok) throw new Error('Failed to load tickets list.');
       const data = await res.json();
       setTickets(data);
+
+      // Determine if there are potentially more records
+      if (data.length === limit) {
+        setHasMore(true);
+      } else {
+        setHasMore(false);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -110,7 +161,7 @@ export default function TicketsSummary({ user, token }) {
   };
 
   // Status Action Handlers
-  const handleStatusChange = async (ticketId, newStatus) => {
+  const handleStatusChange = async (ticketId, newStatus, comment = '') => {
     try {
       const res = await fetch(`${API_URL}/tickets/${ticketId}/status`, {
         method: 'PATCH',
@@ -118,12 +169,12 @@ export default function TicketsSummary({ user, token }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus, comment })
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Gagal mengubah status.');
+        throw new Error(data.error || 'Failed to change status.');
       }
 
       // Refresh list and details
@@ -150,7 +201,7 @@ export default function TicketsSummary({ user, token }) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Gagal menugaskan agen.');
+        throw new Error(data.error || 'Failed to assign agent.');
       }
 
       fetchTickets();
@@ -159,6 +210,95 @@ export default function TicketsSummary({ user, token }) {
       }
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId) => {
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    const result = await Swal.fire({
+      title: 'Delete Ticket?',
+      text: `Are you sure you want to permanently delete ticket ${ticketId}? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Delete It',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      background: isDark ? '#0f172a' : '#ffffff',
+      color: isDark ? '#f1f5f9' : '#1e293b',
+      iconColor: '#f59e0b',
+      customClass: {
+        popup: 'rounded-3xl border border-gray-200/50 dark:border-slate-800/40 shadow-2xl p-6 font-sans',
+        title: 'text-lg font-extrabold text-gray-800 dark:text-slate-100 mt-2',
+        htmlContainer: 'text-xs text-gray-500 dark:text-slate-400 leading-relaxed font-medium',
+        confirmButton: 'px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all text-white',
+        cancelButton: 'px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all text-white'
+      },
+      buttonsStyling: true
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      Swal.fire({
+        title: 'Deleting...',
+        text: 'Please wait while we erase this record.',
+        background: isDark ? '#0f172a' : '#ffffff',
+        color: isDark ? '#f1f5f9' : '#1e293b',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const res = await fetch(`${API_URL}/tickets/${ticketId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete ticket.');
+      }
+
+      await Swal.fire({
+        title: 'Deleted!',
+        text: `Ticket ${ticketId} has been successfully deleted.`,
+        icon: 'success',
+        confirmButtonColor: '#06b6d4',
+        background: isDark ? '#0f172a' : '#ffffff',
+        color: isDark ? '#f1f5f9' : '#1e293b',
+        iconColor: '#10b981',
+        customClass: {
+          popup: 'rounded-3xl border border-gray-200/50 dark:border-slate-800/40 shadow-2xl p-6 font-sans',
+          title: 'text-lg font-extrabold text-gray-800 dark:text-slate-100 mt-2',
+          htmlContainer: 'text-xs text-gray-500 dark:text-slate-400 font-medium',
+          confirmButton: 'px-5 py-2.5 rounded-xl font-bold text-xs text-white'
+        }
+      });
+      
+      if (selectedTicketId === ticketId) {
+        setSelectedTicketId(null);
+      }
+      
+      fetchTickets();
+    } catch (err) {
+      Swal.fire({
+        title: 'Error!',
+        text: err.message,
+        icon: 'error',
+        confirmButtonColor: '#ef4444',
+        background: isDark ? '#0f172a' : '#ffffff',
+        color: isDark ? '#f1f5f9' : '#1e293b',
+        iconColor: '#ef4444',
+        customClass: {
+          popup: 'rounded-3xl border border-gray-200/50 dark:border-slate-800/40 shadow-2xl p-6 font-sans',
+          title: 'text-lg font-extrabold text-gray-800 dark:text-slate-100 mt-2',
+          htmlContainer: 'text-xs text-gray-500 dark:text-slate-400 font-medium',
+          confirmButton: 'px-5 py-2.5 rounded-xl font-bold text-xs text-white'
+        }
+      });
     }
   };
 
@@ -171,7 +311,7 @@ export default function TicketsSummary({ user, token }) {
             ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400' 
             : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
         }`}>
-          {ticket.isSlaBreached ? 'Breached (Terlambat)' : 'SLA Met (Tepat Waktu)'}
+          {ticket.isSlaBreached ? 'Breached (Late)' : 'SLA Met (On Time)'}
         </span>
       );
     }
@@ -195,16 +335,16 @@ export default function TicketsSummary({ user, token }) {
 
     let timeString = '';
     if (diffHours > 0) {
-      timeString = `${diffHours} jam ${mins} menit`;
+      timeString = `${diffHours} hr ${mins} min`;
     } else {
-      timeString = `${mins} menit`;
+      timeString = `${mins} min`;
     }
 
     if (ticket.status === 'PENDING') {
       return (
         <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 flex items-center gap-1.5 w-fit">
           <Pause className="w-3 h-3 fill-current" />
-          Paused ({timeString} sisa)
+          Paused ({timeString} left)
         </span>
       );
     }
@@ -221,7 +361,7 @@ export default function TicketsSummary({ user, token }) {
     return (
       <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 flex items-center gap-1.5 w-fit border border-amber-500/10">
         <Clock className="w-3.5 h-3.5 animate-pulse" />
-        {timeString} sisa
+        {timeString} left
       </span>
     );
   };
@@ -254,6 +394,16 @@ export default function TicketsSummary({ user, token }) {
     );
   };
 
+  const displayTickets = tickets.filter(t => {
+    if (statusFilter === 'ALL_ACTIVE') {
+      return ['OPEN', 'IN_PROGRESS', 'PENDING'].includes(t.status);
+    }
+    if (statusFilter === 'ALL_HISTORY') {
+      return ['RESOLVED', 'CLOSED'].includes(t.status);
+    }
+    return true; // Already filtered by backend for specific statuses
+  });
+
   return (
     <div className="space-y-6 animate-fade-in relative min-h-screen">
       
@@ -261,10 +411,10 @@ export default function TicketsSummary({ user, token }) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-800 dark:text-slate-100 tracking-tight">
-            Daftar Tiket Bantuan
+            Helpdesk Tickets List
           </h1>
           <p className="text-gray-500 dark:text-slate-400 mt-1 font-medium">
-            Monitor keluhan, status pengerjaan, dan perhitungan SLA secara langsung.
+            Monitor issues, work status, and SLA calculations live.
           </p>
         </div>
 
@@ -275,9 +425,45 @@ export default function TicketsSummary({ user, token }) {
             className="flex items-center gap-2 px-5 py-3 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-brand-500/15 shrink-0"
           >
             <Plus className="w-5 h-5" />
-            <span>Buat Tiket Baru</span>
+            <span>Create New Ticket</span>
           </Link>
         )}
+      </div>
+
+      {/* Main Tabs: Active vs History */}
+      <div className="flex border-b border-gray-200 dark:border-slate-800/60">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('ACTIVE');
+            setStatusFilter('ALL_ACTIVE');
+            setLimit(100);
+            setMonthFilter('ALL');
+          }}
+          className={`px-6 py-3 text-sm font-bold border-b-2 transition-all ${
+            activeTab === 'ACTIVE'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300'
+          }`}
+        >
+          Active Tickets
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('HISTORY');
+            setStatusFilter('ALL_HISTORY');
+            setLimit(100);
+            setMonthFilter('ALL');
+          }}
+          className={`px-6 py-3 text-sm font-bold border-b-2 transition-all ${
+            activeTab === 'HISTORY'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300'
+          }`}
+        >
+          Ticket History
+        </button>
       </div>
 
       {/* Filter Options Panel */}
@@ -285,32 +471,86 @@ export default function TicketsSummary({ user, token }) {
         
         {/* Tab Status Filters */}
         <div className="flex flex-wrap gap-1 w-full md:w-auto">
-          {['ALL', 'OPEN', 'IN_PROGRESS', 'PENDING', 'RESOLVED', 'CLOSED'].map(status => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                statusFilter === status
-                  ? 'bg-brand-500 text-white shadow-md shadow-brand-500/10'
-                  : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200'
-              }`}
-            >
-              {status}
-            </button>
-          ))}
+          {activeTab === 'ACTIVE' ? (
+            <>
+              {[
+                { label: 'All Active', value: 'ALL_ACTIVE' },
+                { label: 'Open', value: 'OPEN' },
+                { label: 'In Progress', value: 'IN_PROGRESS' },
+                { label: 'Pending', value: 'PENDING' }
+              ].map(status => (
+                <button
+                  key={status.value}
+                  type="button"
+                  onClick={() => setStatusFilter(status.value)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    statusFilter === status.value
+                      ? 'bg-brand-500 text-white shadow-md shadow-brand-500/10'
+                      : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              {[
+                { label: 'All History', value: 'ALL_HISTORY' },
+                { label: 'Resolved', value: 'RESOLVED' },
+                { label: 'Closed', value: 'CLOSED' }
+              ].map(status => (
+                <button
+                  key={status.value}
+                  type="button"
+                  onClick={() => setStatusFilter(status.value)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    statusFilter === status.value
+                      ? 'bg-brand-500 text-white shadow-md shadow-brand-500/10'
+                      : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </>
+          )}
         </div>
 
         {/* Search & Priority Filters */}
         <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Month Filter (History Tab Only) */}
+          {activeTab === 'HISTORY' && (
+            <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 px-3 py-2 rounded-xl shadow-sm">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <select
+                value={monthFilter}
+                onChange={(e) => {
+                  setMonthFilter(e.target.value);
+                  setLimit(100); // Reset limit to 100 on filter change
+                }}
+                className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">All Time</option>
+                <option value="THIS_MONTH">This Month</option>
+                <option value="LAST_MONTH">Last Month</option>
+                <option value="LAST_3_MONTHS">Last 3 Months</option>
+              </select>
+            </div>
+          )}
+
           {/* Priority Filter */}
           <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 px-3 py-2 rounded-xl shadow-sm">
             <Filter className="w-4 h-4 text-gray-400" />
             <select
               value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
+              onChange={(e) => {
+                setPriorityFilter(e.target.value);
+                setLimit(100); // Reset limit to 100 on filter change
+              }}
               className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="">Semua Prioritas</option>
+              <option value="">All Priorities</option>
               <option value="LOW">LOW</option>
               <option value="MEDIUM">MEDIUM</option>
               <option value="HIGH">HIGH</option>
@@ -319,12 +559,16 @@ export default function TicketsSummary({ user, token }) {
 
           {/* Search box */}
           <form 
-            onSubmit={(e) => { e.preventDefault(); fetchTickets(); }}
+            onSubmit={(e) => { 
+              e.preventDefault(); 
+              setLimit(100); 
+              fetchTickets(); 
+            }}
             className="flex-1 md:w-64 relative"
           >
             <input
               type="text"
-              placeholder="Cari tiket..."
+              placeholder="Search tickets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 shadow-sm"
@@ -340,29 +584,27 @@ export default function TicketsSummary({ user, token }) {
       {/* Main Table List */}
       <div className="glass-card rounded-2xl border border-gray-200/50 dark:border-slate-800/30 overflow-hidden">
         {loading ? (
-          <div className="py-20 text-center flex justify-center">
-            <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : tickets.length === 0 ? (
+          <ReactLoader size="md" text="Loading ticket registry..." />
+        ) : displayTickets.length === 0 ? (
           <div className="py-16 text-center text-gray-500 dark:text-slate-500">
-            Tidak ada tiket yang ditemukan dengan kriteria filter tersebut.
+            No tickets found matching the filter criteria.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50 dark:bg-slate-900/50 border-b border-gray-200/50 dark:border-slate-800/50 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                  <th className="py-4 px-6">Tiket</th>
-                  <th className="py-4 px-6">Perusahaan / Lokasi</th>
-                  <th className="py-4 px-6">Prioritas</th>
+                  <th className="py-4 px-6">Ticket</th>
+                  <th className="py-4 px-6">Company / Location</th>
+                  <th className="py-4 px-6">Priority</th>
                   <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6">Target SLA</th>
-                  <th className="py-4 px-6">PIC Agent</th>
-                  <th className="py-4 px-6 text-center">Aksi</th>
+                  <th className="py-4 px-6">SLA Target</th>
+                  <th className="py-4 px-6">Assigned Agent</th>
+                  <th className="py-4 px-6 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800/50 text-sm">
-                {tickets.map(ticket => (
+                {displayTickets.map(ticket => (
                   <tr 
                     key={ticket.id} 
                     className="hover:bg-gray-50/30 dark:hover:bg-slate-900/10 cursor-pointer transition-colors"
@@ -371,9 +613,9 @@ export default function TicketsSummary({ user, token }) {
                     <td className="py-4 px-6 max-w-xs">
                       <div className="font-semibold text-gray-800 dark:text-slate-200 truncate">{ticket.title}</div>
                       <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 flex items-center gap-2">
-                        <span>ID: {ticket.id.substring(0,8)}</span>
+                        <span>ID: {ticket.id.startsWith('MRA-') ? ticket.id : ticket.id.substring(0,8)}</span>
                         <span>•</span>
-                        <span>{ticket.requester.name} ({ticket.category})</span>
+                        <span>{ticket.requester.name} ({ticket.category}{ticket.subCategory && ticket.subCategory !== '-' ? ` - ${ticket.subCategory}` : ''} • {ticket.source || 'Walk-in'})</span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
@@ -394,11 +636,26 @@ export default function TicketsSummary({ user, token }) {
                           <span>{ticket.assignedTo.name}</span>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400 italic">Belum ada</span>
+                        <span className="text-xs text-gray-400 italic">Unassigned</span>
                       )}
                     </td>
                     <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
-                      <ChevronRight className="w-5 h-5 text-gray-400 mx-auto" />
+                      <div className="flex items-center justify-center gap-2">
+                        {user.role === 'ADMIN' && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTicket(ticket.id)}
+                            className="p-1.5 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400 rounded-lg text-gray-405 hover:scale-105 transition-all"
+                            title="Delete Ticket"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <ChevronRight 
+                          className="w-5 h-5 text-gray-400 cursor-pointer hover:text-brand-500 transition-colors" 
+                          onClick={() => setSelectedTicketId(ticket.id)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -408,225 +665,32 @@ export default function TicketsSummary({ user, token }) {
         )}
       </div>
 
-      {/* Ticket Details Side-Drawer Panel (Modal) */}
-      {selectedTicketId && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex justify-end z-50 animate-fade-in">
-          
-          {/* Overlay click to close */}
-          <div className="absolute inset-0" onClick={() => setSelectedTicketId(null)}></div>
-
-          {/* Drawer Body */}
-          <div className="w-full max-w-xl bg-white dark:bg-slate-900 min-h-screen shadow-2xl relative z-10 p-6 flex flex-col justify-between border-l border-gray-200 dark:border-slate-800 overflow-y-auto max-h-screen">
-            
-            {detailsLoading && !ticketDetails ? (
-              <div className="h-full flex items-center justify-center flex-1">
-                <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : ticketDetails ? (
-              <div className="space-y-6 flex-1 flex flex-col justify-between">
-                
-                {/* Header Row */}
-                <div>
-                  <div className="flex justify-between items-start gap-4">
-                    <div>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Detail Tiket Bantuan</span>
-                      <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100 mt-1">{ticketDetails.title}</h3>
-                    </div>
-                    <button 
-                      onClick={() => setSelectedTicketId(null)}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 dark:text-slate-400 transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-4 flex-wrap">
-                    {getStatusBadge(ticketDetails.status)}
-                    {getPriorityBadge(ticketDetails.priority)}
-                    <span className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
-                      {ticketDetails.category}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-200/50 dark:border-slate-800/50 my-2"></div>
-
-                {/* Info Fields Grid */}
-                <div className="space-y-4 flex-1">
-                  
-                  {/* Requester Info Card */}
-                  <div className="p-4 bg-gray-50/50 dark:bg-slate-950/20 border border-gray-200/50 dark:border-slate-800/30 rounded-2xl space-y-3">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Karyawan Pelapor</h4>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <p className="text-gray-400 font-medium">Nama Lengkap</p>
-                        <p className="font-semibold text-gray-700 dark:text-slate-200 mt-0.5">{ticketDetails.requester.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 font-medium">No. Telepon</p>
-                        <p className="font-semibold text-gray-700 dark:text-slate-200 mt-0.5">{ticketDetails.requester.phone || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 font-medium">Perusahaan / Cabang</p>
-                        <p className="font-semibold text-gray-700 dark:text-slate-200 mt-0.5">{ticketDetails.company.name}</p>
-                        <p className="text-[10px] text-gray-400">{ticketDetails.company.location}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 font-medium">Departemen / Posisi</p>
-                        <p className="font-semibold text-gray-700 dark:text-slate-200 mt-0.5">{ticketDetails.requester.department}</p>
-                        <p className="text-[10px] text-gray-400">{ticketDetails.requester.jobPosition}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SLA Tracker Card */}
-                  <div className="p-4 bg-gray-50/50 dark:bg-slate-950/20 border border-gray-200/50 dark:border-slate-800/30 rounded-2xl space-y-3">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Service Level Agreement (SLA)</h4>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <p className="text-gray-400 font-medium">Sisa Waktu Penyelesaian</p>
-                        <div className="mt-1 font-semibold">{renderSlaStatus(ticketDetails)}</div>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 font-medium">Batas Target Resolusi</p>
-                        <p className="font-semibold text-gray-700 dark:text-slate-200 mt-1">
-                          {new Date(ticketDetails.slaResolutionLimit).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                          {', '}
-                          {new Date(ticketDetails.slaResolutionLimit).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Description Box */}
-                  <div className="space-y-1.5">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Detail Keluhan</h4>
-                    <div className="p-4 bg-gray-50/20 dark:bg-slate-950/10 border border-gray-200/30 dark:border-slate-800/30 rounded-2xl text-xs leading-relaxed whitespace-pre-line text-gray-700 dark:text-slate-300">
-                      {ticketDetails.description}
-                    </div>
-                  </div>
-
-                  {/* Audit Logs Chronology */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Riwayat Tindakan (Audit Log)</h4>
-                    <div className="space-y-2 border-l border-gray-200 dark:border-slate-800 pl-4 py-1 ml-2 text-xs">
-                      {ticketDetails.auditLogs.map(log => (
-                        <div key={log.id} className="relative mt-2">
-                          <div className="absolute w-2 h-2 rounded-full bg-brand-500 -left-[21px] top-1"></div>
-                          <p className="font-semibold text-gray-700 dark:text-slate-200">{log.action.replace('_', ' ')}</p>
-                          <p className="text-gray-500 dark:text-slate-400 mt-0.5">{log.details}</p>
-                          <span className="text-[10px] text-gray-400">
-                            {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(log.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short' })}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Operations & Agent Actions (Agents/Admins Only) */}
-                {user.role !== 'USER' && (
-                  <div className="pt-6 border-t border-gray-200 dark:border-slate-800 space-y-4">
-                    
-                    {/* Assign Agent controls */}
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-slate-400">
-                        <UserPlus className="w-4 h-4 text-gray-400" />
-                        <span>Penugasan Agen:</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {/* Assign to Self button */}
-                        {!ticketDetails.assignedTo || ticketDetails.assignedTo.id !== user.id ? (
-                          <button
-                            onClick={() => handleAssignAgent(ticketDetails.id, user.id)}
-                            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-gray-700 dark:text-slate-200 rounded-lg transition-all"
-                          >
-                            Tugaskan ke Saya
-                          </button>
-                        ) : null}
-
-                        {/* Dropdown list of all agents */}
-                        <select
-                          value={ticketDetails.assignedToId || ''}
-                          onChange={(e) => handleAssignAgent(ticketDetails.id, e.target.value)}
-                          className="px-2 py-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-                        >
-                          <option value="">-- Pilih Agen --</option>
-                          {agents.map(ag => (
-                            <option key={ag.id} value={ag.id}>{ag.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Status transition controls */}
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      {/* 1. Open -> Start Process */}
-                      {ticketDetails.status === 'OPEN' && (
-                        <button
-                          onClick={() => handleStatusChange(ticketDetails.id, 'IN_PROGRESS')}
-                          className="w-full col-span-2 py-3 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-brand-500/10 transition-colors"
-                        >
-                          <Play className="w-4 h-4 fill-current" />
-                          <span>Mulai Proses Penanganan (Start SLA)</span>
-                        </button>
-                      )}
-
-                      {/* 2. In Progress -> Pause / Resolve */}
-                      {ticketDetails.status === 'IN_PROGRESS' && (
-                        <>
-                          <button
-                            onClick={() => handleStatusChange(ticketDetails.id, 'PENDING')}
-                            className="py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
-                          >
-                            <Pause className="w-4 h-4 fill-current" />
-                            <span>Tunda SLA (Pause)</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => handleStatusChange(ticketDetails.id, 'RESOLVED')}
-                            className="py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10 transition-colors"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Selesaikan Tiket</span>
-                          </button>
-                        </>
-                      )}
-
-                      {/* 3. Pending -> Resume Process */}
-                      {ticketDetails.status === 'PENDING' && (
-                        <button
-                          onClick={() => handleStatusChange(ticketDetails.id, 'IN_PROGRESS')}
-                          className="w-full col-span-2 py-3 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
-                        >
-                          <Play className="w-4 h-4 fill-current" />
-                          <span>Lanjutkan Penanganan (Resume SLA)</span>
-                        </button>
-                      )}
-
-                      {/* 4. Resolved -> Close Ticket */}
-                      {ticketDetails.status === 'RESOLVED' && (
-                        <button
-                          onClick={() => handleStatusChange(ticketDetails.id, 'CLOSED')}
-                          className="w-full col-span-2 py-3 bg-gray-800 hover:bg-gray-900 dark:bg-slate-950 dark:hover:bg-black text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>Tutup Tiket Secara Permanen</span>
-                        </button>
-                      )}
-                    </div>
-
-                  </div>
-                )}
-
-              </div>
-            ) : null}
-
-          </div>
-
+      {/* Load More Button */}
+      {hasMore && !loading && (
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={handleLoadMore}
+            className="px-6 py-2.5 bg-white hover:bg-gray-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-700 dark:text-slate-200 rounded-xl transition-all shadow-sm hover:shadow"
+          >
+            Load More (Muat Lebih Banyak)
+          </button>
         </div>
+      )}
+
+      {/* Ticket Details Modular Modal (Kotak Tengah) */}
+      {selectedTicketId && (
+        <TicketDetailsModal
+          user={user}
+          token={token}
+          ticketDetails={ticketDetails}
+          detailsLoading={detailsLoading}
+          agents={agents}
+          currentTime={currentTime}
+          onClose={() => setSelectedTicketId(null)}
+          handleStatusChange={handleStatusChange}
+          handleAssignAgent={handleAssignAgent}
+        />
       )}
 
     </div>

@@ -55,6 +55,10 @@ model User {
   
   requestedTickets Ticket[] @relation("RequesterTickets")
   assignedTickets  Ticket[] @relation("AssignedTickets")
+
+  @@index([companyId])
+  @@index([role])
+  @@index([department])
 }
 
 model Ticket {
@@ -62,6 +66,8 @@ model Ticket {
   title              String
   description        String
   category           String       // Hardware, Software, Network, Access
+  subCategory        String?      @default("-") // Detailing of category (e.g., Printer, Email, Wi-Fi)
+  source             String       @default("Walk-in") // Walk-in, Email, Phone Call, Instant Messaging, Direct Instruction, On-site Visit, System Alert
   status             TicketStatus @default(OPEN)
   priority           Priority     @default(LOW)
   
@@ -89,6 +95,13 @@ model Ticket {
   totalPausedMs      Int          @default(0) // Accumulated pause time in milliseconds
   
   auditLogs          AuditLog[]
+
+  @@index([companyId])
+  @@index([requesterId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
 }
 
 model AuditLog {
@@ -99,4 +112,7 @@ model AuditLog {
   ticketId    String
   ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([createdAt])
 }

@@ -8,11 +8,17 @@ const router = express.Router();
 // Returns structured analytics data for the dashboard and visual reports
 router.get('/', verifyToken, async (req, res, next) => {
   try {
-    const { companyId } = req.query;
+    const { companyId, startDate, endDate } = req.query;
     const where = {};
 
     if (companyId) {
       where.companyId = parseInt(companyId);
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
     }
 
     // 1. Fetch all tickets under query criteria

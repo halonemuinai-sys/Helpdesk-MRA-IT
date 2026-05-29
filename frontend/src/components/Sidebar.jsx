@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,12 +11,16 @@ import {
   Sun,
   Moon,
   ShieldCheck,
-  Building2
+  Building2,
+  HelpCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   if (!user) return null;
 
@@ -41,22 +45,28 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
       roles: ['AGENT', 'ADMIN']
     },
     {
-      label: 'Laporan Analisis',
+      label: 'Analysis Reports',
       path: '/reports',
       icon: BarChart3,
       roles: ['ADMIN'] // Admin only
     },
     {
-      label: 'Performa Agent (KPI)',
+      label: 'Agent Performance (KPI)',
       path: '/performance',
       icon: Award,
       roles: ['AGENT', 'ADMIN'] // Agents and Admins
     },
     {
-      label: 'Manajemen User',
+      label: 'User Management',
       path: '/users',
       icon: Users,
       roles: ['ADMIN'] // Admin only
+    },
+    {
+      label: 'Guideline',
+      path: '/guideline',
+      icon: HelpCircle,
+      roles: ['AGENT', 'ADMIN']
     }
   ];
 
@@ -68,42 +78,67 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
   };
 
   return (
-    <aside className="w-64 min-h-screen glass-panel flex flex-col justify-between border-r border-gray-200 dark:border-slate-800 transition-colors duration-200">
+    <aside 
+      className={`${
+        isCollapsed ? 'w-20' : 'w-64'
+      } min-h-screen glass-panel flex flex-col justify-between border-r border-gray-200 dark:border-slate-800 transition-all duration-300 ease-in-out relative`}
+    >
+      {/* Collapse Toggle Button */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-3 top-5 w-6 h-6 rounded-full bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center shadow-md border border-white/20 z-30 transition-transform duration-300 active:scale-90"
+        aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+      >
+        {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+      </button>
+
       <div className="flex flex-col">
         {/* Brand Logo Header */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-200/50 dark:border-slate-800/50 gap-2">
-          <Building2 className="w-6 h-6 text-brand-500" />
-          <span className="font-extrabold text-lg bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent">
-            MRA Helpdesk
-          </span>
+        <div className={`h-16 flex items-center border-b border-gray-200/50 dark:border-slate-800/50 gap-2 relative ${
+          isCollapsed ? 'justify-center px-2' : 'px-6'
+        }`}>
+          <Building2 className="w-6 h-6 text-brand-500 shrink-0" />
+          {!isCollapsed && (
+            <span className="font-extrabold text-lg bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent truncate animate-fade-in">
+              MRA Helpdesk
+            </span>
+          )}
         </div>
 
         {/* User Card */}
-        <div className="p-4 mx-4 my-4 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-gray-200/50 dark:border-slate-800/30">
-          <div className="flex items-center gap-3">
+        {!isCollapsed ? (
+          <div className="p-4 mx-4 my-4 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-950 flex items-center justify-center font-bold text-brand-700 dark:text-brand-300">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="overflow-hidden">
+                <h4 className="font-semibold text-sm text-gray-800 dark:text-slate-200 truncate">
+                  {user.name}
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                  {user.department}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-2.5 py-1 rounded-lg w-fit">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              {user.role}
+            </div>
+            <div className="mt-2 text-[10px] text-gray-400 dark:text-slate-500 font-medium truncate">
+              {user.companyName || (user.company && user.company.name)}
+            </div>
+          </div>
+        ) : (
+          <div className="p-2 mx-auto my-4 bg-white/50 dark:bg-slate-900/40 rounded-full border border-gray-200/50 dark:border-slate-800/30 w-12 h-12 flex items-center justify-center transition-all duration-300 cursor-pointer">
             <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-950 flex items-center justify-center font-bold text-brand-700 dark:text-brand-300">
               {user.name.charAt(0).toUpperCase()}
             </div>
-            <div className="overflow-hidden">
-              <h4 className="font-semibold text-sm text-gray-800 dark:text-slate-200 truncate">
-                {user.name}
-              </h4>
-              <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
-                {user.department}
-              </p>
-            </div>
           </div>
-          <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-2.5 py-1 rounded-lg w-fit">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            {user.role}
-          </div>
-          <div className="mt-2 text-[10px] text-gray-400 dark:text-slate-500 font-medium truncate">
-            {user.companyName || (user.company && user.company.name)}
-          </div>
-        </div>
+        )}
 
         {/* Navigation Items */}
-        <nav className="px-4 space-y-1">
+        <nav className={`px-4 space-y-2 ${isCollapsed ? 'flex flex-col items-center px-2' : ''}`}>
           {filteredNavItems.map(item => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -111,14 +146,25 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
+                className={`flex items-center rounded-xl text-sm font-medium transition-all duration-205 relative group ${
+                  isCollapsed ? 'justify-center p-3 w-12 h-12 animate-fade-in' : 'gap-3 px-4 py-3 w-full'
+                } ${
                   isActive
-                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20'
-                    : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200'
+                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 scale-[1.02]'
+                    : `text-gray-600 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200 ${
+                        isCollapsed ? 'hover:scale-110' : 'hover:translate-x-1'
+                      }`
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                {item.label}
+                <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'scale-105' : ''}`} />
+                {!isCollapsed && <span>{item.label}</span>}
+                
+                {/* Tooltip on Collapsed Hover */}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-950 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md whitespace-nowrap z-50">
+                    {item.label}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -126,21 +172,33 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
       </div>
 
       {/* Footer Controls */}
-      <div className="p-4 border-t border-gray-200/50 dark:border-slate-800/50 space-y-2">
+      <div className={`p-4 border-t border-gray-200/50 dark:border-slate-800/50 space-y-2 ${isCollapsed ? 'flex flex-col items-center px-2' : ''}`}>
         {/* Theme Switcher Button */}
         <button
           onClick={toggleDarkMode}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200 transition-colors"
+          className={`flex items-center rounded-xl text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200 transition-all duration-200 group relative ${
+            isCollapsed ? 'justify-center p-3 w-12 h-12 hover:scale-110 animate-fade-in' : 'w-full gap-3 px-4 py-2.5'
+          }`}
         >
           {darkMode ? (
             <>
-              <Sun className="w-5 h-5 text-amber-500" />
-              <span>Light Mode</span>
+              <Sun className="w-5 h-5 text-amber-500 transition-transform duration-300 group-hover:rotate-45" />
+              {!isCollapsed && <span>Light Mode</span>}
+              {isCollapsed && (
+                <span className="absolute left-16 bg-slate-950 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md whitespace-nowrap z-50">
+                  Light Mode
+                </span>
+              )}
             </>
           ) : (
             <>
-              <Moon className="w-5 h-5 text-brand-600" />
-              <span>Dark Mode</span>
+              <Moon className="w-5 h-5 text-brand-600 transition-transform duration-300 group-hover:-rotate-12" />
+              {!isCollapsed && <span>Dark Mode</span>}
+              {isCollapsed && (
+                <span className="absolute left-16 bg-slate-950 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md whitespace-nowrap z-50">
+                  Dark Mode
+                </span>
+              )}
             </>
           )}
         </button>
@@ -148,10 +206,17 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
         {/* Logout Button */}
         <button
           onClick={handleLogoutClick}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+          className={`flex items-center rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200 group relative ${
+            isCollapsed ? 'justify-center p-3 w-12 h-12 hover:scale-110 animate-fade-in' : 'w-full gap-3 px-4 py-2.5'
+          }`}
         >
-          <LogOut className="w-5 h-5" />
-          <span>Keluar</span>
+          <LogOut className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-0.5" />
+          {!isCollapsed && <span>Logout</span>}
+          {isCollapsed && (
+            <span className="absolute left-16 bg-slate-950 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md whitespace-nowrap z-50">
+              Logout
+            </span>
+          )}
         </button>
       </div>
     </aside>

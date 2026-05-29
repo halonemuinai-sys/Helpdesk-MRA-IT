@@ -24,11 +24,17 @@ router.get('/', verifyToken, async (req, res, next) => {
       }
     });
 
+    const { startDate, endDate } = req.query;
+    const ticketsWhere = { assignedToId: { not: null } };
+    if (startDate || endDate) {
+      ticketsWhere.createdAt = {};
+      if (startDate) ticketsWhere.createdAt.gte = new Date(startDate);
+      if (endDate) ticketsWhere.createdAt.lte = new Date(endDate);
+    }
+
     // 2. Fetch all tickets assigned to any agent/admin
     const tickets = await prisma.ticket.findMany({
-      where: {
-        assignedToId: { not: null }
-      },
+      where: ticketsWhere,
       select: {
         assignedToId: true,
         status: true,
