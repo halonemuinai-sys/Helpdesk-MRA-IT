@@ -124,13 +124,16 @@ async function main() {
       continue;
     }
     
-    // Determine user role (promote to AGENT if in IT/Tech/MIS department)
+    // Determine user role (promote to AGENT only if programmer or IT staff, excluding technicians)
     let role = 'USER';
     const deptLower = emp.department.toLowerCase();
     const posLower = emp.jobPosition.toLowerCase();
     
-    if (deptLower.includes('it') || deptLower.includes('mis') || deptLower.includes('system') ||
-        posLower.includes('it') || posLower.includes('technician') || posLower.includes('programmer')) {
+    const hasIt = (/\bit\b/.test(deptLower) || /\bit\b/.test(posLower) || deptLower.includes('information & technology') || posLower.includes('information & technology'));
+    const hasProgrammer = deptLower.includes('programmer') || posLower.includes('programmer');
+    const isTechnician = deptLower.includes('teknik') || posLower.includes('technician');
+
+    if ((hasIt || hasProgrammer) && !isTechnician) {
       role = 'AGENT';
     }
     
