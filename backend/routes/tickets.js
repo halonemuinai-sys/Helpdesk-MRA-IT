@@ -103,6 +103,76 @@ router.get('/', verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/tickets/categories
+// Get all ticket categories and subcategories metadata
+router.get('/categories', verifyToken, async (req, res, next) => {
+  try {
+    const categories = await prisma.categoryMetadata.findMany({
+      orderBy: [
+        { category: 'asc' },
+        { subCategory: 'asc' }
+      ]
+    });
+    res.json(categories);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/tickets/categories
+// Add a new category metadata mapping
+router.post('/categories', verifyToken, async (req, res, next) => {
+  try {
+    const { category, subCategory } = req.body;
+    if (!category || !subCategory) {
+      return res.status(400).json({ error: 'Category and subCategory are required.' });
+    }
+
+    const newMeta = await prisma.categoryMetadata.upsert({
+      where: {
+        category_subCategory: {
+          category,
+          subCategory: subCategory.trim()
+        }
+      },
+      update: {},
+      create: {
+        category,
+        subCategory: subCategory.trim()
+      }
+    });
+
+    res.status(201).json(newMeta);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/tickets/categories/:id
+// Delete category metadata by ID
+router.delete('/categories/:id', verifyToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if category metadata exists
+    const meta = await prisma.categoryMetadata.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!meta) {
+      return res.status(404).json({ error: 'Category metadata not found.' });
+    }
+
+    await prisma.categoryMetadata.delete({
+      where: { id: parseInt(id) }
+    });
+
+    res.json({ message: `Category mapping for ${meta.category} - ${meta.subCategory} deleted.` });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/tickets/:id
 // Get detailed ticket by ID
 router.get('/:id', verifyToken, async (req, res, next) => {
@@ -168,6 +238,27 @@ router.post('/', verifyToken, async (req, res, next) => {
     const limits = SLA_LIMITS[targetPriority];
     const slaResponseLimit = new Date(baseTime.getTime() + limits.response);
     const slaResolutionLimit = new Date(baseTime.getTime() + limits.resolution);
+
+    // Auto-upsert category metadata
+    if (subCategory && subCategory.trim() !== '' && subCategory.trim() !== '-') {
+      try {
+        await prisma.categoryMetadata.upsert({
+          where: {
+            category_subCategory: {
+              category,
+              subCategory: subCategory.trim()
+            }
+          },
+          update: {},
+          create: {
+            category,
+            subCategory: subCategory.trim()
+          }
+        });
+      } catch (metaErr) {
+        console.error('Failed to auto-upsert category metadata:', metaErr.message);
+      }
+    }
 
     const ticketId = await generateNextTicketId();
 
@@ -408,6 +499,27 @@ router.post('/public', async (req, res, next) => {
     const limits = SLA_LIMITS[targetPriority];
     const slaResponseLimit = new Date(now.getTime() + limits.response);
     const slaResolutionLimit = new Date(now.getTime() + limits.resolution);
+
+    // Auto-upsert category metadata
+    if (subCategory && subCategory.trim() !== '' && subCategory.trim() !== '-') {
+      try {
+        await prisma.categoryMetadata.upsert({
+          where: {
+            category_subCategory: {
+              category,
+              subCategory: subCategory.trim()
+            }
+          },
+          update: {},
+          create: {
+            category,
+            subCategory: subCategory.trim()
+          }
+        });
+      } catch (metaErr) {
+        console.error('Failed to auto-upsert category metadata in public route:', metaErr.message);
+      }
+    }
 
     const ticketId = await generateNextTicketId();
 

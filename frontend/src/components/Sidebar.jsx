@@ -14,7 +14,8 @@ import {
   Building2,
   HelpCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FolderTree
 } from 'lucide-react';
 
 export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
@@ -61,6 +62,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
       path: '/users',
       icon: Users,
       roles: ['ADMIN'] // Admin only
+    },
+    {
+      label: 'Category Settings',
+      path: '/categories',
+      icon: FolderTree,
+      roles: ['AGENT', 'ADMIN']
     },
     {
       label: 'Guideline',

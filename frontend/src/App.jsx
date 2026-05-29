@@ -15,6 +15,7 @@ import AgentPerformance from './pages/AgentPerformance';
 import Users from './pages/Users';
 import ResetPassword from './pages/ResetPassword';
 import Guideline from './pages/Guideline';
+import Categories from './pages/Categories';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -116,6 +117,10 @@ export default function App() {
             <Route
               path="/users"
               element={user ? <Users user={user} token={token} /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/categories"
+              element={user ? <Categories user={user} token={token} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="/guideline"

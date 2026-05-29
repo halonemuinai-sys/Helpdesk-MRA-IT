@@ -167,6 +167,71 @@ async function main() {
   }
   
   console.log(`Seeding complete. Seeded ${userCount} users. Skipped ${skippedCount} users.`);
+
+  // 4. Seed Category & Subcategory Metadata
+  console.log('Seeding category and subcategory metadata...');
+  const categoryMetadata = [
+    // Hardware
+    { category: 'Hardware', subCategory: 'PC/Laptop' },
+    { category: 'Hardware', subCategory: 'Printer' },
+    { category: 'Hardware', subCategory: 'Scanner' },
+    { category: 'Hardware', subCategory: 'Monitor' },
+    { category: 'Hardware', subCategory: 'Keyboard/Mouse' },
+    { category: 'Hardware', subCategory: 'IP Phone' },
+    { category: 'Hardware', subCategory: 'UPS' },
+    { category: 'Hardware', subCategory: 'POS Cashier Machine' },
+    { category: 'Hardware', subCategory: 'Projector' },
+    
+    // Software
+    { category: 'Software', subCategory: 'Outlook/Email' },
+    { category: 'Software', subCategory: 'SAP' },
+    { category: 'Software', subCategory: 'Retailsoft ERP' },
+    { category: 'Software', subCategory: 'NetSuite ERP' },
+    { category: 'Software', subCategory: 'Ginee ERP' },
+    { category: 'Software', subCategory: 'Operating System (Windows/macOS)' },
+    { category: 'Software', subCategory: 'Microsoft Office (Word, Excel, etc.)' },
+    { category: 'Software', subCategory: 'Antivirus' },
+    { category: 'Software', subCategory: 'Google Workspace' },
+    { category: 'Software', subCategory: 'Custom Internal Apps' },
+    
+    // Network
+    { category: 'Network', subCategory: 'Wi-Fi Connection' },
+    { category: 'Network', subCategory: 'LAN Cable Connection' },
+    { category: 'Network', subCategory: 'VPN/Remote Access' },
+    { category: 'Network', subCategory: 'Internet Slow/Offline' },
+    { category: 'Network', subCategory: 'Switch/Router Issue' },
+    
+    // Access
+    { category: 'Access', subCategory: 'Active Directory / Login Domain' },
+    { category: 'Access', subCategory: 'Email Password Reset' },
+    { category: 'Access', subCategory: 'SAP Account Lock / Password Reset' },
+    { category: 'Access', subCategory: 'Shared Folder Access' },
+    { category: 'Access', subCategory: 'VPN Account Request' },
+    { category: 'Access', subCategory: 'CCTV Access' }
+  ];
+
+  let metaCount = 0;
+  for (const meta of categoryMetadata) {
+    try {
+      await prisma.categoryMetadata.upsert({
+        where: {
+          category_subCategory: {
+            category: meta.category,
+            subCategory: meta.subCategory
+          }
+        },
+        update: {},
+        create: {
+          category: meta.category,
+          subCategory: meta.subCategory
+        }
+      });
+      metaCount++;
+    } catch (err) {
+      console.log(`Error seeding category metadata ${meta.category} - ${meta.subCategory}:`, err.message);
+    }
+  }
+  console.log(`Seeding category metadata complete. Seeded ${metaCount} items.`);
 }
 
 main()

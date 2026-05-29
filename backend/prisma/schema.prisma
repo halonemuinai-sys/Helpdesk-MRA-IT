@@ -116,3 +116,13 @@ model AuditLog {
   @@index([ticketId])
   @@index([createdAt])
 }
+
+model CategoryMetadata {
+  id          Int      @id @default(autoincrement())
+  category    String   // e.g., Hardware, Software, Network, Access
+  subCategory String   // e.g., Printer, Outlook Webmail
+  createdAt   DateTime @default(now())
+
+  @@unique([category, subCategory])
+  @@index([category])
+}

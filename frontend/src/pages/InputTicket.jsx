@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FilePlus2, CheckCircle2, AlertCircle, Loader2, ArrowRight, Clock } from 'lucide-react';
+import { FilePlus2, CheckCircle2, AlertCircle, Loader2, ArrowRight, Clock, ChevronDown, Search, X } from 'lucide-react';
 import SearchableSelect from '../components/SearchableSelect';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.css';
@@ -34,15 +34,46 @@ export default function InputTicket({ user, token }) {
   const [priority, setPriority] = useState('LOW');
   const [source, setSource] = useState('Walk-in');
 
+  // Categories Metadata States
+  const [categoriesMetadata, setCategoriesMetadata] = useState([]);
+  const [isSubOpen, setIsSubOpen] = useState(false);
+  const [subSearch, setSubSearch] = useState('');
+  const subRef = useRef(null);
+
   // Page States
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch all companies on mount
+  // Fetch all companies & categories on mount
   useEffect(() => {
     fetchCompanies();
+    fetchCategoriesMetadata();
   }, []);
+
+  // Handle click outside sub-category dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (subRef.current && !subRef.current.contains(event.target)) {
+        setIsSubOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchCategoriesMetadata = async () => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/categories`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch categories metadata.');
+      const data = await res.json();
+      setCategoriesMetadata(data);
+    } catch (err) {
+      console.error('Error fetching category metadata:', err.message);
+    }
+  };
 
   const fetchCompanies = async () => {
     try {
@@ -152,10 +183,16 @@ export default function InputTicket({ user, token }) {
     }
   };
 
+  const handleCategoryChange = (e) => {
+    setCategory(e.target.value);
+    setSubCategory('');
+    setSubSearch('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !description || !selectedCompanyId || !selectedEmployeeId) {
-      setError('Please complete all form fields.');
+    if (!title || !description || !selectedCompanyId || !selectedEmployeeId || !subCategory) {
+      setError('Please complete all form fields, including Sub-Category / Detailing.');
       return;
     }
 
@@ -379,7 +416,7 @@ export default function InputTicket({ user, token }) {
                   </label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={handleCategoryChange}
                     className="w-full px-2 py-2 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 rounded-xl text-gray-850 dark:text-slate-250 focus:outline-none text-xs cursor-pointer font-semibold"
                   >
                     <option value="Hardware">Hardware</option>
@@ -427,18 +464,99 @@ export default function InputTicket({ user, token }) {
               </div>
 
               {/* Sub-Category Detail */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5" ref={subRef}>
                 <label className="text-xs font-bold text-gray-700 dark:text-slate-350 uppercase tracking-wider block">
                   Sub-Category / Detailing
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Epson L3110 Printer / Outlook Webmail / WiFi"
-                  value={subCategory}
-                  onChange={(e) => setSubCategory(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-255 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs shadow-sm"
-                />
+                
+                <div className="relative w-full">
+                  {/* Select Trigger */}
+                  <div
+                    className={`w-full flex items-center justify-between border border-gray-250 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-xs overflow-hidden px-4 py-2.5 cursor-pointer shadow-sm focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition-all hover:border-gray-300 dark:hover:border-slate-700`}
+                    onClick={() => setIsSubOpen(!isSubOpen)}
+                  >
+                    <span className={`truncate mr-2 ${subCategory ? 'text-gray-800 dark:text-slate-200 font-semibold' : 'text-gray-400 dark:text-slate-500'}`}>
+                      {subCategory || '-- Select Sub-Category --'}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${isSubOpen ? 'transform rotate-180' : ''}`} />
+                  </div>
+
+                  {/* Dropdown Menu */}
+                  {isSubOpen && (
+                    <div className="absolute z-30 w-full mt-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-xl max-h-64 flex flex-col overflow-hidden animate-fade-in">
+                      {/* Search box */}
+                      <div className="flex items-center border-b border-gray-100 dark:border-slate-800 px-3 py-2 gap-2 bg-gray-50/50 dark:bg-slate-900/50">
+                        <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Search or type to add custom..."
+                          value={subSearch}
+                          onChange={(e) => setSubSearch(e.target.value)}
+                          className="w-full bg-transparent border-none text-xs text-gray-800 dark:text-slate-200 focus:outline-none placeholder-gray-400 py-1"
+                        />
+                        {subSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setSubSearch('')}
+                            className="p-0.5 hover:bg-gray-200 dark:hover:bg-slate-800 rounded"
+                          >
+                            <X className="w-3.5 h-3.5 text-gray-400" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Options list */}
+                      <div className="overflow-y-auto flex-1 max-h-48 divide-y divide-gray-50 dark:divide-slate-800/30 text-xs">
+                        {/* Custom "Add new" option if search does not match existing options */}
+                        {subSearch.trim() && !categoriesMetadata
+                          .filter(item => item.category === category)
+                          .some(item => item.subCategory.toLowerCase() === subSearch.trim().toLowerCase()) && (
+                          <div
+                            onClick={() => {
+                              setSubCategory(subSearch.trim());
+                              setSubSearch('');
+                              setIsSubOpen(false);
+                            }}
+                            className="px-4 py-3 cursor-pointer bg-brand-50/30 dark:bg-slate-850/40 text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-slate-800 font-bold transition-colors truncate"
+                          >
+                            + Add "{subSearch.trim()}" as new detailing
+                          </div>
+                        )}
+
+                        {categoriesMetadata.filter(item => item.category === category).length === 0 && !subSearch.trim() ? (
+                          <div className="p-4 text-center text-gray-450 dark:text-slate-500 font-medium">
+                            No options under this category. Type to add custom.
+                          </div>
+                        ) : (
+                          categoriesMetadata
+                            .filter(item => item.category === category)
+                            .filter(item => item.subCategory.toLowerCase().includes(subSearch.toLowerCase()))
+                            .map((opt, i) => {
+                              const isSelected = opt.subCategory === subCategory;
+                              return (
+                                <div
+                                  key={i}
+                                  onClick={() => {
+                                    setSubCategory(opt.subCategory);
+                                    setSubSearch('');
+                                    setIsSubOpen(false);
+                                  }}
+                                  className={`px-4 py-3 cursor-pointer hover:bg-brand-50 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-brand-400 font-semibold transition-colors truncate ${
+                                    isSelected
+                                      ? 'bg-brand-50/70 text-brand-600 dark:bg-slate-800/80 dark:text-brand-400'
+                                      : 'text-gray-700 dark:text-slate-350'
+                                  }`}
+                                >
+                                  {opt.subCategory}
+                                </div>
+                              );
+                            })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Detailed Description */}
