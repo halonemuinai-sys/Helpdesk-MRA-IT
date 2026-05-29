@@ -8,10 +8,10 @@ const router = express.Router();
 // Calculates and returns IT agent performance metrics (SLA compliance, average response & resolution times)
 router.get('/', verifyToken, async (req, res, next) => {
   try {
-    // 1. Fetch all users who are AGENT or ADMIN
+    // 1. Fetch all users who are AGENT
     const agents = await prisma.user.findMany({
       where: {
-        role: { in: ['AGENT', 'ADMIN'] }
+        role: 'AGENT'
       },
       select: {
         id: true,
