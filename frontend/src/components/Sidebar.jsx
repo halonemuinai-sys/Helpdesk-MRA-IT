@@ -20,25 +20,25 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
 
   if (!user) return null;
 
-  // Navigation schema based on Roles
+  // Navigation schema based on Roles (Only AGENT and ADMIN log in)
   const navItems = [
     {
       label: 'Dashboard',
       path: '/dashboard',
       icon: LayoutDashboard,
-      roles: ['USER', 'AGENT', 'ADMIN']
+      roles: ['AGENT', 'ADMIN']
     },
     {
       label: 'Input Ticket',
       path: '/input-ticket',
       icon: FilePlus2,
-      roles: ['USER', 'ADMIN'] // Users can request, Admins can do anything. Agents usually process, but can also request if needed. Let's allow ADMIN/USER.
+      roles: ['AGENT', 'ADMIN'] // Agents and Admins can input tickets on behalf of employees
     },
     {
       label: 'Tickets List',
       path: '/tickets',
       icon: Ticket,
-      roles: ['USER', 'AGENT', 'ADMIN']
+      roles: ['AGENT', 'ADMIN']
     },
     {
       label: 'Laporan Analisis',

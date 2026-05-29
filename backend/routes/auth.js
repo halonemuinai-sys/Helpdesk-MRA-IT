@@ -25,6 +25,11 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
+    // Only allow AGENT and ADMIN roles to login to the dashboard
+    if (user.role === 'USER') {
+      return res.status(403).json({ error: 'Akses ditolak. Karyawan biasa tidak diperbolehkan masuk ke dashboard IT.' });
+    }
+
     // Compare passwords
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {

@@ -314,4 +314,70 @@ router.patch('/:id/assign', verifyToken, async (req, res, next) => {
   }
 });
 
+// POST /api/tickets/public
+// Create a ticket from public sources (e.g. Google Form)
+router.post('/public', async (req, res, next) => {
+  try {
+    const { email, title, description, category, priority } = req.body;
+
+    if (!email || !title || !description || !category) {
+      return res.status(400).json({ error: 'Email, title, description, and category are required.' });
+    }
+
+    // Find employee by email
+    const requester = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    if (!requester) {
+      return res.status(404).json({ error: `Karyawan dengan email ${email} tidak terdaftar di database helpdesk MRA.` });
+    }
+
+    const targetPriority = (priority || 'LOW').toUpperCase();
+    if (!SLA_LIMITS[targetPriority]) {
+      return res.status(400).json({ error: 'Invalid priority level.' });
+    }
+
+    // Calculate SLA Targets
+    const now = new Date();
+    const limits = SLA_LIMITS[targetPriority];
+    const slaResponseLimit = new Date(now.getTime() + limits.response);
+    const slaResolutionLimit = new Date(now.getTime() + limits.resolution);
+
+    const ticket = await prisma.ticket.create({
+      data: {
+        title,
+        description,
+        category,
+        priority: targetPriority,
+        companyId: requester.companyId,
+        requesterId: requester.id,
+        slaResponseLimit,
+        slaResolutionLimit,
+        auditLogs: {
+          create: {
+            action: 'TICKET_CREATED_PUBLIC',
+            details: `Tiket dibuat secara otomatis melalui integrasi (Google Form) dengan prioritas ${targetPriority}.`,
+            performedBy: 'Google Form System'
+          }
+        }
+      },
+      include: {
+        company: true,
+        requester: {
+          select: { name: true, email: true, department: true }
+        }
+      }
+    });
+
+    res.status(201).json({
+      message: 'Tiket berhasil dibuat melalui Google Form.',
+      ticketId: ticket.id,
+      ticket
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
