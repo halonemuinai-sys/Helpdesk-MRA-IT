@@ -7,6 +7,7 @@ export default function Users({ user: currentUser, token }) {
   const [users, setUsers] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState(null);
@@ -96,12 +97,14 @@ export default function Users({ user: currentUser, token }) {
     );
   }
 
-  // Filter users based on query search
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter users based on query search and role
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = selectedRole === '' || u.role === selectedRole;
+    return matchesSearch && matchesRole;
+  });
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -134,6 +137,21 @@ export default function Users({ user: currentUser, token }) {
                 {comp.name}
               </option>
             ))}
+          </select>
+        </div>
+
+        {/* Role filter */}
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 px-3 py-2 rounded-xl shadow-sm w-full sm:w-auto">
+          <ShieldCheck className="w-4 h-4 text-gray-400" />
+          <select
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none pr-4 cursor-pointer w-full"
+          >
+            <option value="">Semua Hak Akses (Role)</option>
+            <option value="USER">USER (Karyawan)</option>
+            <option value="AGENT">AGENT (IT Staff)</option>
+            <option value="ADMIN">ADMIN (Super User)</option>
           </select>
         </div>
 
