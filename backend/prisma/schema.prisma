@@ -1,0 +1,102 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  AGENT
+  ADMIN
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Company {
+  id        Int      @id @default(autoincrement())
+  name      String   // Clean company name (e.g., PT Hourlogy Indah Perkasa)
+  location  String   // Branch/Location detail (e.g., Butik OMEGA Plaza Indonesia or HQ)
+  sector    String   // FB, RADIO, MEDIA, RETAIL, GENERAL
+  createdAt DateTime @default(now())
+  users     User[]
+  tickets   Ticket[]
+
+  @@unique([name, location])
+}
+
+model User {
+  id           String    @id // Employee ID (e.g., '40822045')
+  email        String    @unique
+  password     String
+  name         String
+  department   String    // Organization (e.g., 'Finance & Accounting')
+  jobPosition  String    // Job Position (e.g., 'Operational Staff')
+  phone        String?   // Mobile Phone
+  role         Role      @default(USER)
+  companyId    Int
+  company      Company   @relation(fields: [companyId], references: [id])
+  createdAt    DateTime  @default(now())
+  
+  requestedTickets Ticket[] @relation("RequesterTickets")
+  assignedTickets  Ticket[] @relation("AssignedTickets")
+}
+
+model Ticket {
+  id                 String       @id @default(uuid())
+  title              String
+  description        String
+  category           String       // Hardware, Software, Network, Access
+  status             TicketStatus @default(OPEN)
+  priority           Priority     @default(LOW)
+  
+  companyId          Int
+  company            Company      @relation(fields: [companyId], references: [id])
+  
+  requesterId        String
+  requester          User         @relation("RequesterTickets", fields: [requesterId], references: [id])
+  
+  assignedToId       String?
+  assignedTo         User?        @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  
+  // SLA tracking
+  slaResponseLimit   DateTime     // Target timestamp for first response
+  slaResolutionLimit DateTime     // Target timestamp for resolution
+  respondedAt        DateTime?    // Actual timestamp of first response
+  resolvedAt         DateTime?    // Actual timestamp of resolution
+  isSlaBreached      Boolean      @default(false)
+  
+  // SLA pause support
+  lastPausedAt       DateTime?    // Timestamp when moved to PENDING
+  totalPausedMs      Int          @default(0) // Accumulated pause time in milliseconds
+  
+  auditLogs          AuditLog[]
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String   // e.g., "TICKET_CREATED", "STATUS_CHANGED", "ASSIGNED"
+  details     String   // Change detail description
+  performedBy String   // User name or ID who performed the action
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
