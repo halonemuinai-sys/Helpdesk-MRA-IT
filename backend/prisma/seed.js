@@ -144,6 +144,7 @@ async function main() {
           department: emp.department,
           jobPosition: emp.jobPosition,
           phone: emp.phone,
+          role: role,
           companyId: companyId
         },
         create: {
