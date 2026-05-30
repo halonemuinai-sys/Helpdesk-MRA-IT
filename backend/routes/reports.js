@@ -295,6 +295,30 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
 
       // Only include company masters that have a budget or have assets/devices
       if (yearlyBudget > 0 || activeDevices.length > 0) {
+        const getVendorName = (asset) => {
+          const brand = (asset.brand || '').toLowerCase();
+          const model = (asset.model || '').toLowerCase();
+          const os = (asset.os || '').toLowerCase();
+          const ram = (asset.ram || '').toLowerCase();
+          const isSmartphone = (brand === 'apple' && model.includes('iphone')) ||
+                               os.includes('ios') ||
+                               os.includes('android') ||
+                               brand === 'samsung' ||
+                               brand === 'oppo' ||
+                               brand === 'vivo' ||
+                               brand === 'xiaomi' ||
+                               brand === 'realme' ||
+                               brand === 'infinix' ||
+                               brand === 'iqoo' ||
+                               ram.includes('4 gb') ||
+                               ram.includes('4gb');
+          
+          if (isSmartphone) {
+            return "PT Permata Landmarq Abadi";
+          }
+          return "PT Teknologi Skoring Nusantara";
+        };
+
         companyStats.push({
           id: master.id,
           name: master.name,
@@ -302,7 +326,21 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
           monthlyCosts,
           totalCost: totalProjectedCost,
           totalDevices: activeDevices.length,
-          users: uniqueUsers.map(u => ({ id: u.id, name: u.name, yearlyBudget: u.yearlyBudget }))
+          users: uniqueUsers.map(u => ({ id: u.id, name: u.name, yearlyBudget: u.yearlyBudget })),
+          assets: activeDevices.map(a => ({
+            id: a.id,
+            brand: a.brand,
+            model: a.model,
+            assetTag: a.assetTag,
+            deviceRef: a.deviceRef,
+            vendorRef: a.vendorRef,
+            rentalCost: a.rentalCost,
+            rentalStart: a.rentalStart,
+            rentalEnd: a.rentalEnd,
+            status: a.status,
+            vendor: getVendorName(a),
+            user: a.user ? { name: a.user.name, department: a.user.department } : null
+          }))
         });
       }
     }

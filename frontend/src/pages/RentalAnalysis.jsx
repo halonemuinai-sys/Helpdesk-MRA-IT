@@ -34,6 +34,25 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   // Collapse state for employee details per company master
   const [expandedCompanyId, setExpandedCompanyId] = useState(null);
   
+  // Breakdown modal states
+  const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
+  const [breakdownCompany, setBreakdownCompany] = useState(null);
+
+  const formatDateDMY = (value) => {
+    if (!value) return '-';
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return '-';
+      const day = d.getDate();
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      const month = monthNames[d.getMonth()];
+      const year = String(d.getFullYear()).slice(-2);
+      return `${day} ${month} ${year}`;
+    } catch (e) {
+      return '-';
+    }
+  };
+  
   // Edit budget modal states
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -403,7 +422,17 @@ export default function RentalAnalysis({ user, token, darkMode }) {
               {companyStats.map(comp => (
                 <tr key={comp.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                   <td className="py-3 px-4 font-bold text-brand-600 dark:text-brand-400">
-                    {comp.name}
+                    <button
+                      onClick={() => {
+                        setBreakdownCompany(comp);
+                        setIsBreakdownModalOpen(true);
+                      }}
+                      className="hover:underline hover:text-brand-500 text-left focus:outline-none flex items-center gap-1.5"
+                      title="Lihat Detail Aset Sewa"
+                    >
+                      <Building2 className="w-3.5 h-3.5 text-slate-450 shrink-0" />
+                      <span>{comp.name}</span>
+                    </button>
                   </td>
                   {comp.monthlyCosts.map((cost, idx) => (
                     <td key={idx} className="py-3 px-3 text-right font-semibold text-gray-700 dark:text-slate-350">
@@ -480,7 +509,17 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                           >
                             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                           </button>
-                          <span>{comp.name}</span>
+                          <button
+                            onClick={() => {
+                              setBreakdownCompany(comp);
+                              setIsBreakdownModalOpen(true);
+                            }}
+                            className="hover:underline hover:text-rose-500 text-left focus:outline-none flex items-center gap-1.5"
+                            title="Lihat Detail Aset Sewa"
+                          >
+                            <Building2 className="w-3.5 h-3.5 text-slate-450 shrink-0" />
+                            <span>{comp.name}</span>
+                          </button>
                         </div>
                       </td>
                       <td className="py-3 px-3 text-center font-bold text-slate-600 dark:text-slate-350">{comp.totalDevices} Unit</td>
@@ -595,6 +634,108 @@ export default function RentalAnalysis({ user, token, darkMode }) {
           </table>
         </div>
       </div>
+
+      {/* 4. Asset Rental Cost Breakdown Modal */}
+      {isBreakdownModalOpen && breakdownCompany && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800 shadow-2xl w-full max-w-4xl overflow-hidden animate-scale-up">
+            
+            {/* Header */}
+            <div className="p-6 border-b border-gray-150 dark:border-slate-850 flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">
+                  Breakdown Biaya Sewa: {breakdownCompany.name}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold mt-1">
+                  Breakdown aset sewa
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsBreakdownModalOpen(false)}
+                className="text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-lg p-1.5 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Table */}
+            <div className="overflow-x-auto p-4">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-gray-500 dark:text-slate-450 border-b border-gray-150 dark:border-slate-850 font-extrabold uppercase tracking-wider text-[9px]">
+                    <th className="py-3 px-4">Perangkat</th>
+                    <th className="py-3 px-4">Pengguna</th>
+                    <th className="py-3 px-4">Vendor</th>
+                    <th className="py-3 px-4">Periode Sewa</th>
+                    <th className="py-3 px-4 text-right">Biaya / Bulan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-150 dark:divide-slate-850">
+                  {breakdownCompany.assets && breakdownCompany.assets.length > 0 ? (
+                    breakdownCompany.assets.map(asset => {
+                      const startStr = formatDateDMY(asset.rentalStart);
+                      const endStr = formatDateDMY(asset.rentalEnd);
+                      
+                      return (
+                        <tr key={asset.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-slate-800 dark:text-slate-100">{asset.brand} {asset.model}</div>
+                            <div className="text-[9px] text-gray-400 font-mono mt-0.5">
+                              SN: {asset.assetTag || asset.deviceRef || '-'}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                            {asset.user ? (
+                              <div>
+                                <span className="font-bold text-slate-800 dark:text-slate-200">{asset.user.name}</span>
+                                {asset.user.department && (
+                                  <span className="text-[10px] text-gray-450 block font-medium">({asset.user.department})</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic font-medium">Tersedia di IT</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-semibold">
+                            {asset.vendor || '-'}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-mono font-bold">
+                            {startStr} s/d {endStr}
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-black text-slate-800 dark:text-slate-100 font-mono text-[11px]">
+                            {formatCurrency(asset.rentalCost)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="py-8 text-center text-gray-450 italic font-semibold">
+                        Tidak ada aset sewa aktif di bawah unit bisnis ini.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-150 dark:border-slate-850 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/10">
+              <div className="text-xs text-slate-750 dark:text-slate-300 font-semibold">
+                Estimasi Total Proyeksi Tahun <span className="font-extrabold text-slate-900 dark:text-slate-100">{selectedYear}</span>: <span className="font-black text-rose-500 text-sm ml-1.5">{formatCurrency(breakdownCompany.totalCost)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBreakdownModalOpen(false)}
+                className="px-5 py-2 bg-slate-150 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition"
+              >
+                Tutup
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      )}
 
       {/* Edit User Budget Modal */}
       {isEditUserModalOpen && editingUser && (
