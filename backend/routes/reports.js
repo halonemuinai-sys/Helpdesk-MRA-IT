@@ -29,11 +29,19 @@ router.get('/', verifyToken, async (req, res, next) => {
         status: true,
         priority: true,
         category: true,
+        subCategory: true,
+        source: true,
         isSlaBreached: true,
         createdAt: true,
+        respondedAt: true,
+        resolvedAt: true,
+        totalPausedMs: true,
         companyId: true,
         company: {
           select: { name: true }
+        },
+        requester: {
+          select: { department: true }
         }
       }
     });
@@ -63,11 +71,26 @@ router.get('/', verifyToken, async (req, res, next) => {
       CRITICAL: 0
     };
 
-    // 5. Aggregate SLA compliance
+    // 5. Aggregate source counts
+    const sourceCounts = {};
+
+    // 6. Aggregate department counts
+    const departmentCounts = {};
+
+    // 7. Aggregate subcategory counts
+    const subCategoryCounts = {};
+
+    // 8. Aggregate SLA compliance & durations
     let slaMet = 0;
     let slaBreached = 0;
 
-    // 6. Aggregate company-specific ticket counts
+    let totalResponseTimeMs = 0;
+    let respondedTicketsCount = 0;
+
+    let totalResolutionTimeMs = 0;
+    let resolvedTicketsCount = 0;
+
+    // 9. Aggregate company-specific ticket counts
     const companyDistribution = {};
 
     tickets.forEach(ticket => {
@@ -80,16 +103,44 @@ router.get('/', verifyToken, async (req, res, next) => {
       if (categoryCounts[ticket.category] !== undefined) {
         categoryCounts[ticket.category]++;
       } else {
-        categoryCounts[ticket.category] = 1; // Safeguard for dynamic categories
+        categoryCounts[ticket.category] = (categoryCounts[ticket.category] || 0) + 1; // Safeguard for dynamic categories
       }
+
+      // Sub-category
+      const subCat = ticket.subCategory || '-';
+      subCategoryCounts[subCat] = (subCategoryCounts[subCat] || 0) + 1;
+
+      // Source
+      const src = ticket.source || 'Walk-in';
+      sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+
+      // Department
+      const dept = ticket.requester?.department || 'General';
+      departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
 
       // Priority
       if (priorityCounts[ticket.priority] !== undefined) {
         priorityCounts[ticket.priority]++;
       }
 
-      // SLA Compliance (Resolved or Closed tickets)
+      // Response Time calculation
+      if (ticket.respondedAt) {
+        const timeDiff = new Date(ticket.respondedAt).getTime() - new Date(ticket.createdAt).getTime();
+        if (timeDiff >= 0) {
+          totalResponseTimeMs += timeDiff;
+          respondedTicketsCount++;
+        }
+      }
+
+      // Resolution Time calculation (for Resolved or Closed tickets)
       if (ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') {
+        if (ticket.resolvedAt) {
+          const rawDiff = new Date(ticket.resolvedAt).getTime() - new Date(ticket.createdAt).getTime();
+          const netDiff = rawDiff - (ticket.totalPausedMs || 0);
+          totalResolutionTimeMs += Math.max(0, netDiff);
+          resolvedTicketsCount++;
+        }
+
         if (ticket.isSlaBreached) {
           slaBreached++;
         } else {
@@ -105,15 +156,28 @@ router.get('/', verifyToken, async (req, res, next) => {
     const totalResolved = slaMet + slaBreached;
     const slaComplianceRate = totalResolved > 0 ? Math.round((slaMet / totalResolved) * 100) : 100;
 
+    const avgResponseHours = respondedTicketsCount > 0 
+      ? parseFloat((totalResponseTimeMs / (1000 * 60 * 60 * respondedTicketsCount)).toFixed(1))
+      : 0;
+
+    const avgResolutionHours = resolvedTicketsCount > 0
+      ? parseFloat((totalResolutionTimeMs / (1000 * 60 * 60 * resolvedTicketsCount)).toFixed(1))
+      : 0;
+
     res.json({
       totalTickets: tickets.length,
       status: statusCounts,
       categories: categoryCounts,
       priorities: priorityCounts,
+      sources: sourceCounts,
+      departments: departmentCounts,
+      subCategories: subCategoryCounts,
       sla: {
         met: slaMet,
         breached: slaBreached,
-        complianceRate: slaComplianceRate
+        complianceRate: slaComplianceRate,
+        avgResponseHours,
+        avgResolutionHours
       },
       companies: companyDistribution
     });
