@@ -193,11 +193,10 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
     const year = parseInt(req.query.year || new Date().getFullYear());
     const category = req.query.category || 'ALL'; // ALL, LAPTOP, SMARTPHONE
     
-    // 1. Fetch all rental assets (excluding status DISPOSED)
+    // 1. Fetch all rental assets
     const assets = await prisma.asset.findMany({
       where: {
-        ownershipType: 'RENTAL',
-        status: { not: 'DISPOSED' }
+        ownershipType: 'RENTAL'
       },
       include: {
         companyMaster: true,
