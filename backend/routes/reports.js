@@ -240,7 +240,7 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
               select: {
                 id: true,
                 name: true,
-                yearlyBudget: true
+                monthlyBudget: true
               }
             }
           }
@@ -260,7 +260,8 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
         });
       });
       const uniqueUsers = Array.from(usersMap.values());
-      const yearlyBudget = uniqueUsers.reduce((sum, u) => sum + u.yearlyBudget, 0);
+      const monthlyBudget = uniqueUsers.reduce((sum, u) => sum + (u.monthlyBudget || 0), 0);
+      const yearlyBudget = monthlyBudget * 12;
 
       // Find rental assets for this company master
       const companyAssets = filteredAssets.filter(a => a.companyMasterId === master.id);
@@ -322,11 +323,12 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
         companyStats.push({
           id: master.id,
           name: master.name,
+          monthlyBudget,
           yearlyBudget,
           monthlyCosts,
           totalCost: totalProjectedCost,
           totalDevices: activeDevices.length,
-          users: uniqueUsers.map(u => ({ id: u.id, name: u.name, yearlyBudget: u.yearlyBudget })),
+          users: uniqueUsers.map(u => ({ id: u.id, name: u.name, monthlyBudget: u.monthlyBudget })),
           assets: activeDevices.map(a => ({
             id: a.id,
             brand: a.brand,
@@ -356,21 +358,21 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
 });
 
 // PUT /api/reports/rental-budget/user
-// Updates a specific user's yearly budget
+// Updates a specific user's monthly budget
 router.put('/rental-budget/user', verifyToken, async (req, res, next) => {
   try {
-    const { userId, yearlyBudget } = req.body;
-    if (!userId || yearlyBudget === undefined) {
-      return res.status(400).json({ error: 'userId and yearlyBudget are required.' });
+    const { userId, monthlyBudget } = req.body;
+    if (!userId || monthlyBudget === undefined) {
+      return res.status(400).json({ error: 'userId and monthlyBudget are required.' });
     }
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { yearlyBudget: parseFloat(yearlyBudget) },
+      data: { monthlyBudget: parseFloat(monthlyBudget) },
       select: {
         id: true,
         name: true,
-        yearlyBudget: true
+        monthlyBudget: true
       }
     });
 
@@ -381,7 +383,7 @@ router.put('/rental-budget/user', verifyToken, async (req, res, next) => {
 });
 
 // PUT /api/reports/rental-budget/company
-// Updates a company's total budget by distributing it evenly among all its users
+// Updates a company's total monthly budget by distributing it evenly among all its users
 router.put('/rental-budget/company', verifyToken, async (req, res, next) => {
   try {
     const { companyMasterId, totalBudget } = req.body;
@@ -413,7 +415,7 @@ router.put('/rental-budget/company', verifyToken, async (req, res, next) => {
       const userBudget = i < remainder ? baseBudget + 1 : baseBudget;
       await prisma.user.update({
         where: { id: users[i].id },
-        data: { yearlyBudget: userBudget }
+        data: { monthlyBudget: userBudget }
       });
     }
 

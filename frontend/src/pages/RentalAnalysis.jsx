@@ -116,7 +116,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
         headers,
         body: JSON.stringify({
           userId: editingUser.id,
-          yearlyBudget: parseFloat(editingUserBudget)
+          monthlyBudget: parseFloat(editingUserBudget)
         })
       });
       
@@ -165,7 +165,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
       Swal.fire({
         icon: 'success',
         title: 'Budget Didistribusikan',
-        text: `Budget tahunan ${editingCompany.name} berhasil diperbarui.`,
+        text: `Budget bulanan ${editingCompany.name} berhasil diperbarui.`,
         timer: 1500,
         showConfirmButton: false
       });
@@ -468,7 +468,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
       <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden shadow-sm">
         <div className="p-5 border-b border-gray-150 dark:border-slate-850">
           <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Validasi Tahunan vs Budget</h3>
-          <p className="text-[10px] text-gray-500 font-semibold mt-1">Berdasarkan akumulasi budget tahunan karyawan per Unit Bisnis</p>
+          <p className="text-[10px] text-gray-500 font-semibold mt-1">Berdasarkan akumulasi budget bulanan karyawan yang dikalkulasi ke setahun per Unit Bisnis</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
@@ -525,11 +525,14 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                       <td className="py-3 px-3 text-center font-bold text-slate-600 dark:text-slate-350">{comp.totalDevices} Unit</td>
                       <td className="py-3 px-3 text-right font-extrabold text-slate-800 dark:text-slate-200">
                         <div className="flex items-center justify-end gap-1.5">
-                          <span>{formatCurrency(comp.yearlyBudget)}</span>
+                          <div className="text-right">
+                            <p>{formatCurrency(comp.yearlyBudget)}</p>
+                            <p className="text-[9px] text-gray-400 font-normal">Rp {formatNumber(comp.monthlyBudget)}/bln</p>
+                          </div>
                           <button
                             onClick={() => {
                               setEditingCompany(comp);
-                              setEditingCompanyBudget(comp.yearlyBudget.toString());
+                              setEditingCompanyBudget(comp.monthlyBudget.toString());
                               setIsEditCompanyModalOpen(true);
                             }}
                             className="p-1 text-gray-400 hover:text-rose-500 rounded transition"
@@ -576,16 +579,16 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                                   </div>
                                   <div className="text-right flex items-center gap-2">
                                     <div>
-                                      <p className="font-black text-rose-600 dark:text-rose-455 font-mono text-[11px]">{formatCurrency(u.yearlyBudget)}</p>
-                                      <p className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">Per Tahun</p>
+                                      <p className="font-black text-rose-600 dark:text-rose-455 font-mono text-[11px]">{formatCurrency(u.monthlyBudget)}</p>
+                                      <p className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">Per Bulan</p>
                                     </div>
                                     <button
                                       onClick={() => {
                                         setEditingUser(u);
-                                        setEditingUserBudget(u.yearlyBudget.toString());
+                                        setEditingUserBudget(u.monthlyBudget.toString());
                                         setIsEditUserModalOpen(true);
                                       }}
-                                      className="p-1 hover:bg-gray-50 dark:hover:bg-slate-850 border border-gray-150 dark:border-slate-800 text-gray-400 hover:text-rose-500 rounded-lg transition"
+                                      className="p-1 hover:bg-gray-50 dark:hover:bg-slate-855 border border-gray-150 dark:border-slate-800 text-gray-450 hover:text-rose-500 rounded-lg transition"
                                       title="Edit Budget Karyawan"
                                     >
                                       <Edit3 className="w-3 h-3" />
@@ -763,7 +766,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                 </div>
                 
                 <div>
-                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Budget Tahunan (IDR) *</label>
+                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Budget Bulanan (IDR) *</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
                     <input
@@ -772,8 +775,8 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                       min="0"
                       value={editingUserBudget}
                       onChange={(e) => setEditingUserBudget(e.target.value)}
-                      placeholder="e.g. 5000000"
-                      className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      placeholder="e.g. 500000"
+                      className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                     />
                   </div>
                   <p className="text-[9px] text-gray-400 mt-1">Isi dengan nominal Rupiah tanpa tanda titik atau koma.</p>
@@ -835,7 +838,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Total Budget Unit Bisnis (IDR) *</label>
+                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Total Budget Bulanan Unit Bisnis (IDR) *</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
                     <input
@@ -844,11 +847,11 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                       min="0"
                       value={editingCompanyBudget}
                       onChange={(e) => setEditingCompanyBudget(e.target.value)}
-                      placeholder="e.g. 50000000"
+                      placeholder="e.g. 5000000"
                       className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                     />
                   </div>
-                  <p className="text-[9px] text-gray-400 mt-1">Rata-rata per karyawan: {editingCompanyBudget ? formatCurrency(parseFloat(editingCompanyBudget) / editingCompany.users.length) : '-'}</p>
+                  <p className="text-[9px] text-gray-400 mt-1">Rata-rata per karyawan per bulan: {editingCompanyBudget ? formatCurrency(parseFloat(editingCompanyBudget) / editingCompany.users.length) : '-'}</p>
                 </div>
               </div>
               
