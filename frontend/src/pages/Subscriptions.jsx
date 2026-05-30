@@ -708,11 +708,11 @@ export default function Subscriptions({ user, token }) {
 
       {/* CRUD Form Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800/80 shadow-2xl w-full max-w-3xl overflow-hidden animate-slide-up-fade">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800/80 shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
             
             {/* Header */}
-            <div className="flex justify-between items-center p-5 border-b border-gray-150 dark:border-slate-850">
+            <div className="flex justify-between items-center p-5 border-b border-gray-150 dark:border-slate-850 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-rose-500/10 text-rose-500 rounded-xl">
                   <CreditCard className="w-5 h-5" />
@@ -739,8 +739,8 @@ export default function Subscriptions({ user, token }) {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit}>
-              <div className="p-6 space-y-4 max-h-[55vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1">
                 
                 {formError && (
                   <div className="p-3.5 rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800 text-red-755 text-xs flex items-center gap-2">
@@ -965,7 +965,7 @@ export default function Subscriptions({ user, token }) {
               </div>
 
               {/* Action Buttons */}
-              <div className="p-5 border-t border-gray-150 dark:border-slate-850 flex justify-end gap-3 bg-gray-50/50 dark:bg-slate-900/35">
+              <div className="p-5 border-t border-gray-150 dark:border-slate-850 flex justify-end gap-3 bg-gray-50/50 dark:bg-slate-900/35 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
