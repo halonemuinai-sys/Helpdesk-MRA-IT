@@ -109,7 +109,7 @@ export default function Login({ onLogin }) {
 
         {/* Footer Credit */}
         <div className="text-[10px] text-slate-500 relative z-10 font-medium">
-          © {new Date().getFullYear()} PT MRA Group. All rights reserved.
+          © {new Date().getFullYear()} PT Mugi Rekso Abadi (Group). All rights reserved.
         </div>
       </div>
 
