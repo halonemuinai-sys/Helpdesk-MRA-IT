@@ -17,6 +17,7 @@ import ResetPassword from './pages/ResetPassword';
 import Guideline from './pages/Guideline';
 import Categories from './pages/Categories';
 import WifiAps from './pages/WifiAps';
+import Subscriptions from './pages/Subscriptions';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -126,6 +127,10 @@ export default function App() {
             <Route
               path="/wifi-aps"
               element={user ? <WifiAps user={user} token={token} /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/subscriptions"
+              element={user ? <Subscriptions user={user} token={token} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="/guideline"

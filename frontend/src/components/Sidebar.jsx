@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderTree,
-  Wifi
+  Wifi,
+  CreditCard
 } from 'lucide-react';
 
 export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
@@ -64,6 +65,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           label: 'WiFi Database',
           path: '/wifi-aps',
           icon: Wifi,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'IT Subscriptions',
+          path: '/subscriptions',
+          icon: CreditCard,
           roles: ['AGENT', 'ADMIN']
         },
         {

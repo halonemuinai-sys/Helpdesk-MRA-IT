@@ -38,6 +38,7 @@ model Company {
   users     User[]
   tickets   Ticket[]
   wifiAPs   WifiAccessPoint[]
+  subscriptions ITSubscription[]
 
   @@unique([name, location])
 }
@@ -149,4 +150,47 @@ model WifiAccessPoint {
 
   @@index([companyId])
   @@index([ssid])
+}
+
+model ITSubscription {
+  id                      String           @id @default(uuid())
+  category                String           // e.g. "Hosting", "Domain", "VPN", "ISP", "Subscription", "Others"
+  vendor                  String           // Penyedia jasa (e.g. Google, Niagahoster)
+  name                    String           // Nama layanan / Domain (e.g. "Google Workspace", "mra.co.id")
+  billingCycle            String           // Siklus penagihan: "1 Bulan", "3 Bulan", "6 Bulan", "1 Tahun", "2 Tahun", "3 Tahun"
+  cost                    Float            // Biaya layanan dalam Rupiah (e.g. 150000)
+  startDate               DateTime         // Tanggal mulai aktif kontrak
+  expiryDate              DateTime         // Tanggal akhir aktif kontrak (kedaluwarsa)
+  status                  String           @default("ACTIVE") // Status: "ACTIVE" (Aktif), "EXPIRED" (Kedaluwarsa), "INACTIVE" (Tidak Aktif)
+  evidenceLink            String?          // URL Link bukti pembayaran/kontrak (Google Drive, dll.)
+  notes                   String?          // Catatan tambahan (IP, Akun Admin, dll.)
+  journey                 String?          @default("") // Akumulasi log catatan pembaruan teks
+  renewals                RenewalHistory[] // Relasi historis perpanjangan
+  
+  // Relasi ke Anak Perusahaan (Company Entity Tagging)
+  companyId               Int
+  company                 Company          @relation(fields: [companyId], references: [id])
+
+  // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
+  replacedSubscriptionId  String?          @unique
+  replacedSubscription    ITSubscription?  @relation("SubscriptionReplacement", fields: [replacedSubscriptionId], references: [id])
+  replacedBySubscription  ITSubscription?  @relation("SubscriptionReplacement")
+
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  @@index([companyId])
+  @@index([category])
+  @@index([status])
+  @@index([expiryDate])
+}
+
+model RenewalHistory {
+  id             String         @id @default(uuid())
+  subscriptionId String
+  subscription   ITSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  renewedAt      DateTime       @default(now())
+  cost           Float          // Biaya perpanjangan saat tindakan dilakukan
+  period         String         // Durasi perpanjangan (e.g., "1 Tahun")
+  notes          String?        // Catatan perpanjangan (e.g., "Diperpanjang 2 tahun per 6 bulan (Rp 300rb)")
 }
