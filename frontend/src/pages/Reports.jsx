@@ -17,8 +17,7 @@ import {
   ShieldAlert,
   Briefcase,
   Layers,
-  FileText,
-  HelpCircle
+  FileText
 } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 import Select from 'react-select';
@@ -232,8 +231,46 @@ export default function Reports({ user, token, darkMode }) {
     return 'text-red-500';
   };
 
+  const slaHoverGlow = slaRate >= 90 
+    ? 'hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.18)]' 
+    : slaRate >= 75 
+    ? 'hover:shadow-[0_0_20px_5px_rgba(245,158,11,0.18)]' 
+    : 'hover:shadow-[0_0_20px_5px_rgba(239,68,68,0.18)]';
+
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
+      {/* Inline styles for custom premium reports page animations */}
+      <style>{`
+        @keyframes slideUpFade {
+          from {
+            opacity: 0;
+            transform: translateY(16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes growWidth {
+          from {
+            width: 0%;
+          }
+        }
+        .animate-slide-up-fade {
+          animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-grow-width {
+          animation: growWidth 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .delay-1 { animation-delay: 40ms; }
+        .delay-2 { animation-delay: 80ms; }
+        .delay-3 { animation-delay: 120ms; }
+        .delay-4 { animation-delay: 160ms; }
+        .delay-5 { animation-delay: 200ms; }
+        .delay-6 { animation-delay: 240ms; }
+        .delay-7 { animation-delay: 280ms; }
+        .delay-8 { animation-delay: 320ms; }
+      `}</style>
       
       {/* Title Header Row */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -306,37 +343,40 @@ export default function Reports({ user, token, darkMode }) {
       )}
 
       {data && (
-        <div className="space-y-8">
+        <div 
+          key={`${selectedCompanyId}-${selectedMonth}-${selectedYear}`} 
+          className="space-y-8"
+        >
           
           {/* 1. TOP SUMMARY HUD CARD GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
             {/* HUD 1: Total Tickets */}
-            <div className="glass-panel p-5 rounded-2xl bg-gradient-to-br from-white to-blue-50/10 dark:from-slate-900/70 dark:to-slate-950/40 border border-gray-250 dark:border-slate-800/80 shadow-md flex items-center justify-between">
+            <div className="group glass-panel p-5 rounded-2xl bg-gradient-to-br from-white to-blue-50/10 dark:from-slate-900/70 dark:to-slate-950/40 border border-gray-250 dark:border-slate-800/80 shadow-md flex items-center justify-between hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.15)] hover:-translate-y-1 transition-all duration-300 animate-slide-up-fade delay-1 opacity-0">
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Total Tiket Masuk</p>
                 <h3 className="text-3xl font-extrabold text-gray-800 dark:text-slate-100">{data.totalTickets}</h3>
                 <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400">Insiden terdata di sistem</p>
               </div>
-              <div className="p-3.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-2xl shadow-inner">
+              <div className="p-3.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-2xl shadow-inner group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Ticket className="w-6 h-6" />
               </div>
             </div>
 
             {/* HUD 2: SLA compliance Met Rate */}
-            <div className="glass-panel p-5 rounded-2xl bg-gradient-to-br from-white to-emerald-50/10 dark:from-slate-900/70 dark:to-slate-950/40 border border-gray-250 dark:border-slate-800/80 shadow-md flex items-center justify-between">
+            <div className={`group glass-panel p-5 rounded-2xl bg-gradient-to-br from-white to-emerald-50/10 dark:from-slate-900/70 dark:to-slate-950/40 border border-gray-250 dark:border-slate-800/80 shadow-md flex items-center justify-between hover:-translate-y-1 transition-all duration-300 animate-slide-up-fade delay-2 opacity-0 ${slaHoverGlow}`}>
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Kepatuhan SLA</p>
                 <h3 className={`text-3xl font-extrabold ${getSlaColor(slaRate)}`}>{slaRate}%</h3>
                 <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400">{metTickets} Met / {breachedTickets} Breached</p>
               </div>
-              <div className="p-3.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl shadow-inner">
+              <div className="p-3.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl shadow-inner group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <ShieldCheck className="w-6 h-6" />
               </div>
             </div>
 
             {/* HUD 3: Average Response Time */}
-            <div className="glass-panel p-5 rounded-2xl bg-gradient-to-br from-white to-teal-50/10 dark:from-slate-900/70 dark:to-slate-950/40 border border-gray-200/50 dark:border-slate-800/80 shadow-md flex items-center justify-between">
+            <div className="group glass-panel p-5 rounded-2xl bg-gradient-to-br from-white to-teal-50/10 dark:from-slate-900/70 dark:to-slate-950/40 border border-gray-200/50 dark:border-slate-800/80 shadow-md flex items-center justify-between hover:shadow-[0_0_20px_5px_rgba(20,184,166,0.15)] hover:-translate-y-1 transition-all duration-300 animate-slide-up-fade delay-3 opacity-0">
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Rata Waktu Respon</p>
                 <h3 className="text-3xl font-extrabold text-teal-600 dark:text-teal-400">
@@ -344,13 +384,13 @@ export default function Reports({ user, token, darkMode }) {
                 </h3>
                 <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400">Durasi respon pertama agen</p>
               </div>
-              <div className="p-3.5 bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded-2xl shadow-inner">
+              <div className="p-3.5 bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded-2xl shadow-inner group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Clock className="w-6 h-6 animate-pulse" />
               </div>
             </div>
 
             {/* HUD 4: Average Resolution Time */}
-            <div className="glass-panel p-5 rounded-2xl bg-gradient-to-br from-white to-indigo-50/10 dark:from-slate-900/70 dark:to-slate-950/40 border border-gray-200/50 dark:border-slate-800/80 shadow-md flex items-center justify-between">
+            <div className="group glass-panel p-5 rounded-2xl bg-gradient-to-br from-white to-indigo-50/10 dark:from-slate-900/70 dark:to-slate-950/40 border border-gray-200/50 dark:border-slate-800/80 shadow-md flex items-center justify-between hover:shadow-[0_0_20px_5px_rgba(99,102,241,0.15)] hover:-translate-y-1 transition-all duration-300 animate-slide-up-fade delay-4 opacity-0">
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Rata Waktu Resolusi</p>
                 <h3 className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">
@@ -358,7 +398,7 @@ export default function Reports({ user, token, darkMode }) {
                 </h3>
                 <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400">Durasi penyelesaian bersih</p>
               </div>
-              <div className="p-3.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-2xl shadow-inner">
+              <div className="p-3.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-2xl shadow-inner group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Sparkles className="w-6 h-6" />
               </div>
             </div>
@@ -369,7 +409,7 @@ export default function Reports({ user, token, darkMode }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             {/* Box A: Status Breakdown */}
-            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between min-h-[340px] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-slide-up-fade delay-5 opacity-0">
               <div>
                 <h4 className="font-bold text-sm text-gray-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-brand-500" />
@@ -397,7 +437,7 @@ export default function Reports({ user, token, darkMode }) {
                         {/* Progress Bar Container */}
                         <div className="h-2.5 bg-gray-100 dark:bg-slate-800/50 rounded-full overflow-hidden relative border border-gray-200/10">
                           <div 
-                            className={`h-full ${colors[statusKey].split(' ')[0]} rounded-full transition-all duration-1000`}
+                            className={`h-full ${colors[statusKey].split(' ')[0]} rounded-full animate-grow-width`}
                             style={{ width: `${percent}%` }}
                           />
                         </div>
@@ -409,7 +449,7 @@ export default function Reports({ user, token, darkMode }) {
             </div>
 
             {/* Box B: Priority Breakdown */}
-            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between min-h-[340px] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-slide-up-fade delay-6 opacity-0">
               <div>
                 <h4 className="font-bold text-sm text-gray-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-brand-500" />
@@ -443,7 +483,7 @@ export default function Reports({ user, token, darkMode }) {
                         {/* Progress Bar Container */}
                         <div className="h-2.5 bg-gray-100 dark:bg-slate-800/50 rounded-full overflow-hidden relative border border-gray-200/10">
                           <div 
-                            className={`h-full ${barColors[priorityKey] || 'bg-gray-400'} rounded-full transition-all duration-1000`}
+                            className={`h-full ${barColors[priorityKey] || 'bg-gray-400'} rounded-full animate-grow-width`}
                             style={{ width: `${percent}%` }}
                           />
                         </div>
@@ -455,7 +495,7 @@ export default function Reports({ user, token, darkMode }) {
             </div>
 
             {/* Box C: Category (Issue Type) Breakdown */}
-            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between min-h-[340px] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-slide-up-fade delay-7 opacity-0">
               <div>
                 <h4 className="font-bold text-sm text-gray-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-brand-500" />
@@ -475,7 +515,7 @@ export default function Reports({ user, token, darkMode }) {
                         {/* Progress Bar Container */}
                         <div className="h-2.5 bg-gray-100 dark:bg-slate-800/50 rounded-full overflow-hidden relative border border-gray-200/10">
                           <div 
-                            className="h-full bg-brand-500 rounded-full transition-all duration-1000"
+                            className="h-full bg-brand-500 rounded-full animate-grow-width"
                             style={{ width: `${percent}%` }}
                           />
                         </div>
@@ -492,7 +532,7 @@ export default function Reports({ user, token, darkMode }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             {/* Box D: Departments Breakdown */}
-            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between lg:col-span-1 min-h-[360px]">
+            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between lg:col-span-1 min-h-[360px] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-slide-up-fade delay-5 opacity-0">
               <div>
                 <h4 className="font-bold text-sm text-gray-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <Users className="w-4 h-4 text-brand-500" />
@@ -516,7 +556,7 @@ export default function Reports({ user, token, darkMode }) {
                               <span className="text-indigo-600 dark:text-indigo-400 font-bold">{count} ({percent}%)</span>
                             </div>
                             <div className="h-2 bg-gray-150 dark:bg-slate-800/50 rounded-full overflow-hidden">
-                              <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${percent}%` }} />
+                              <div className="h-full bg-indigo-500 rounded-full animate-grow-width" style={{ width: `${percent}%` }} />
                             </div>
                           </div>
                         );
@@ -527,7 +567,7 @@ export default function Reports({ user, token, darkMode }) {
             </div>
 
             {/* Box E: Top Sub-Categories */}
-            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between lg:col-span-1 min-h-[360px]">
+            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between lg:col-span-1 min-h-[360px] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-slide-up-fade delay-6 opacity-0">
               <div>
                 <h4 className="font-bold text-sm text-gray-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-brand-500" />
@@ -551,7 +591,7 @@ export default function Reports({ user, token, darkMode }) {
                               <span className="text-amber-600 dark:text-amber-400 font-bold">{count} ({percent}%)</span>
                             </div>
                             <div className="h-2 bg-gray-150 dark:bg-slate-800/50 rounded-full overflow-hidden">
-                              <div className="h-full bg-amber-500 rounded-full" style={{ width: `${percent}%` }} />
+                              <div className="h-full bg-amber-500 rounded-full animate-grow-width" style={{ width: `${percent}%` }} />
                             </div>
                           </div>
                         );
@@ -562,7 +602,7 @@ export default function Reports({ user, token, darkMode }) {
             </div>
 
             {/* Box F: Ticket Sources */}
-            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between lg:col-span-1 min-h-[360px]">
+            <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 flex flex-col justify-between lg:col-span-1 min-h-[360px] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-slide-up-fade delay-7 opacity-0">
               <div>
                 <h4 className="font-bold text-sm text-gray-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-brand-500" />
@@ -588,7 +628,7 @@ export default function Reports({ user, token, darkMode }) {
                               <span className="text-teal-600 dark:text-teal-400 font-bold">{count} ({percent}%)</span>
                             </div>
                             <div className="h-2 bg-gray-150 dark:bg-slate-800/50 rounded-full overflow-hidden">
-                              <div className="h-full bg-teal-500 rounded-full" style={{ width: `${percent}%` }} />
+                              <div className="h-full bg-teal-500 rounded-full animate-grow-width" style={{ width: `${percent}%` }} />
                             </div>
                           </div>
                         );
@@ -601,7 +641,7 @@ export default function Reports({ user, token, darkMode }) {
           </div>
 
           {/* 4. SUBSIDIARY COMPANY VOLUMES TABLE */}
-          <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55">
+          <div className="glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-slide-up-fade delay-8 opacity-0">
             <h4 className="font-bold text-sm text-gray-800 dark:text-slate-200 mb-4 flex items-center gap-1.5">
               <TrendingUp className="w-5 h-5 text-brand-500 animate-pulse" />
               <span>Client Company Distribution Data (MRA Group)</span>
@@ -635,7 +675,7 @@ export default function Reports({ user, token, darkMode }) {
                             <td className="py-3 px-4 w-1/2">
                               <div className="flex items-center gap-3">
                                 <div className="flex-1 h-2 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                  <div className="h-full bg-brand-500 rounded-full transition-all duration-1000" style={{ width: `${pct}%` }}></div>
+                                  <div className="h-full bg-brand-500 rounded-full animate-grow-width" style={{ width: `${pct}%` }}></div>
                                 </div>
                                 <span className="w-8 text-right text-[10px] font-bold text-gray-500">{pct}%</span>
                               </div>
