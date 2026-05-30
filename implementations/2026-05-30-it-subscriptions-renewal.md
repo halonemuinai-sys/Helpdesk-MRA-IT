@@ -25,21 +25,27 @@ Dua model baru akan ditambahkan ke skema database PostgreSQL Supabase:
 Mencatat informasi terkini dari layanan IT yang aktif/tidak aktif.
 ```prisma
 model ITSubscription {
-  id             String           @id @default(uuid())
-  category       String           // e.g. "Hosting", "Domain", "VPN", "ISP", "Subscription", "Others"
-  vendor         String           // Penyedia jasa (e.g. Google, Niagahoster)
-  name           String           // Nama layanan / Domain (e.g. "Google Workspace", "mra.co.id")
-  billingCycle   String           // Siklus penagihan: "1 Bulan", "3 Bulan", "6 Bulan", "1 Tahun", "2 Tahun", "3 Tahun"
-  cost           Float            // Biaya layanan dalam Rupiah (e.g. 150000)
-  startDate      DateTime         // Tanggal mulai aktif kontrak
-  expiryDate     DateTime         // Tanggal akhir aktif kontrak (kedaluwarsa)
-  status         String           @default("ACTIVE") // Status: "ACTIVE" (Aktif), "EXPIRED" (Kedaluwarsa), "INACTIVE" (Tidak Aktif)
-  evidenceLink   String?          // URL Link bukti pembayaran/kontrak (Google Drive, dll.)
-  notes          String?          // Catatan tambahan (IP, Akun Admin, dll.)
-  journey        String?          @default("") // Akumulasi log catatan pembaruan teks
-  renewals       RenewalHistory[] // Relasi historis perpanjangan
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id                      String           @id @default(uuid())
+  category                String           // e.g. "Hosting", "Domain", "VPN", "ISP", "Subscription", "Others"
+  vendor                  String           // Penyedia jasa (e.g. Google, Niagahoster)
+  name                    String           // Nama layanan / Domain (e.g. "Google Workspace", "mra.co.id")
+  billingCycle            String           // Siklus penagihan: "1 Bulan", "3 Bulan", "6 Bulan", "1 Tahun", "2 Tahun", "3 Tahun"
+  cost                    Float            // Biaya layanan dalam Rupiah (e.g. 150000)
+  startDate               DateTime         // Tanggal mulai aktif kontrak
+  expiryDate              DateTime         // Tanggal akhir aktif kontrak (kedaluwarsa)
+  status                  String           @default("ACTIVE") // Status: "ACTIVE" (Aktif), "EXPIRED" (Kedaluwarsa), "INACTIVE" (Tidak Aktif)
+  evidenceLink            String?          // URL Link bukti pembayaran/kontrak (Google Drive, dll.)
+  notes                   String?          // Catatan tambahan (IP, Akun Admin, dll.)
+  journey                 String?          @default("") // Akumulasi log catatan pembaruan teks
+  renewals                RenewalHistory[] // Relasi historis perpanjangan
+  
+  // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
+  replacedSubscriptionId  String?          @unique
+  replacedSubscription    ITSubscription?  @relation("SubscriptionReplacement", fields: [replacedSubscriptionId], references: [id])
+  replacedBySubscription  ITSubscription?  @relation("SubscriptionReplacement")
+
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
 
   @@index([category])
   @@index([status])
@@ -88,6 +94,7 @@ Mendaftarkan layanan baru pertama kali.
   * `status` (Wajib)
   * `evidenceLink` (Opsional)
   * `notes` (Opsional)
+  * `replacedSubscriptionId` (Opsional, untuk link ke kontrak lama jika ini merupakan kontrak baru/pengganti)
 * **Response**: Objek data `ITSubscription` yang berhasil disimpan.
 
 ### 3. `PUT /api/subscriptions/:id`
@@ -130,3 +137,32 @@ Menyesuaikan struktur form persis seperti visual gambar mockup:
 
 ### C. Visual Riwayat Perjalanan (*Renewal Journey List*)
 Ketika baris tabel layanan diklik, tabel akan meluas kebawah (*accordion expand*) untuk memaparkan log berurutan tanggal mengenai kapan saja layanan tersebut diperpanjang, oleh siapa, dan berapa biayanya pada tanggal tersebut.
+
+---
+
+## 5. Alur Logika Perpanjangan vs. Kontrak Baru (Business Logic)
+
+Untuk menjamin kelengkapan data audit keuangan IT (*financial audit compliance*), sistem membedakan secara tegas antara **Perpanjangan Sederhana (Simple Renewal)** dan **Pembuatan Kontrak Baru (New Contract / Replacement)**:
+
+### Kasus A: Perpanjangan Kontrak Aktif (Simple Renewal)
+* **Kapan digunakan**: Layanan dilanjutkan dengan vendor/provider yang sama, spesifikasi sama, hanya menambah masa aktif (misalnya domain `.com` diperpanjang 1 tahun lagi).
+* **Alur Eksekusi**:
+  1. Pengguna mengklik tombol **Update / Perpanjang** pada layanan yang sudah ada.
+  2. Pengguna mengisi bagian **Update Journey / Perpanjangan** (misal: *"Diperpanjang 1 tahun (Rp 150rb)"*).
+  3. Sistem **memperbarui** record `ITSubscription` yang sama:
+     - Masa kedaluwarsa (`expiryDate`) digeser maju secara otomatis berdasarkan unit `billingCycle` terhitung dari tanggal kedaluwarsa sebelumnya (atau tanggal sekarang jika sudah terlanjur mati).
+     - Kolom `journey` di-append dengan teks catatan baru beserta tanggal pembaruan.
+  4. Sistem menyisipkan log baru di tabel `RenewalHistory` sebagai bukti rekaman biaya perpanjangan tersebut.
+
+### Kasus B: Pembuatan Kontrak Baru / Ganti Vendor (New Contract / Replacement)
+* **Kapan digunakan**: Layanan lama berakhir dan digantikan dengan struktur kontrak baru (misalnya ganti vendor hosting dari Niagahoster ke Domainesia, migrasi ke tingkat paket lisensi berbeda, atau penandatanganan nomor kontrak ISP baru).
+* **Mengapa dipisahkan**: Agar dokumen fisik lama (*evidence link*), harga lama, dan tanggal kontrak asli masa lalu tetap beku (*frozen*) dan tidak terhapus untuk kebutuhan audit pembukuan tahunan.
+* **Alur Eksekusi**:
+  1. Pengguna memilih opsi **"Buat Kontrak Baru (Ganti Kontrak)"** dari detail layanan lama.
+  2. Sistem membuka formulir pembuatan baru dengan data dasar (nama layanan, vendor) yang terisi otomatis dari kontrak lama.
+  3. Pengguna mengisi detail kontrak baru (biaya baru, tanggal mulai baru, tanggal kedaluwarsa baru, dan link dokumen PDF kontrak baru).
+  4. Saat tombol **Simpan** diklik:
+     - Record lama di-update statusnya menjadi `INACTIVE` / `ARCHIVED`.
+     - Record **baru** dibuat dengan status `ACTIVE`.
+     - Field `replacedSubscriptionId` pada record baru diisi dengan `id` record lama.
+  5. Di antarmuka UI, kontrak baru dan lama akan terhubung secara visual dalam bentuk **Linimasa Silsilah Kontrak (Contract Lineage Chain)**, sehingga IT tetap dapat melacak sejarah perpindahan kontrak/vendor dari awal hingga saat ini.
