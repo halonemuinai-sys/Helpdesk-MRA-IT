@@ -658,12 +658,12 @@ export default function InputTicket({ user, token }) {
               </div>
 
               {/* Priority SLA Description Guide with Rotating Glow Border */}
-              <div className="relative p-[1.5px] overflow-hidden rounded-2xl mt-4 shadow-sm shadow-rose-500/5">
+              <div className="relative p-[2px] overflow-hidden rounded-2xl mt-4 shadow-sm shadow-rose-500/5">
                 {/* Rotating Conic Gradient Beam */}
                 <div className="absolute inset-[-150%] bg-[conic-gradient(from_0deg,transparent_60%,#e11d48_100%)] animate-border-spin" />
                 
-                {/* Inner Content Box */}
-                <div className="relative bg-rose-50/90 dark:bg-slate-900 rounded-[15px] p-4 flex gap-3 text-xs text-rose-700 dark:text-rose-300 leading-relaxed font-semibold z-10">
+                {/* Inner Content Box (Solid background prevents animation from showing inside) */}
+                <div className="relative bg-rose-50 dark:bg-slate-900 rounded-[14px] p-4 flex gap-3 text-xs text-rose-700 dark:text-rose-300 leading-relaxed font-semibold z-10">
                   <Clock className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                   <div>
                     <b className="text-gray-800 dark:text-slate-200 block mb-1">Priority SLA Targets:</b>
