@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Wifi, 
   Plus, 
@@ -473,7 +474,7 @@ export default function WifiAps({ user, token }) {
       </div>
 
       {/* CRUD Form Modal */}
-      {isModalOpen && (
+      {isModalOpen && createPortal(
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800/80 shadow-2xl w-full max-w-3xl overflow-hidden animate-slide-up">
@@ -750,7 +751,8 @@ export default function WifiAps({ user, token }) {
             </form>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
       )}
 
     </div>
