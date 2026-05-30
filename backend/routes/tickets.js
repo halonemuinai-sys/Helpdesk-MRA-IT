@@ -1,6 +1,11 @@
 const express = require('express');
 const prisma = require('../api/db');
 const { verifyToken } = require('../api/authMiddleware');
+const {
+  sendTicketCreatedEmail,
+  sendTicketStatusChangedEmail,
+  sendTicketAssignedEmail
+} = require('../api/email');
 
 const router = express.Router();
 
@@ -290,6 +295,9 @@ router.post('/', verifyToken, async (req, res, next) => {
       }
     });
 
+    // Send email notification to requester (non-blocking)
+    sendTicketCreatedEmail(ticket);
+
     res.status(201).json(ticket);
   } catch (err) {
     next(err);
@@ -390,6 +398,11 @@ router.patch('/:id/status', verifyToken, async (req, res, next) => {
       }
     });
 
+    // Send email notification to requester if status changed (non-blocking)
+    if (newStatus !== ticket.status) {
+      sendTicketStatusChangedEmail(updatedTicket, ticket.status, newStatus, comment);
+    }
+
     res.json(updatedTicket);
   } catch (err) {
     next(err);
@@ -463,6 +476,9 @@ router.patch('/:id/assign', verifyToken, async (req, res, next) => {
         }
       }
     });
+
+    // Send email notification to IT Agent (non-blocking)
+    sendTicketAssignedEmail(ticket, agent);
 
     res.json(ticket);
   } catch (err) {
@@ -551,6 +567,9 @@ router.post('/public', async (req, res, next) => {
         }
       }
     });
+
+    // Send email notification to requester (non-blocking)
+    sendTicketCreatedEmail(ticket);
 
     res.status(201).json({
       message: 'Tiket berhasil dibuat melalui Google Form.',
