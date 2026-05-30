@@ -32,17 +32,21 @@ async function generateNextTicketId() {
 
 // SLA limits in milliseconds
 const SLA_LIMITS = {
+  CRITICAL: {
+    response: 30 * 60 * 1000,       // 30 Minutes
+    resolution: 3 * 60 * 60 * 1000   // 3 Hours
+  },
   HIGH: {
-    response: 30 * 60 * 1000,      // 30 Minutes
-    resolution: 2 * 60 * 60 * 1000  // 2 Hours
+    response: 30 * 60 * 1000,       // 30 Minutes
+    resolution: 5 * 60 * 60 * 1000   // 5 Hours
   },
   MEDIUM: {
-    response: 2 * 60 * 60 * 1000,    // 2 Hours
-    resolution: 6 * 60 * 60 * 1000   // 6 Hours
+    response: 2 * 60 * 60 * 1000,     // 2 Hours
+    resolution: 8 * 60 * 60 * 1000    // 8 Hours
   },
   LOW: {
-    response: 4 * 60 * 60 * 1000,    // 4 Hours
-    resolution: 24 * 60 * 60 * 1000  // 24 Hours
+    response: 4 * 60 * 60 * 1000,     // 4 Hours
+    resolution: 24 * 60 * 60 * 1000   // 24 Hours
   }
 };
 

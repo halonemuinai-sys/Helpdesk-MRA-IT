@@ -368,6 +368,7 @@ export default function TicketsSummary({ user, token }) {
 
   const getPriorityBadge = (prio) => {
     const classes = {
+      CRITICAL: 'bg-rose-700 text-white shadow-rose-700/20 border border-rose-500 animate-pulse',
       HIGH: 'bg-red-500 text-white shadow-red-500/10',
       MEDIUM: 'bg-amber-500 text-white shadow-amber-500/10',
       LOW: 'bg-emerald-500 text-white shadow-emerald-500/10'
@@ -546,7 +547,7 @@ export default function TicketsSummary({ user, token }) {
               value={priorityFilter}
               onChange={(e) => {
                 setPriorityFilter(e.target.value);
-                setLimit(100); // Reset limit to 100 on filter change
+                setLimit(100); // Reset limit to 105 on filter change
               }}
               className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
@@ -554,6 +555,7 @@ export default function TicketsSummary({ user, token }) {
               <option value="LOW">LOW</option>
               <option value="MEDIUM">MEDIUM</option>
               <option value="HIGH">HIGH</option>
+              <option value="CRITICAL">CRITICAL</option>
             </select>
           </div>
 

@@ -59,7 +59,8 @@ router.get('/', verifyToken, async (req, res, next) => {
     const priorityCounts = {
       LOW: 0,
       MEDIUM: 0,
-      HIGH: 0
+      HIGH: 0,
+      CRITICAL: 0
     };
 
     // 5. Aggregate SLA compliance

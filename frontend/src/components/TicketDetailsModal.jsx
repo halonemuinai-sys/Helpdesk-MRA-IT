@@ -32,6 +32,7 @@ export default function TicketDetailsModal({
 
   const getPriorityBadge = (prio) => {
     const classes = {
+      CRITICAL: 'bg-rose-700 text-white shadow-rose-700/20 border border-rose-500 animate-pulse',
       HIGH: 'bg-red-500 text-white shadow-red-500/10',
       MEDIUM: 'bg-amber-500 text-white shadow-amber-500/10',
       LOW: 'bg-emerald-500 text-white shadow-emerald-500/10'

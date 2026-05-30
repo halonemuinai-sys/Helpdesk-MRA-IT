@@ -95,9 +95,10 @@ npm run dev
 4. Klik **Sub-Category / Detailing**. Pilihan dropdown otomatis tersaring berdasarkan kategori utama.
    * **Fitur Tambah Instan**: Jika sub-kategori tidak ada di database, ketik nama sub-kategori baru lalu klik opsi `+ Add "[nama]" as new detailing`. Sistem akan mendaftarkannya secara otomatis ke database ketika tiket dikirim.
 5. Pilih prioritas (SLA Target akan dihitung otomatis):
-   * **HIGH**: Tanggapan pertama (30 menit) & resolusi pengerjaan (2 jam).
-   * **MEDIUM**: Tanggapan pertama (2 jam) & resolusi pengerjaan (6 hours).
-   * **LOW**: Tanggapan pertama (4 jam) & resolusi pengerjaan (24 hours).
+   * **CRITICAL**: Tanggapan pertama (30 menit) & resolusi pengerjaan (3 jam).
+   * **HIGH**: Tanggapan pertama (30 menit) & resolusi pengerjaan (5 jam).
+   * **MEDIUM**: Tanggapan pertama (2 jam) & resolusi pengerjaan (8 jam).
+   * **LOW**: Tanggapan pertama (4 jam) & resolusi pengerjaan (24 jam).
 6. **Incident Backdating (Retroaktif)**: Agent dapat menginput waktu kejadian masa lalu secara kustom, dan SLA akan otomatis dihitung mundur dari waktu tersebut.
 
 ### B. Notifikasi Email Otomatis (Turbify Yahoo SMTP)

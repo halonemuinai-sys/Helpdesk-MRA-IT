@@ -439,6 +439,7 @@ export default function InputTicket({ user, token }) {
                     <option value="LOW">LOW</option>
                     <option value="MEDIUM">MEDIUM</option>
                     <option value="HIGH">HIGH</option>
+                    <option value="CRITICAL">CRITICAL</option>
                   </select>
                 </div>
 
@@ -577,8 +578,9 @@ export default function InputTicket({ user, token }) {
               {/* Priority SLA Description Guide */}
               <p className="text-[10px] text-gray-450 dark:text-slate-500 font-medium leading-relaxed mt-4 pt-3 border-t border-gray-100 dark:border-slate-800/40">
                 💡 <b>Priority SLA Targets:</b><br />
-                • <b>HIGH:</b> Max 30 minutes response / 2 hours resolution.<br />
-                • <b>MEDIUM:</b> Max 2 hours response / 6 hours resolution.<br />
+                • <b>CRITICAL:</b> Max 30 minutes response / 3 hours resolution.<br />
+                • <b>HIGH:</b> Max 30 minutes response / 5 hours resolution.<br />
+                • <b>MEDIUM:</b> Max 2 hours response / 8 hours resolution.<br />
                 • <b>LOW:</b> Max 4 hours response / 24 hours resolution.
               </p>
             </div>

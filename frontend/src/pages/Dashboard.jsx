@@ -207,13 +207,13 @@ export default function Dashboard({ user, token, darkMode }) {
         }
       }
 
-      // 3. Fetch Recent Urgent Tickets (HIGH priority, OPEN/IN_PROGRESS)
-      const ticketRes = await fetch(`${API_URL}/tickets?priority=HIGH`, { headers });
+      // 3. Fetch Recent Urgent Tickets (CRITICAL/HIGH priority, OPEN/IN_PROGRESS)
+      const ticketRes = await fetch(`${API_URL}/tickets`, { headers });
       if (ticketRes.ok) {
         const ticketData = await ticketRes.json();
         // filter for active ones
         const activeUrgent = ticketData
-          .filter(t => ['OPEN', 'IN_PROGRESS'].includes(t.status))
+          .filter(t => ['CRITICAL', 'HIGH'].includes(t.priority) && ['OPEN', 'IN_PROGRESS'].includes(t.status))
           .slice(0, 4);
         setRecentUrgentTickets(activeUrgent);
       }
@@ -626,9 +626,10 @@ export default function Dashboard({ user, token, darkMode }) {
               {/* Tickets by Priority & SLA Breakdown */}
               <div className="stagger-3 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 hover:shadow-lg transition-shadow">
                 <h4 className="font-bold text-base text-gray-800 dark:text-slate-200 mb-5">Tickets by Priority</h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {Object.entries(analytics.priorities).map(([priorityKey, count]) => {
                     const colors = {
+                      CRITICAL: 'text-rose-600 bg-rose-50/55 border-rose-250 hover:bg-rose-100/50 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-450 dark:hover:bg-rose-950/30 animate-pulse',
                       HIGH: 'text-red-600 bg-red-50/50 border-red-200 hover:bg-red-100/50 dark:bg-red-950/20 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-950/30',
                       MEDIUM: 'text-amber-600 bg-amber-50/50 border-amber-200 hover:bg-amber-100/50 dark:bg-amber-950/20 dark:border-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-950/30',
                       LOW: 'text-emerald-600 bg-emerald-50/50 border-emerald-200 hover:bg-emerald-100/50 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-950/30'
@@ -637,11 +638,11 @@ export default function Dashboard({ user, token, darkMode }) {
                     return (
                       <div 
                         key={priorityKey} 
-                        className={`p-4 rounded-xl border text-center transition-all duration-300 hover:scale-105 cursor-pointer ${colors[priorityKey] || 'bg-gray-50'}`}
+                        className={`p-3 rounded-xl border text-center transition-all duration-300 hover:scale-105 cursor-pointer ${colors[priorityKey] || 'bg-gray-50'}`}
                       >
-                        <p className="text-[10px] font-extrabold uppercase tracking-wider">{priorityKey}</p>
-                        <h4 className="text-2xl font-black mt-2">{count}</h4>
-                        <p className="text-[9px] mt-1 opacity-70">Registered</p>
+                        <p className="text-[9px] font-black uppercase tracking-wider">{priorityKey}</p>
+                        <h4 className="text-xl font-black mt-1.5">{count}</h4>
+                        <p className="text-[8px] mt-0.5 opacity-70">Registered</p>
                       </div>
                     );
                   })}
