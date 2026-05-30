@@ -99,8 +99,15 @@ export default function ResetPassword() {
       </div>
 
       {/* Right side: Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 md:px-16 lg:px-24 bg-slate-950 relative">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 md:px-16 lg:px-24 bg-slate-950 relative overflow-hidden">
+        {/* Subtle Cyber Grid */}
+        <div className="absolute inset-0 cyber-grid pointer-events-none opacity-60"></div>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(70,98,193,0.03),transparent)] pointer-events-none"></div>
+
+        {/* Animated Floating Aurora Orbs */}
+        <div className="absolute top-1/4 -right-1/4 w-[400px] h-[400px] rounded-full bg-brand-500/5 dark:bg-brand-500/10 blur-[100px] animate-float-orb-1 pointer-events-none"></div>
+        <div className="absolute bottom-1/4 -left-1/4 w-[350px] h-[350px] rounded-full bg-rose-500/5 dark:bg-rose-500/5 blur-[90px] animate-float-orb-2 pointer-events-none"></div>
+        <div className="absolute -bottom-10 right-1/4 w-[300px] h-[300px] rounded-full bg-cyan-400/5 dark:bg-cyan-400/5 blur-[80px] animate-float-orb-3 pointer-events-none"></div>
 
         <div className="w-full max-w-md mx-auto space-y-8 animate-fade-in relative z-10">
           
