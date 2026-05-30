@@ -18,7 +18,8 @@ import {
   FolderTree,
   Wifi,
   CreditCard,
-  Laptop
+  Laptop,
+  TrendingUp
 } from 'lucide-react';
 
 export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
@@ -78,6 +79,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           label: 'Asset Management',
           path: '/assets',
           icon: Laptop,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'Analisa Biaya Sewa',
+          path: '/rental-analysis',
+          icon: TrendingUp,
           roles: ['AGENT', 'ADMIN']
         },
         {

@@ -65,6 +65,7 @@ model User {
   department   String    // Organization (e.g., 'Finance & Accounting')
   jobPosition  String    // Job Position (e.g., 'Operational Staff')
   phone        String?   // Mobile Phone
+  yearlyBudget Float     @default(0) // Annual rental budget in IDR
   role         Role      @default(USER)
   companyId    Int
   company      Company   @relation(fields: [companyId], references: [id])

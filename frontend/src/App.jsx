@@ -19,6 +19,7 @@ import Categories from './pages/Categories';
 import WifiAps from './pages/WifiAps';
 import Subscriptions from './pages/Subscriptions';
 import Assets from './pages/Assets';
+import RentalAnalysis from './pages/RentalAnalysis';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -136,6 +137,10 @@ export default function App() {
             <Route
               path="/assets"
               element={user ? <Assets user={user} token={token} /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/rental-analysis"
+              element={user ? <RentalAnalysis user={user} token={token} darkMode={darkMode} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="/guideline"
