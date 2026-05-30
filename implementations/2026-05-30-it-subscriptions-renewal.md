@@ -39,6 +39,10 @@ model ITSubscription {
   journey                 String?          @default("") // Akumulasi log catatan pembaruan teks
   renewals                RenewalHistory[] // Relasi historis perpanjangan
   
+  // Relasi ke Anak Perusahaan (Company Entity Tagging)
+  companyId               Int
+  company                 Company          @relation(fields: [companyId], references: [id])
+
   // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
   replacedSubscriptionId  String?          @unique
   replacedSubscription    ITSubscription?  @relation("SubscriptionReplacement", fields: [replacedSubscriptionId], references: [id])
@@ -47,6 +51,7 @@ model ITSubscription {
   createdAt               DateTime         @default(now())
   updatedAt               DateTime         @updatedAt
 
+  @@index([companyId])
   @@index([category])
   @@index([status])
   @@index([expiryDate])
@@ -123,8 +128,9 @@ Halaman diletakkan pada berkas `/frontend/src/pages/Subscriptions.jsx` dengan ta
 
 ### B. Formulir Input "Tambah Layanan Baru" / "Edit Layanan"
 Menyesuaikan struktur form persis seperti visual gambar mockup:
-1. **Kategori**: Dropdown pilihan (`Hosting`, `Domain`, `VPN`, `ISP`, `Subscription`, `Security`, `Others`).
-2. **Vendor/Provider**: Input teks (ex. Google, Niagahoster).
+1. **Anak Perusahaan / Entitas (Company Tagging)**: Dropdown select untuk menautkan layanan ke entitas MRA Group tertentu (ex. PT Hourlogy Indah Perkasa, dll.) -- *ditambahkan untuk memfilter pengeluaran & kepemilikan kontrak per anak perusahaan.*
+2. **Kategori**: Dropdown pilihan (`Hosting`, `Domain`, `VPN`, `ISP`, `Subscription`, `Security`, `Others`).
+3. **Vendor/Provider**: Input teks (ex. Google, Niagahoster).
 3. **Nama Layanan / Domain**: Input teks (ex. Google Workspace, example.com).
 4. **Siklus Penagihan**: Dropdown pilihan (`1 Bulan`, `3 Bulan`, `6 Bulan`, `1 Tahun`, `2 Tahun`, `3 Tahun`).
 5. **Biaya (RP)**: Input angka rupiah terformat (ex. 150.000).
