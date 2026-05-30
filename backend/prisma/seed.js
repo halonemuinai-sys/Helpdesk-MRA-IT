@@ -22,7 +22,40 @@ async function main() {
   const salt = await bcrypt.genSalt(10);
   const defaultPasswordHash = await bcrypt.hash('Password123!', salt);
   
-  // 1. Collect unique companies
+  // 1. Collect unique master companies
+  const masterCompanyMap = new Map(); // key: name, value: { name, sector }
+  
+  // Ensure the default company master exists
+  masterCompanyMap.set("PT Mugi Rekso Abadi", {
+    name: "PT Mugi Rekso Abadi",
+    sector: "GENERAL"
+  });
+
+  for (const emp of employeesData) {
+    if (!masterCompanyMap.has(emp.company)) {
+      masterCompanyMap.set(emp.company, {
+        name: emp.company,
+        sector: emp.sector
+      });
+    }
+  }
+
+  console.log(`Found ${masterCompanyMap.size} unique master companies. Seeding CompanyMaster...`);
+  const dbCompanyMasters = {};
+  for (const [name, value] of masterCompanyMap.entries()) {
+    const master = await prisma.companyMaster.upsert({
+      where: { name: value.name },
+      update: { sector: value.sector },
+      create: {
+        name: value.name,
+        sector: value.sector
+      }
+    });
+    dbCompanyMasters[name] = master.id;
+  }
+  console.log('CompanyMaster seeded successfully.');
+
+  // 2. Collect unique companies (branches)
   const companyMap = new Map(); // key: "name|location", value: { name, location, sector }
   
   // Ensure the default company for admin/agent exists
@@ -48,6 +81,7 @@ async function main() {
   // Insert companies and store their database IDs
   const dbCompanies = {};
   for (const [key, value] of companyMap.entries()) {
+    const masterId = dbCompanyMasters[value.name];
     const company = await prisma.company.upsert({
       where: {
         name_location: {
@@ -56,12 +90,14 @@ async function main() {
         }
       },
       update: {
-        sector: value.sector
+        sector: value.sector,
+        companyMasterId: masterId
       },
       create: {
         name: value.name,
         location: value.location,
-        sector: value.sector
+        sector: value.sector,
+        companyMasterId: masterId
       }
     });
     dbCompanies[key] = company.id;

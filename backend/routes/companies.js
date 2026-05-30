@@ -4,6 +4,19 @@ const { verifyToken } = require('../api/authMiddleware');
 
 const router = express.Router();
 
+// GET /api/companies/master
+// Returns all master companies (unique legal entities)
+router.get('/master', verifyToken, async (req, res, next) => {
+  try {
+    const masters = await prisma.companyMaster.findMany({
+      orderBy: { name: 'asc' }
+    });
+    res.json(masters);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/companies
 // Returns all company branches (name, location, sector)
 router.get('/', verifyToken, async (req, res, next) => {

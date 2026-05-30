@@ -30,8 +30,8 @@ router.get('/', verifyToken, async (req, res, next) => {
     const subscriptions = await prisma.iTSubscription.findMany({
       where,
       include: {
-        company: {
-          select: { name: true, location: true }
+        companyMaster: {
+          select: { name: true }
         },
         renewals: {
           orderBy: { renewedAt: 'desc' }
@@ -70,11 +70,14 @@ router.post('/', verifyToken, async (req, res, next) => {
       status, 
       evidenceLink, 
       notes,
+      companyMasterId,
       companyId,
       replacedSubscriptionId
     } = req.body;
 
-    if (!category || !vendor || !name || !billingCycle || cost === undefined || !startDate || !expiryDate || !companyId) {
+    const targetCompanyMasterId = companyMasterId || companyId;
+
+    if (!category || !vendor || !name || !billingCycle || cost === undefined || !startDate || !expiryDate || !targetCompanyMasterId) {
       return res.status(400).json({ error: 'Missing mandatory fields.' });
     }
 
@@ -98,7 +101,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         status: status || 'ACTIVE',
         evidenceLink: evidenceLink || null,
         notes: notes || null,
-        companyId: parseInt(companyId),
+        companyMasterId: parseInt(targetCompanyMasterId),
         replacedSubscriptionId: replacedSubscriptionId || null
       }
     });
@@ -128,6 +131,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       status,
       evidenceLink,
       notes,
+      companyMasterId,
       companyId,
       updateJourney
     } = req.body;
@@ -152,7 +156,11 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (status !== undefined) updateData.status = status;
     if (evidenceLink !== undefined) updateData.evidenceLink = evidenceLink || null;
     if (notes !== undefined) updateData.notes = notes || null;
-    if (companyId !== undefined) updateData.companyId = parseInt(companyId);
+    
+    const targetCompanyMasterId = companyMasterId !== undefined ? companyMasterId : companyId;
+    if (targetCompanyMasterId !== undefined && targetCompanyMasterId !== null) {
+      updateData.companyMasterId = parseInt(targetCompanyMasterId);
+    }
 
     // If updateJourney text is provided, add it to journey log and insert RenewalHistory
     if (updateJourney && updateJourney.trim()) {

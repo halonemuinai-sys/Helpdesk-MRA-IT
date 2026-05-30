@@ -29,16 +29,28 @@ enum Priority {
   CRITICAL
 }
 
+model CompanyMaster {
+  id            Int              @id @default(autoincrement())
+  name          String           @unique
+  sector        String           // GENERAL, FB, RADIO, RETAIL, MEDIA
+  createdAt     DateTime         @default(now())
+  companies     Company[]        // Branches belonging to this master company
+  subscriptions ITSubscription[] // Subscriptions belonging to this master company
+}
+
 model Company {
-  id        Int      @id @default(autoincrement())
-  name      String   // Clean company name (e.g., PT Hourlogy Indah Perkasa)
-  location  String   // Branch/Location detail (e.g., Butik OMEGA Plaza Indonesia or HQ)
-  sector    String   // FB, RADIO, MEDIA, RETAIL, GENERAL
-  createdAt DateTime @default(now())
-  users     User[]
-  tickets   Ticket[]
-  wifiAPs   WifiAccessPoint[]
-  subscriptions ITSubscription[]
+  id              Int              @id @default(autoincrement())
+  name            String           // Clean company name (e.g., PT Hourlogy Indah Perkasa)
+  location        String           // Branch/Location detail (e.g., Butik OMEGA Plaza Indonesia or HQ)
+  sector          String           // FB, RADIO, MEDIA, RETAIL, GENERAL
+  createdAt       DateTime         @default(now())
+  users           User[]
+  tickets         Ticket[]
+  wifiAPs         WifiAccessPoint[]
+  
+  // Link to master company
+  companyMasterId Int?
+  companyMaster   CompanyMaster?   @relation(fields: [companyMasterId], references: [id])
 
   @@unique([name, location])
 }
@@ -167,19 +179,19 @@ model ITSubscription {
   journey                 String?          @default("") // Akumulasi log catatan pembaruan teks
   renewals                RenewalHistory[] // Relasi historis perpanjangan
   
-  // Relasi ke Anak Perusahaan (Company Entity Tagging)
-  companyId               Int
-  company                 Company          @relation(fields: [companyId], references: [id])
+  // Relasi ke Master Company (Company Entity Tagging)
+  companyMasterId         Int?
+  companyMaster           CompanyMaster?   @relation(fields: [companyMasterId], references: [id])
 
   // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
   replacedSubscriptionId  String?          @unique
   replacedSubscription    ITSubscription?  @relation("SubscriptionReplacement", fields: [replacedSubscriptionId], references: [id])
   replacedBySubscription  ITSubscription?  @relation("SubscriptionReplacement")
-
+ 
   createdAt               DateTime         @default(now())
   updatedAt               DateTime         @updatedAt
 
-  @@index([companyId])
+  @@index([companyMasterId])
   @@index([category])
   @@index([status])
   @@index([expiryDate])

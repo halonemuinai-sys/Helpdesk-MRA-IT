@@ -78,8 +78,8 @@ export default function Subscriptions({ user, token }) {
       const subData = await subRes.json();
       setSubscriptions(subData);
 
-      // 2. Fetch Companies
-      const compRes = await fetch(`${API_URL}/companies`, { headers });
+      // 2. Fetch Companies (Master entities)
+      const compRes = await fetch(`${API_URL}/companies/master`, { headers });
       if (!compRes.ok) throw new Error('Gagal memuat data perusahaan.');
       const compData = await compRes.json();
       setCompanies(compData);
@@ -161,7 +161,7 @@ export default function Subscriptions({ user, token }) {
     setFormEvidenceLink(sub.evidenceLink || '');
     setFormNotes(sub.notes || '');
     setFormUpdateJourney('');
-    setFormCompanyId(sub.companyId);
+    setFormCompanyId(sub.companyMasterId || '');
     setReplacedSubscriptionId(null);
     setFormError(null);
     setIsModalOpen(true);
@@ -198,7 +198,7 @@ export default function Subscriptions({ user, token }) {
     setFormEvidenceLink('');
     setFormNotes(`Menggantikan kontrak lama: ID ${sub.id.substring(0,8)}`);
     setFormUpdateJourney(`Kontrak baru dibuat menggantikan ID ${sub.id.substring(0,8)}`);
-    setFormCompanyId(sub.companyId);
+    setFormCompanyId(sub.companyMasterId || '');
     setReplacedSubscriptionId(sub.id);
     setFormError(null);
     setIsModalOpen(true);
@@ -238,7 +238,7 @@ export default function Subscriptions({ user, token }) {
         status: formStatus,
         evidenceLink: formEvidenceLink || null,
         notes: formNotes || null,
-        companyId: parseInt(formCompanyId),
+        companyMasterId: parseInt(formCompanyId),
         replacedSubscriptionId: replacedSubscriptionId,
         updateJourney: formUpdateJourney || null
       };
@@ -551,7 +551,7 @@ export default function Subscriptions({ user, token }) {
                           </div>
                         </td>
                         <td className="py-4 px-6 font-bold text-gray-700 dark:text-slate-350">
-                          {sub.company?.name}
+                          {sub.companyMaster?.name}
                         </td>
                         <td className="py-4 px-6">
                           <span className="inline-block bg-slate-100 dark:bg-slate-850 px-2 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300">
@@ -768,7 +768,7 @@ export default function Subscriptions({ user, token }) {
                       >
                         {companies.map(comp => (
                           <option key={comp.id} value={comp.id}>
-                            {comp.name} ({comp.location})
+                            {comp.name}
                           </option>
                         ))}
                       </select>
