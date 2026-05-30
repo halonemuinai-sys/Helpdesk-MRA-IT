@@ -3,11 +3,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../api/db');
 const { verifyToken, JWT_SECRET } = require('../api/authMiddleware');
+const { authRateLimiter } = require('../api/rateLimiter');
 
 const router = express.Router();
 
 // POST /api/auth/login
-router.post('/login', async (req, res, next) => {
+router.post('/login', authRateLimiter, async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -84,7 +85,7 @@ router.get('/me', verifyToken, async (req, res, next) => {
 
 // POST /api/auth/forgot-password
 // Initiate password reset flow (prints token in console for local dev, sends email in production via SMTP)
-router.post('/forgot-password', async (req, res, next) => {
+router.post('/forgot-password', authRateLimiter, async (req, res, next) => {
   try {
     const { email } = req.body;
 
@@ -167,7 +168,7 @@ router.post('/forgot-password', async (req, res, next) => {
 
 // POST /api/auth/reset-password
 // Performs password update using valid reset token
-router.post('/reset-password', async (req, res, next) => {
+router.post('/reset-password', authRateLimiter, async (req, res, next) => {
   try {
     const { token, password } = req.body;
 
