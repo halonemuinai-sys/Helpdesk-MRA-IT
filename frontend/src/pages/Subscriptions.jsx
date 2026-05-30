@@ -768,7 +768,7 @@ export default function Subscriptions({ user, token }) {
                       >
                         {companies.map(comp => (
                           <option key={comp.id} value={comp.id}>
-                            {comp.name}
+                            {comp.name} ({comp.location})
                           </option>
                         ))}
                       </select>
