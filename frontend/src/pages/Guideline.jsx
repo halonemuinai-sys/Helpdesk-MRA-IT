@@ -40,7 +40,7 @@ export default function Guideline({ user }) {
           <div className="absolute inset-0 bg-gradient-to-tr from-brand-500/10 to-indigo-500/10 dark:from-brand-500/20 dark:to-indigo-500/20 blur-xl opacity-80" />
           
           {/* Main Floating Card Mockup */}
-          <div className="relative w-72 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-xl p-5 border border-white/20 dark:border-slate-800/80 transform hover:-translate-y-2 transition-transform duration-300">
+          <div className="relative w-72 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-xl p-5 border border-white/20 dark:border-slate-800/80 animate-mockup-float">
             <div className="flex justify-between items-center mb-4">
               <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md">
                 MRA-00042
@@ -86,38 +86,38 @@ export default function Guideline({ user }) {
       ],
       visual: (
         <div className="relative w-full h-64 bg-slate-900/30 dark:bg-slate-950/40 rounded-2xl p-4 flex flex-col justify-between overflow-hidden border border-gray-200/20">
-          <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-teal-500/10 dark:from-blue-500/20 dark:to-teal-500/20 blur-xl opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-teal-500/10 dark:from-blue-500/20 dark:to-blue-500/20 blur-xl opacity-80" />
           
           {/* Dashboard Mini Mockups */}
           <div className="grid grid-cols-2 gap-3 z-10">
             {/* SLA Card */}
-            <div className="bg-white/80 dark:bg-slate-900/80 rounded-xl p-3 border border-white/20 dark:border-slate-800/80">
-              <p className="text-[10px] text-gray-500 dark:text-slate-400">Team SLA Compliance</p>
-              <h5 className="text-lg font-bold text-teal-600 dark:text-teal-400">98.4%</h5>
-              <div className="w-full bg-gray-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
-                <div className="bg-teal-500 h-full rounded-full w-[94%]" />
+            <div className="bg-white/80 dark:bg-slate-900/80 rounded-xl p-3 border border-white/20 dark:border-slate-800/80 shadow-sm">
+              <p className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold">Team SLA Compliance</p>
+              <h5 className="text-lg font-bold text-teal-600 dark:text-teal-400 mt-0.5">98.4%</h5>
+              <div className="w-full bg-gray-100 dark:bg-slate-850 h-1.5 rounded-full overflow-hidden mt-2">
+                <div className="bg-teal-500 h-full rounded-full animate-progress-fill" style={{ width: '94%' }} />
               </div>
             </div>
             {/* Spotlight Card */}
-            <div className="bg-white/80 dark:bg-slate-900/80 rounded-xl p-3 border border-white/20 dark:border-slate-800/80 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-400">
+            <div className="bg-white/80 dark:bg-slate-900/80 rounded-xl p-3 border border-white/20 dark:border-slate-800/80 shadow-sm flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-400 animate-bounce">
                 🏆
               </div>
               <div className="overflow-hidden">
                 <p className="text-[9px] text-gray-500 dark:text-slate-400 truncate">Spotlight Agent</p>
-                <p className="text-xs font-bold text-gray-800 dark:text-slate-200 truncate">Roni Wijaya</p>
+                <p className="text-xs font-bold text-gray-800 dark:text-slate-200 truncate mt-0.5">Roni Wijaya</p>
               </div>
             </div>
           </div>
           
           {/* Filter Bar Mockup */}
-          <div className="bg-white/85 dark:bg-slate-900/85 rounded-xl p-2 border border-white/20 dark:border-slate-800/80 z-10 flex items-center justify-between text-[10px] text-gray-600 dark:text-slate-300">
-            <span className="font-semibold flex items-center gap-1">
+          <div className="bg-white/85 dark:bg-slate-900/85 rounded-xl p-2.5 border border-white/20 dark:border-slate-800/80 z-10 flex items-center justify-between text-[10px] text-gray-600 dark:text-slate-300 shadow-sm">
+            <span className="font-bold flex items-center gap-1 text-slate-700 dark:text-slate-300">
               📅 Filter Terpilih:
             </span>
             <div className="flex gap-1.5">
-              <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Mei</span>
-              <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">2026</span>
+              <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-semibold">Mei</span>
+              <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-semibold">2026</span>
             </div>
           </div>
         </div>
@@ -139,23 +139,23 @@ export default function Guideline({ user }) {
           <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 blur-xl opacity-80" />
           
           {/* Calendar / Backdate Mockup */}
-          <div className="relative w-72 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-xl p-4 border border-white/20 dark:border-slate-800/80 z-10">
+          <div className="relative w-72 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-xl p-4 border border-white/20 dark:border-slate-800/80 z-10 animate-pulse-glow-purple">
             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100 dark:border-slate-800">
               <Calendar className="w-4 h-4 text-purple-500" />
               <span className="text-xs font-bold text-gray-800 dark:text-slate-200">Incident Backdating</span>
             </div>
             
             <div className="space-y-2">
-              <div className="bg-purple-50 dark:bg-purple-950/40 p-2 rounded-xl border border-purple-100 dark:border-purple-900/50">
-                <p className="text-[10px] text-purple-700 dark:text-purple-300 font-semibold">
+              <div className="bg-purple-50/50 dark:bg-purple-950/20 p-2.5 rounded-xl border border-purple-100 dark:border-purple-900/40">
+                <p className="text-[10px] text-purple-700 dark:text-purple-300 font-bold">
                   ⚠️ Fitur Pencatatan Mundur Aktif
                 </p>
-                <p className="text-[9px] text-purple-600/80 dark:text-purple-400/80">
+                <p className="text-[9px] text-purple-600/80 dark:text-purple-400/85 mt-0.5 leading-normal">
                   Tanggal insiden diatur sebelum waktu pembuatan tiket saat ini.
                 </p>
               </div>
               
-              <div className="flex justify-between items-center text-[10px]">
+              <div className="flex justify-between items-center text-[10px] pt-1">
                 <span className="text-gray-500 dark:text-slate-400">Tanggal Kejadian:</span>
                 <span className="font-bold text-gray-800 dark:text-slate-200 bg-gray-100 dark:bg-slate-850 px-2 py-0.5 rounded">
                   28 May 2026, 14:00
@@ -182,7 +182,7 @@ export default function Guideline({ user }) {
           <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20 blur-xl opacity-80" />
           
           {/* Stepper Mockup */}
-          <div className="relative w-72 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-xl p-4 border border-white/20 dark:border-slate-800/80 z-10 space-y-3">
+          <div className="relative w-72 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-xl p-4 border border-white/20 dark:border-slate-800/80 z-10 space-y-3 animate-mockup-float">
             <div className="flex items-center justify-between text-[11px] font-bold text-gray-700 dark:text-slate-200">
               <span>SLA Tracker</span>
               <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
@@ -202,7 +202,7 @@ export default function Guideline({ user }) {
               <div className="w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center text-[9px] text-white font-bold">
                 ✓
               </div>
-              <div className="w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center text-[9px] text-white font-bold ring-4 ring-brand-100 dark:ring-brand-950">
+              <div className="w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center text-[9px] text-white font-bold ring-4 ring-brand-100 dark:ring-brand-950 animate-pulse">
                 3
               </div>
               <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-slate-800 flex items-center justify-center text-[9px] text-gray-400 font-bold">
@@ -232,24 +232,24 @@ export default function Guideline({ user }) {
       ],
       visual: (
         <div className="relative w-full h-64 bg-slate-900/30 dark:bg-slate-950/40 rounded-2xl p-4 flex flex-col justify-center items-center overflow-hidden border border-gray-200/20">
-          <div className="absolute inset-0 bg-gradient-to-tr from-red-500/10 to-rose-500/10 dark:from-red-500/20 dark:to-rose-500/20 blur-xl opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-red-500/10 to-rose-500/10 dark:from-red-500/20 dark:to-red-500/20 blur-xl opacity-80" />
           
           {/* SweetAlert2 style popup mockup */}
           <div className="relative w-72 bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-xl p-4 border border-white/20 dark:border-slate-800/80 z-10 flex flex-col items-center text-center">
-            <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/50 flex items-center justify-center text-red-600 dark:text-red-400 mb-2 border border-red-100 dark:border-red-900/30">
+            <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/50 flex items-center justify-center text-red-600 dark:text-red-400 mb-2 border border-red-100 dark:border-red-900/30 animate-wiggle-alert">
               ⚠️
             </div>
             
             <h5 className="text-xs font-bold text-gray-800 dark:text-slate-100">Apakah Anda Yakin?</h5>
-            <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 max-w-[200px]">
+            <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 max-w-[200px] leading-normal">
               Tindakan menghapus tiket MRA-00042 tidak dapat dibatalkan!
             </p>
             
             <div className="flex gap-2 mt-3 w-full">
-              <button className="flex-1 bg-red-600 text-white rounded-lg py-1 text-[9px] font-bold shadow-md hover:bg-red-700 transition">
+              <button className="flex-1 bg-red-600 text-white rounded-lg py-1.5 text-[9px] font-bold shadow-md hover:bg-red-700 transition animate-pulse-glow-red">
                 Ya, Hapus!
               </button>
-              <button className="flex-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 rounded-lg py-1 text-[9px] font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition">
+              <button className="flex-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 rounded-lg py-1.5 text-[9px] font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition">
                 Batal
               </button>
             </div>
@@ -278,7 +278,53 @@ export default function Guideline({ user }) {
   const progressPercent = ((currentSlide + 1) / slides.length) * 100;
 
   return (
-    <div className="max-w-6xl mx-auto py-6">
+    <div className="max-w-6xl mx-auto py-6 relative">
+      {/* Inline styles for custom slide animations */}
+      <style>{`
+        @keyframes slideUpFade {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes mockupFloat {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(0.5deg); }
+        }
+        @keyframes progressFill {
+          from { width: 0%; }
+          to { width: 94%; }
+        }
+        @keyframes pulseGlowPurple {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+          50% { box-shadow: 0 0 8px 2px rgba(168, 85, 247, 0.15); }
+        }
+        @keyframes wiggleAlert {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08) rotate(3deg); }
+        }
+        @keyframes pulseGlowRed {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+          50% { box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.2); }
+        }
+        .animate-slide-up-fade {
+          animation: slideUpFade 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-mockup-float {
+          animation: mockupFloat 4s ease-in-out infinite;
+        }
+        .animate-progress-fill {
+          animation: progressFill 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-pulse-glow-purple {
+          animation: pulseGlowPurple 3s ease-in-out infinite;
+        }
+        .animate-wiggle-alert {
+          animation: wiggleAlert 2s ease-in-out infinite;
+        }
+        .animate-pulse-glow-red {
+          animation: pulseGlowRed 2s ease-in-out infinite;
+        }
+      `}</style>
+
       {/* Header section with icon and subtitle */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -318,7 +364,7 @@ export default function Guideline({ user }) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-8 lg:p-12 flex-1 items-center">
           
           {/* Left Column: Descriptive Text Content */}
-          <div className="lg:col-span-7 space-y-6 animate-fade-in">
+          <div key={currentSlide} className="lg:col-span-7 space-y-6 animate-slide-up-fade">
             <div className="flex items-center gap-3">
               <div className={`p-2.5 rounded-xl bg-gradient-to-br ${currentInfo.color} text-white shadow-md shadow-brand-500/10`}>
                 <SlideIcon className="w-5 h-5" />
@@ -360,7 +406,7 @@ export default function Guideline({ user }) {
           </div>
 
           {/* Right Column: Stylized Visual Mockups */}
-          <div className="lg:col-span-5 flex justify-center items-center animate-fade-in">
+          <div key={`visual-${currentSlide}`} className="lg:col-span-5 flex justify-center items-center animate-slide-up-fade">
             <div className="w-full max-w-md">
               {currentInfo.visual}
             </div>
