@@ -474,35 +474,36 @@ export default function WifiAps({ user, token }) {
 
       {/* CRUD Form Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800/80 shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
-            
-            {/* Modal Header */}
-            <div className="flex justify-between items-center p-5 border-b border-gray-150 dark:border-slate-850 shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-rose-500/10 text-rose-500 rounded-xl">
-                  <Wifi className="w-5 h-5" />
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800/80 shadow-2xl w-full max-w-3xl overflow-hidden animate-slide-up">
+              
+              {/* Modal Header */}
+              <div className="flex justify-between items-center p-5 border-b border-gray-150 dark:border-slate-850">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-rose-500/10 text-rose-500 rounded-xl">
+                    <Wifi className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                      {isEditMode ? 'Edit Access Point' : 'Register Access Point'}
+                    </h3>
+                    <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                      {isEditMode ? 'Update existing AP hardware mapping and IP configuration.' : 'Add new Wi-Fi transmitter with localized branch context.'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
-                    {isEditMode ? 'Edit Access Point' : 'Register Access Point'}
-                  </h3>
-                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                    {isEditMode ? 'Update existing AP hardware mapping and IP configuration.' : 'Add new Wi-Fi transmitter with localized branch context.'}
-                  </p>
-                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Modal Form Body */}
-            <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
-              <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              {/* Modal Form Body */}
+              <form onSubmit={handleSubmit}>
+                <div className="p-6 space-y-4">
                 
                 {formError && (
                   <div className="p-3.5 rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800 text-red-755 text-xs flex items-center gap-2">
@@ -748,7 +749,7 @@ export default function WifiAps({ user, token }) {
               </div>
 
               {/* Modal Action Buttons */}
-              <div className="p-5 border-t border-gray-150 dark:border-slate-850 flex justify-end gap-3 bg-gray-50/50 dark:bg-slate-900/35 shrink-0">
+              <div className="p-5 border-t border-gray-150 dark:border-slate-850 flex justify-end gap-3 bg-gray-50/50 dark:bg-slate-900/35">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -769,6 +770,7 @@ export default function WifiAps({ user, token }) {
             </form>
           </div>
         </div>
+      </div>
       )}
 
     </div>
