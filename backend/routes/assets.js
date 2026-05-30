@@ -14,9 +14,6 @@ router.get('/', verifyToken, async (req, res, next) => {
     const { category, status, search, companyMasterId, limit, skip } = req.query;
 
     const where = {};
-    if (category) {
-      where.category = category;
-    }
     if (status) {
       where.status = status;
     }
@@ -25,7 +22,6 @@ router.get('/', verifyToken, async (req, res, next) => {
     }
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
         { assetTag: { contains: search, mode: 'insensitive' } },
         { deviceRef: { contains: search, mode: 'insensitive' } },
         { vendorRef: { contains: search, mode: 'insensitive' } },
@@ -35,10 +31,8 @@ router.get('/', verifyToken, async (req, res, next) => {
       ];
     }
 
-    const takeValue = limit ? parseInt(limit) : 50;
-    const skipValue = skip ? parseInt(skip) : 0;
-
-    const assets = await prisma.asset.findMany({
+    // Since category is not a direct column, we fetch first, filter in memory, then paginate
+    const allMatchingAssets = await prisma.asset.findMany({
       where,
       include: {
         user: {
@@ -51,12 +45,45 @@ router.get('/', verifyToken, async (req, res, next) => {
           select: { id: true, name: true }
         }
       },
-      orderBy: { createdAt: 'desc' },
-      take: takeValue,
-      skip: skipValue
+      orderBy: { createdAt: 'desc' }
     });
 
-    res.json(assets);
+    const isSmartphone = (asset) => {
+      const brand = (asset.brand || '').toLowerCase();
+      const model = (asset.model || '').toLowerCase();
+      const os = (asset.os || '').toLowerCase();
+      const ram = (asset.ram || '').toLowerCase();
+
+      return (brand === 'apple' && model.includes('iphone')) ||
+             os.includes('ios') ||
+             os.includes('android') ||
+             brand === 'samsung' ||
+             brand === 'oppo' ||
+             brand === 'vivo' ||
+             brand === 'xiaomi' ||
+             brand === 'realme' ||
+             brand === 'infinix' ||
+             brand === 'iqoo' ||
+             ram.includes('4 gb') ||
+             ram.includes('4gb');
+    };
+
+    let filteredAssets = allMatchingAssets;
+    if (category) {
+      const upperCategory = category.toUpperCase();
+      if (upperCategory === 'LAPTOP') {
+        filteredAssets = allMatchingAssets.filter(a => !isSmartphone(a));
+      } else if (upperCategory === 'SMARTPHONE') {
+        filteredAssets = allMatchingAssets.filter(a => isSmartphone(a));
+      }
+    }
+
+    const takeValue = limit ? parseInt(limit) : 200; // default to a larger value like 200
+    const skipValue = skip ? parseInt(skip) : 0;
+
+    const paginatedAssets = filteredAssets.slice(skipValue, skipValue + takeValue);
+
+    res.json(paginatedAssets);
   } catch (err) {
     next(err);
   }
