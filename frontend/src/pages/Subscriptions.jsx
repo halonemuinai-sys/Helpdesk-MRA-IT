@@ -63,6 +63,8 @@ export default function Subscriptions({ user, token }) {
   const [formCompanyId, setFormCompanyId] = useState('');
   const [replacedSubscriptionId, setReplacedSubscriptionId] = useState(null);
 
+  const [hasProcessed, setHasProcessed] = useState(false);
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -72,13 +74,7 @@ export default function Subscriptions({ user, token }) {
       setLoading(true);
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      // 1. Fetch Subscriptions
-      const subRes = await fetch(`${API_URL}/subscriptions`, { headers });
-      if (!subRes.ok) throw new Error('Gagal memuat data subskripsi IT.');
-      const subData = await subRes.json();
-      setSubscriptions(subData);
-
-      // 2. Fetch Companies (Master entities)
+      // 1. Fetch Companies (Master entities)
       const compRes = await fetch(`${API_URL}/companies/master`, { headers });
       if (!compRes.ok) throw new Error('Gagal memuat data perusahaan.');
       const compData = await compRes.json();
@@ -91,17 +87,41 @@ export default function Subscriptions({ user, token }) {
     }
   };
 
-  const handleRefreshData = async () => {
+  const fetchSubscriptions = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const headers = { 'Authorization': `Bearer ${token}` };
-      const subRes = await fetch(`${API_URL}/subscriptions`, { headers });
-      if (subRes.ok) {
-        const subData = await subRes.json();
-        setSubscriptions(subData);
-      }
+
+      const params = new URLSearchParams();
+      if (selectedCategory) params.append('category', selectedCategory);
+      if (selectedStatus) params.append('status', selectedStatus);
+      if (searchQuery) params.append('search', searchQuery);
+
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+
+      const subRes = await fetch(`${API_URL}/subscriptions${queryString}`, { headers });
+      if (!subRes.ok) throw new Error('Gagal memuat data subskripsi IT.');
+      const subData = await subRes.json();
+      setSubscriptions(subData);
+      setHasProcessed(true);
     } catch (err) {
-      console.error('Error refreshing subscriptions:', err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleRefreshData = async () => {
+    await fetchSubscriptions();
+  };
+
+  const handleResetFilters = () => {
+    setSelectedCategory('');
+    setSelectedStatus('');
+    setSearchQuery('');
+    setSubscriptions([]);
+    setHasProcessed(false);
   };
 
   const formatRupiah = (value) => {
@@ -459,57 +479,101 @@ export default function Subscriptions({ user, token }) {
       </div>
 
       {/* Control Filter Bar */}
-      <div className="glass-panel p-4 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-gray-250/60 dark:border-slate-800/60 flex flex-col md:flex-row gap-4 items-center justify-between">
-        
-        {/* Search */}
-        <div className="relative w-full md:w-80 group">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
-          <input
-            type="text"
-            placeholder="Cari Layanan, Vendor, IP, Akun..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-850/50 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-          />
-        </div>
-
-        {/* Category & Status Filters */}
-        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-          {/* Category Selector */}
-          <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full md:w-48">
-            <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
-            >
-              <option value="">Semua Kategori</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+      <div className="glass-panel p-4 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-gray-250/60 dark:border-slate-800/60 flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
+          
+          {/* Search */}
+          <div className="relative w-full md:w-80 group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
+            <input
+              type="text"
+              placeholder="Cari Layanan, Vendor, IP, Akun..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-850/50 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+            />
           </div>
 
-          {/* Status Selector */}
-          <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full md:w-44">
-            <Clock className="w-4 h-4 text-gray-400 shrink-0" />
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
-            >
-              <option value="">Semua Status</option>
-              <option value="ACTIVE">Aktif</option>
-              <option value="EXPIRED">Kedaluwarsa</option>
-              <option value="INACTIVE">Arsip / Inaktif</option>
-            </select>
+          {/* Category & Status Filters */}
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+            {/* Category Selector */}
+            <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full md:w-48">
+              <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
+              >
+                <option value="">Semua Kategori</option>
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Selector */}
+            <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full md:w-44">
+              <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
+              >
+                <option value="">Semua Status</option>
+                <option value="ACTIVE">Aktif</option>
+                <option value="EXPIRED">Kedaluwarsa</option>
+                <option value="INACTIVE">Arsip / Inaktif</option>
+              </select>
+            </div>
           </div>
         </div>
 
+        {/* Action Button Row */}
+        <div className="flex justify-end items-center gap-3 pt-2 border-t border-gray-150 dark:border-slate-850/60">
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="px-4 py-2 border border-gray-250 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/60 text-gray-655 dark:text-slate-300 text-xs font-bold rounded-xl transition-all"
+          >
+            Clear Filters
+          </button>
+          
+          <button
+            type="button"
+            onClick={fetchSubscriptions}
+            disabled={loading}
+            className="flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-rose-500/10 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            <span>Process & Load Subscriptions</span>
+          </button>
+        </div>
       </div>
 
-      {/* Main Subscriptions List */}
-      <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden">
+      {!hasProcessed ? (
+        <div className="glass-panel p-12 text-center rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 max-w-2xl mx-auto space-y-6 animate-scale-up mt-6">
+          <div className="w-16 h-16 rounded-full bg-rose-50/50 dark:bg-rose-950/30 text-rose-500 flex items-center justify-center mx-auto shadow-inner">
+            <CreditCard className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-extrabold text-gray-800 dark:text-slate-100">Ready to Process Subscriptions</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
+              Sistem MRA Group melacak beberapa kontrak domain, hosting, dan lisensi IT. Silakan pilih kriteria filter di atas dan klik <strong>"Process & Load Subscriptions"</strong> untuk menampilkan data.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={fetchSubscriptions}
+            disabled={loading}
+            className="mx-auto flex items-center gap-2 px-6 py-3 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-rose-500/15 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+            <span>Process & Load Subscriptions</span>
+          </button>
+        </div>
+      ) : (
+        /* Main Subscriptions List */
+        <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden">
         {filteredSubs.length === 0 ? (
           <div className="py-16 text-center">
             <CreditCard className="w-12 h-12 text-gray-300 dark:text-slate-750 mx-auto mb-3" />
@@ -706,6 +770,7 @@ export default function Subscriptions({ user, token }) {
           </div>
         )}
       </div>
+      )}
 
       {/* CRUD Form Modal */}
       {isModalOpen && createPortal(
