@@ -8,7 +8,8 @@ export default function SearchableSelect({
   placeholder = '-- Pilih --', 
   disabled = false, 
   labelKey = 'name', 
-  valueKey = 'id' 
+  valueKey = 'id',
+  icon: Icon
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -52,15 +53,18 @@ export default function SearchableSelect({
     <div className="relative w-full" ref={containerRef}>
       {/* Clickable Select Field */}
       <div
-        className={`w-full flex items-center justify-between border border-gray-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-sm overflow-hidden px-4 py-3 cursor-pointer shadow-sm focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition-all ${
+        className={`w-full flex items-center justify-between border border-gray-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-xs overflow-hidden px-4 py-2.5 cursor-pointer shadow-sm focus-within:border-rose-500 focus-within:ring-1 focus-within:ring-rose-500/10 transition-all ${
           disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-950' : 'hover:border-gray-300 dark:hover:border-slate-700'
         }`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
-        <span className={`truncate mr-2 ${displayValue ? 'text-gray-800 dark:text-slate-200 font-medium' : 'text-gray-400'}`}>
-          {displayValue || placeholder}
-        </span>
-        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} />
+        <div className="flex items-center gap-2.5 truncate">
+          {Icon && <Icon className="w-4 h-4 text-rose-500 shrink-0" />}
+          <span className={`truncate ${displayValue ? 'text-gray-800 dark:text-slate-200 font-semibold' : 'text-gray-400 dark:text-slate-500'}`}>
+            {displayValue || placeholder}
+          </span>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`} />
       </div>
 
       {/* Floating Options Panel */}
