@@ -38,7 +38,7 @@ router.post('/', verifyToken, async (req, res, next) => {
     if (req.user.role === 'USER') {
       return res.status(403).json({ error: 'Access denied.' });
     }
-    const { bssid, ssid, location, companyId, ipAddress, vendor, modelName, frequency, channel, securityType, status } = req.body;
+    const { bssid, ssid, password, location, companyId, ipAddress, vendor, modelName, frequency, channel, securityType, status } = req.body;
     
     if (!bssid || !ssid || !location || !companyId) {
       return res.status(400).json({ error: 'BSSID, SSID, Location, and Company are required.' });
@@ -63,6 +63,7 @@ router.post('/', verifyToken, async (req, res, next) => {
       data: {
         bssid: cleanedBssid,
         ssid,
+        password: password ? password.trim() : "",
         location,
         companyId: parseInt(companyId),
         ipAddress: ipAddress ? ipAddress.trim() : null,
@@ -88,10 +89,11 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
     const { id } = req.params;
-    const { bssid, ssid, location, companyId, ipAddress, vendor, modelName, frequency, channel, securityType, status } = req.body;
+    const { bssid, ssid, password, location, companyId, ipAddress, vendor, modelName, frequency, channel, securityType, status } = req.body;
 
     const updateData = {};
     if (ssid !== undefined) updateData.ssid = ssid;
+    if (password !== undefined) updateData.password = password ? password.trim() : "";
     if (location !== undefined) updateData.location = location;
     if (companyId !== undefined) updateData.companyId = parseInt(companyId);
     if (ipAddress !== undefined) updateData.ipAddress = ipAddress ? ipAddress.trim() : null;

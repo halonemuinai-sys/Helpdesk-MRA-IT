@@ -12,7 +12,10 @@ import {
   Cpu,
   Info,
   ShieldCheck,
-  X
+  X,
+  Eye,
+  EyeOff,
+  Lock
 } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 import Swal from 'sweetalert2';
@@ -29,12 +32,17 @@ export default function WifiAps({ user, token }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
 
+  // Password visibility maps
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+
   // Modal form states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [formId, setFormId] = useState('');
   const [formBssid, setFormBssid] = useState('');
   const [formSsid, setFormSsid] = useState('');
+  const [formPassword, setFormPassword] = useState('');
+  const [showFormPassword, setShowFormPassword] = useState(false);
   const [formLocation, setFormLocation] = useState('');
   const [formCompanyId, setFormCompanyId] = useState('');
   const [formIpAddress, setFormIpAddress] = useState('');
@@ -96,6 +104,8 @@ export default function WifiAps({ user, token }) {
     setFormId('');
     setFormBssid('');
     setFormSsid('');
+    setFormPassword('');
+    setShowFormPassword(false);
     setFormLocation('');
     setFormCompanyId(companies[0]?.id || '');
     setFormIpAddress('');
@@ -115,6 +125,8 @@ export default function WifiAps({ user, token }) {
     setFormId(ap.id);
     setFormBssid(ap.bssid);
     setFormSsid(ap.ssid);
+    setFormPassword(ap.password || '');
+    setShowFormPassword(false);
     setFormLocation(ap.location);
     setFormCompanyId(ap.companyId);
     setFormIpAddress(ap.ipAddress || '');
@@ -158,6 +170,7 @@ export default function WifiAps({ user, token }) {
       const payload = {
         bssid: formBssid,
         ssid: formSsid,
+        password: formPassword,
         location: formLocation,
         companyId: parseInt(formCompanyId),
         ipAddress: formIpAddress || null,
@@ -249,6 +262,13 @@ export default function WifiAps({ user, token }) {
         }
       }
     });
+  };
+
+  const togglePasswordVisibility = (apId) => {
+    setVisiblePasswords(prev => ({
+      ...prev,
+      [apId]: !prev[apId]
+    }));
   };
 
   // Filtered List
@@ -348,6 +368,7 @@ export default function WifiAps({ user, token }) {
                 <tr className="border-b border-gray-200 dark:border-slate-800 text-gray-400 uppercase tracking-wider text-[10px]">
                   <th className="py-4 px-6">SSID Name</th>
                   <th className="py-4 px-6">MAC Address (BSSID)</th>
+                  <th className="py-4 px-6">Wi-Fi Password</th>
                   <th className="py-4 px-6">Company Entity</th>
                   <th className="py-4 px-6">Specific Location</th>
                   <th className="py-4 px-6">Management IP</th>
@@ -356,30 +377,47 @@ export default function WifiAps({ user, token }) {
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800/40 text-gray-750 dark:text-slate-305">
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-800/40 text-gray-755 dark:text-slate-305">
                 {filteredAPs.map((ap) => (
                   <tr key={ap.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                     <td className="py-4 px-6 font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500">
                         <Wifi className="w-3.5 h-3.5" />
                       </div>
-                      <span className="truncate max-w-[150px]">{ap.ssid}</span>
+                      <span className="truncate max-w-[130px]">{ap.ssid}</span>
                     </td>
                     <td className="py-4 px-6 font-mono text-[11px] uppercase text-slate-500 dark:text-slate-400">
                       {ap.bssid}
                     </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs tracking-wider text-slate-600 dark:text-slate-300">
+                          {visiblePasswords[ap.id] ? (ap.password || '-') : '••••••••'}
+                        </span>
+                        {ap.password && (
+                          <button
+                            type="button"
+                            onClick={() => togglePasswordVisibility(ap.id)}
+                            className="text-gray-400 hover:text-rose-500 transition duration-150 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                            title={visiblePasswords[ap.id] ? 'Hide Password' : 'Show Password'}
+                          >
+                            {visiblePasswords[ap.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-4 px-6 font-medium text-slate-500 dark:text-slate-400">
-                      <div className="truncate max-w-[160px] font-bold text-gray-700 dark:text-slate-300">
+                      <div className="truncate max-w-[140px] font-bold text-gray-700 dark:text-slate-300">
                         {ap.company?.name}
                       </div>
-                      <div className="text-[10px] text-slate-400 truncate max-w-[160px]">
+                      <div className="text-[10px] text-slate-400 truncate max-w-[140px]">
                         Branch: {ap.company?.location}
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-1 text-[11px] text-gray-750 dark:text-slate-300">
                         <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
-                        <span className="truncate max-w-[180px]">{ap.location}</span>
+                        <span className="truncate max-w-[150px]">{ap.location}</span>
                       </div>
                     </td>
                     <td className="py-4 px-6 font-mono text-[11px] text-slate-500 dark:text-slate-400">
@@ -467,7 +505,7 @@ export default function WifiAps({ user, token }) {
               <div className="p-6 space-y-4 max-h-[55vh] overflow-y-auto">
                 
                 {formError && (
-                  <div className="p-3.5 rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800 text-red-750 text-xs flex items-center gap-2">
+                  <div className="p-3.5 rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800 text-red-755 text-xs flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>{formError}</span>
                   </div>
@@ -498,6 +536,30 @@ export default function WifiAps({ user, token }) {
                           className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition animate-input-focus"
                           required
                         />
+                      </div>
+                    </div>
+
+                    {/* Wi-Fi Password */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                        Wi-Fi Password / Security Key
+                      </label>
+                      <div className="relative group">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
+                        <input
+                          type={showFormPassword ? 'text' : 'password'}
+                          placeholder="e.g. SecretPassword123"
+                          value={formPassword}
+                          onChange={(e) => setFormPassword(e.target.value)}
+                          className="w-full pl-9 pr-10 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowFormPassword(!showFormPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-450 hover:text-rose-500 transition duration-150"
+                        >
+                          {showFormPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
                       </div>
                     </div>
 
@@ -533,7 +595,7 @@ export default function WifiAps({ user, token }) {
                         <select
                           value={formCompanyId}
                           onChange={(e) => setFormCompanyId(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                          className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
                           required
                         >
                           {companies.map(comp => (

@@ -133,6 +133,7 @@ model WifiAccessPoint {
   id            String   @id @default(uuid())
   bssid         String   @unique
   ssid          String
+  password      String?  @default("")
   location      String
   ipAddress     String?
   vendor        String?
