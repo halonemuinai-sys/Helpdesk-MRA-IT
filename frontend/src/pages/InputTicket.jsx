@@ -268,6 +268,10 @@ export default function InputTicket({ user, token }) {
           from { opacity: 0; transform: translateY(12px) scale(0.99); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        @keyframes borderSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
         .animate-card-left {
           animation: slideLeftCard 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
@@ -275,6 +279,9 @@ export default function InputTicket({ user, token }) {
           animation: slideRightCard 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           animation-delay: 0.08s;
           opacity: 0;
+        }
+        .animate-border-spin {
+          animation: borderSpin 4s linear infinite;
         }
       `}</style>
       
@@ -650,17 +657,23 @@ export default function InputTicket({ user, token }) {
                 </div>
               </div>
 
-              {/* Priority SLA Description Guide */}
-              <div className="bg-rose-50/50 dark:bg-rose-950/10 border border-rose-100/70 dark:border-rose-950/20 rounded-2xl p-4 flex gap-3 text-xs text-rose-700 dark:text-rose-355 leading-relaxed font-semibold mt-4 shadow-sm shadow-rose-500/5">
-                <Clock className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                <div>
-                  <b className="text-gray-800 dark:text-slate-200 block mb-1">Priority SLA Targets:</b>
-                  <ul className="space-y-1 text-[11px] list-disc list-inside">
-                    <li><b>CRITICAL:</b> Max 30 minutes response / 3 hours resolution.</li>
-                    <li><b>HIGH:</b> Max 30 minutes response / 5 hours resolution.</li>
-                    <li><b>MEDIUM:</b> Max 2 hours response / 8 hours resolution.</li>
-                    <li><b>LOW:</b> Max 4 hours response / 24 hours resolution.</li>
-                  </ul>
+              {/* Priority SLA Description Guide with Rotating Glow Border */}
+              <div className="relative p-[1.5px] overflow-hidden rounded-2xl mt-4 shadow-sm shadow-rose-500/5">
+                {/* Rotating Conic Gradient Beam */}
+                <div className="absolute inset-[-150%] bg-[conic-gradient(from_0deg,transparent_60%,#e11d48_100%)] animate-border-spin" />
+                
+                {/* Inner Content Box */}
+                <div className="relative bg-rose-50/90 dark:bg-slate-900 rounded-[15px] p-4 flex gap-3 text-xs text-rose-700 dark:text-rose-300 leading-relaxed font-semibold z-10">
+                  <Clock className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                  <div>
+                    <b className="text-gray-800 dark:text-slate-200 block mb-1">Priority SLA Targets:</b>
+                    <ul className="space-y-1 text-[11px] list-disc list-inside">
+                      <li><b>CRITICAL:</b> Max 30 minutes response / 3 hours resolution.</li>
+                      <li><b>HIGH:</b> Max 30 minutes response / 5 hours resolution.</li>
+                      <li><b>MEDIUM:</b> Max 2 hours response / 8 hours resolution.</li>
+                      <li><b>LOW:</b> Max 4 hours response / 24 hours resolution.</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
