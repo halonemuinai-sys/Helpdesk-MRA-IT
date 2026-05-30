@@ -318,7 +318,7 @@ export default function Dashboard({ user, token, darkMode }) {
       {analytics && (
         <>
           {/* IT Agents Performance Overview (KPI Summary) */}
-          <div className="glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 hover:shadow-lg transition-shadow mb-8 animate-scale-up relative z-20">
+          <div className="bg-gradient-to-br from-white/90 to-slate-50/50 dark:from-slate-900/70 dark:to-slate-950/20 backdrop-blur-xl p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-8 animate-scale-up relative z-20">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div>
                 <h4 className="font-bold text-base text-gray-800 dark:text-slate-200 flex items-center gap-2">
@@ -384,15 +384,15 @@ export default function Dashboard({ user, token, darkMode }) {
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* KPI 1: Overall Compliance */}
-                  <div className="group stagger-1 p-5 bg-slate-50/50 dark:bg-slate-900/40 border border-gray-150 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.02] transition-all duration-300 hover:shadow-md">
+                  <div className="group stagger-1 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300 hover:shadow-[0_8px_20px_rgba(70,98,193,0.04)] dark:hover:shadow-none">
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Team SLA Compliance</p>
+                      <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Team SLA Compliance</p>
                       <h4 className={`text-2xl font-black mt-2 transition-transform duration-300 group-hover:translate-x-1 ${getSlaColor(teamComplianceRate)}`}>
                         {teamComplianceRate}%
                       </h4>
                     </div>
                     <div className="mt-4 flex items-center gap-2">
-                      <div className="w-full h-1.5 bg-gray-150 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div 
                           className={`h-full rounded-full shimmer-bar ${
                             teamComplianceRate >= 90 ? 'bg-emerald-500' :
@@ -406,49 +406,54 @@ export default function Dashboard({ user, token, darkMode }) {
                   </div>
 
                   {/* KPI 2: Response Speed */}
-                  <div className="group stagger-2 p-5 bg-slate-50/50 dark:bg-slate-900/40 border border-gray-150 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.02] transition-all duration-300 hover:shadow-md">
+                  <div className="group stagger-2 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300 hover:shadow-[0_8px_20px_rgba(59,130,246,0.04)] dark:hover:shadow-none">
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Avg Team Response</p>
+                      <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Avg Team Response</p>
                       <h4 className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-2 transition-transform duration-300 group-hover:translate-x-1">
                         {avgTeamResponse > 0 ? `${avgTeamResponse} min` : '0 min'}
                       </h4>
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-4 font-medium flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-115 group-hover:rotate-12 text-brand-500" />
+                    <p className="text-[10px] text-gray-500 mt-4 font-medium flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12 text-brand-500" />
                       <span>Speed to first response</span>
                     </p>
                   </div>
 
                   {/* KPI 3: Resolution Speed */}
-                  <div className="group stagger-3 p-5 bg-slate-50/50 dark:bg-slate-900/40 border border-gray-150 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.02] transition-all duration-300 hover:shadow-md">
+                  <div className="group stagger-3 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300 hover:shadow-[0_8px_20px_rgba(99,102,241,0.04)] dark:hover:shadow-none">
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Avg Team Resolution</p>
+                      <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Avg Team Resolution</p>
                       <h4 className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-2 transition-transform duration-300 group-hover:translate-x-1">
                         {avgTeamResolution > 0 ? `${avgTeamResolution} hrs` : '0 hrs'}
                       </h4>
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-4 font-medium flex items-center gap-1">
-                      <Activity className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-115 text-indigo-500" />
+                    <p className="text-[10px] text-gray-500 mt-4 font-medium flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110 text-indigo-500 animate-pulse" />
                       <span>Active resolution time</span>
                     </p>
                   </div>
 
                   {/* KPI 4: Spotlight Performer */}
-                  <div className="group stagger-4 p-5 bg-gradient-to-br from-brand-500/5 to-brand-500/10 dark:from-brand-950/10 dark:to-brand-950/20 border border-brand-500/10 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.02] transition-all duration-300 hover:shadow-md">
+                  <div className="group stagger-4 p-5 bg-gradient-to-br from-brand-50/50 to-brand-100/20 dark:from-brand-950/20 dark:to-brand-900/10 border border-brand-200/35 dark:border-brand-900/30 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300 hover:shadow-[0_8px_25px_rgba(70,98,193,0.06)]">
                     <div>
                       <p className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest flex items-center gap-1.5">
                         <span className="inline-block animate-float text-sm">🏆</span>
                         <span>Spotlight Agent</span>
                       </p>
                       {topAgent ? (
-                        <>
-                          <h4 className="text-sm font-black text-gray-800 dark:text-slate-100 mt-2.5 truncate">
-                            {topAgent.name}
-                          </h4>
-                          <p className="text-[10px] text-gray-500 dark:text-slate-400 mt-1 truncate">
-                            {topAgent.companyName}
-                          </p>
-                        </>
+                        <div className="flex items-center gap-2.5 mt-2.5">
+                          <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-brand-500/20 shrink-0">
+                            {topAgent.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-bold text-gray-850 dark:text-slate-100 truncate">
+                              {topAgent.name}
+                            </h4>
+                            <p className="text-[9px] text-gray-400 dark:text-slate-400 truncate mt-0.5">
+                              {topAgent.companyName}
+                            </p>
+                          </div>
+                        </div>
                       ) : (
                         <h4 className="text-xs italic text-gray-500 mt-3">No active performer</h4>
                       )}
@@ -456,7 +461,7 @@ export default function Dashboard({ user, token, darkMode }) {
                     {topAgent && (
                       <p className="text-[10px] text-emerald-600 dark:text-emerald-450 font-bold mt-4 flex items-center gap-1">
                         <span className="animate-ping w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                        <span>{topAgent.metrics.complianceRate}% SLA ({topAgent.metrics.resolvedTickets} tickets)</span>
+                        <span>{topAgent.metrics.complianceRate}% SLA ({topAgent.metrics.resolvedTickets} tix)</span>
                       </p>
                     )}
                   </div>
@@ -469,44 +474,44 @@ export default function Dashboard({ user, token, darkMode }) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
             {/* Card 1: Total Tickets */}
-            <div className="group stagger-1 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 flex items-center justify-between hover:-translate-y-1.5 hover-glow-brand transition-all duration-300 cursor-pointer">
+            <div className="group stagger-1 bg-gradient-to-br from-white to-brand-50/20 dark:from-slate-900/60 dark:to-brand-950/15 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:-translate-y-1 hover-glow-brand hover:shadow-md transition-all duration-300 cursor-pointer">
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Tickets</p>
                 <h3 className="text-3xl font-extrabold text-gray-800 dark:text-slate-100 mt-2">{analytics.totalTickets}</h3>
               </div>
-              <div className="w-12 h-12 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 rounded-xl flex items-center justify-center shadow-inner transition-colors duration-300 group-hover:bg-brand-500 group-hover:text-white">
-                <Ticket className="w-6 h-6 transition-transform duration-300 group-hover:scale-115 group-hover:rotate-6" />
+              <div className="w-12 h-12 bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 rounded-xl flex items-center justify-center shadow-inner transition-all duration-300 group-hover:bg-brand-500 group-hover:text-white group-hover:scale-105">
+                <Ticket className="w-6 h-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" />
               </div>
             </div>
 
             {/* Card 2: Active Tickets */}
-            <div className="group stagger-2 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 flex items-center justify-between hover:-translate-y-1.5 hover-glow-blue transition-all duration-300 cursor-pointer">
+            <div className="group stagger-2 bg-gradient-to-br from-white to-blue-50/20 dark:from-slate-900/60 dark:to-blue-950/15 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:-translate-y-1 hover-glow-blue hover:shadow-md transition-all duration-300 cursor-pointer">
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Tickets</p>
                 <h3 className="text-3xl font-extrabold text-gray-800 dark:text-slate-100 mt-2">
                   {analytics.status.OPEN + analytics.status.IN_PROGRESS + analytics.status.PENDING}
                 </h3>
               </div>
-              <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shadow-inner transition-colors duration-300 group-hover:bg-blue-500 group-hover:text-white">
-                <Activity className="w-6 h-6 animate-pulse transition-transform duration-300 group-hover:scale-115" />
+              <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shadow-inner transition-all duration-300 group-hover:bg-blue-500 group-hover:text-white group-hover:scale-105">
+                <Activity className="w-6 h-6 animate-pulse transition-transform duration-300 group-hover:scale-110" />
               </div>
             </div>
 
             {/* Card 3: Resolved Tickets */}
-            <div className="group stagger-3 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 flex items-center justify-between hover:-translate-y-1.5 hover-glow-emerald transition-all duration-300 cursor-pointer">
+            <div className="group stagger-3 bg-gradient-to-br from-white to-emerald-50/20 dark:from-slate-900/60 dark:to-emerald-950/15 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:-translate-y-1 hover-glow-emerald hover:shadow-md transition-all duration-300 cursor-pointer">
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Resolved Tickets</p>
                 <h3 className="text-3xl font-extrabold text-gray-800 dark:text-slate-100 mt-2">
                   {analytics.status.RESOLVED + analytics.status.CLOSED}
                 </h3>
               </div>
-              <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center shadow-inner transition-colors duration-300 group-hover:bg-emerald-500 group-hover:text-white">
-                <CheckCircle2 className="w-6 h-6 transition-transform duration-300 group-hover:scale-115 group-hover:rotate-6" />
+              <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-450 rounded-xl flex items-center justify-center shadow-inner transition-all duration-300 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-105">
+                <CheckCircle2 className="w-6 h-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" />
               </div>
             </div>
 
             {/* Card 4: SLA Compliance Rate (with dynamic SVG Circular Progress Ring) */}
-            <div className="group stagger-4 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 flex items-center justify-between hover:-translate-y-1.5 hover-glow-cyan transition-all duration-300 cursor-pointer">
+            <div className="group stagger-4 bg-gradient-to-br from-white to-cyan-50/20 dark:from-slate-900/60 dark:to-cyan-950/15 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:-translate-y-1 hover-glow-cyan hover:shadow-md transition-all duration-300 cursor-pointer">
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">SLA Compliance</p>
                 <h3 className={`text-3xl font-extrabold mt-2 ${getSlaColor(analytics.sla.complianceRate)}`}>
@@ -515,14 +520,14 @@ export default function Dashboard({ user, token, darkMode }) {
               </div>
               
               {/* Circular Radial Gauge */}
-              <div className="relative w-14 h-14 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+              <div className="relative w-14 h-14 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
                 <svg className="w-full h-full transform -rotate-90">
                   {/* Background Circle */}
                   <circle
                     cx="28"
                     cy="28"
                     r="22"
-                    className="stroke-gray-100 dark:stroke-slate-800/60"
+                    className="stroke-slate-100 dark:stroke-slate-800/60"
                     strokeWidth="4.5"
                     fill="transparent"
                   />
@@ -543,7 +548,7 @@ export default function Dashboard({ user, token, darkMode }) {
                 </svg>
                 {/* Embedded Shield Icon */}
                 <div className="absolute flex items-center justify-center">
-                  <ShieldAlert className={`w-5 h-5 transition-transform duration-300 group-hover:scale-115 ${getSlaColor(analytics.sla.complianceRate)}`} />
+                  <ShieldAlert className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${getSlaColor(analytics.sla.complianceRate)}`} />
                 </div>
               </div>
 
@@ -561,7 +566,7 @@ export default function Dashboard({ user, token, darkMode }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Tickets by Status */}
-                <div className="stagger-2 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 hover:shadow-lg transition-shadow">
+                <div className="stagger-2 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all duration-300">
                   <h4 className="font-bold text-base text-gray-800 dark:text-slate-200 mb-5">Status Distribution</h4>
                   <div className="space-y-4">
                     {Object.entries(analytics.status).map(([statusKey, count]) => {
@@ -596,7 +601,7 @@ export default function Dashboard({ user, token, darkMode }) {
                 </div>
 
                 {/* Tickets by Category */}
-                <div className="stagger-3 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 hover:shadow-lg transition-shadow">
+                <div className="stagger-3 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 border-l-4 border-l-brand-500 shadow-sm hover:shadow-md transition-all duration-300">
                   <h4 className="font-bold text-base text-gray-800 dark:text-slate-200 mb-5">Issue Category</h4>
                   <div className="space-y-4">
                     {Object.entries(analytics.categories).map(([catKey, count]) => {
@@ -624,21 +629,21 @@ export default function Dashboard({ user, token, darkMode }) {
               </div>
 
               {/* Tickets by Priority & SLA Breakdown */}
-              <div className="stagger-3 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 hover:shadow-lg transition-shadow">
+              <div className="stagger-3 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm hover:shadow-md transition-all duration-300">
                 <h4 className="font-bold text-base text-gray-800 dark:text-slate-200 mb-5">Tickets by Priority</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {Object.entries(analytics.priorities).map(([priorityKey, count]) => {
                     const colors = {
-                      CRITICAL: 'text-rose-600 bg-rose-50/55 border-rose-250 hover:bg-rose-100/50 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-450 dark:hover:bg-rose-950/30 animate-pulse',
-                      HIGH: 'text-red-600 bg-red-50/50 border-red-200 hover:bg-red-100/50 dark:bg-red-950/20 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-950/30',
-                      MEDIUM: 'text-amber-600 bg-amber-50/50 border-amber-200 hover:bg-amber-100/50 dark:bg-amber-950/20 dark:border-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-950/30',
-                      LOW: 'text-emerald-600 bg-emerald-50/50 border-emerald-200 hover:bg-emerald-100/50 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-950/30'
+                      CRITICAL: 'text-red-700 bg-red-50/50 border-red-150 border-l-4 border-l-red-500 hover:bg-red-100/40 dark:bg-red-950/20 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-950/30 animate-pulse-glow',
+                      HIGH: 'text-orange-700 bg-orange-50/40 border-orange-150 border-l-4 border-l-orange-500 hover:bg-orange-100/40 dark:bg-orange-950/20 dark:border-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-950/30',
+                      MEDIUM: 'text-amber-700 bg-amber-50/40 border-amber-150 border-l-4 border-l-amber-500 hover:bg-amber-100/40 dark:bg-amber-950/20 dark:border-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-950/30',
+                      LOW: 'text-emerald-700 bg-emerald-50/40 border-emerald-150 border-l-4 border-l-emerald-500 hover:bg-emerald-100/40 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-950/30'
                     };
 
                     return (
                       <div 
                         key={priorityKey} 
-                        className={`p-3 rounded-xl border text-center transition-all duration-300 hover:scale-105 cursor-pointer ${colors[priorityKey] || 'bg-gray-50'}`}
+                        className={`p-3 rounded-xl border text-center transition-all duration-200 hover:scale-[1.03] cursor-pointer ${colors[priorityKey] || 'bg-gray-50'}`}
                       >
                         <p className="text-[9px] font-black uppercase tracking-wider">{priorityKey}</p>
                         <h4 className="text-xl font-black mt-1.5">{count}</h4>
@@ -654,7 +659,7 @@ export default function Dashboard({ user, token, darkMode }) {
             {/* Column 3: Urgent Actions List */}
             <div className="space-y-6">
               
-              <div className="stagger-4 glass-card p-6 rounded-2xl border border-gray-200/50 dark:border-slate-800/30 flex flex-col h-full justify-between hover:shadow-lg transition-shadow">
+              <div className="stagger-4 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 border-l-4 border-l-red-500 flex flex-col h-full justify-between hover:shadow-md transition-all duration-300">
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <Clock className="w-5 h-5 text-red-500 animate-pulse" />
@@ -662,8 +667,10 @@ export default function Dashboard({ user, token, darkMode }) {
                   </div>
                   
                   {recentUrgentTickets.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-gray-500 dark:text-slate-500">
-                      No active high-priority tickets at this time. 👍
+                    <div className="py-8 flex flex-col items-center justify-center text-center">
+                      <ShieldAlert className="w-8 h-8 text-neutral-300 dark:text-neutral-700 mb-2 opacity-60" />
+                      <p className="text-xs font-semibold text-gray-500 dark:text-slate-400">No active high-priority tickets.</p>
+                      <p className="text-[10px] text-gray-405 dark:text-slate-500 mt-0.5">All SLAs are currently compliant. 👍</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -706,7 +713,7 @@ export default function Dashboard({ user, token, darkMode }) {
 
                 <Link
                   to="/tickets"
-                  className="mt-6 flex items-center justify-center gap-2 py-2.5 bg-gray-100 dark:bg-slate-800/80 hover:bg-gray-200 dark:hover:bg-slate-700/80 text-xs font-semibold rounded-xl text-gray-700 dark:text-slate-200 transition-all"
+                  className="mt-6 flex items-center justify-center gap-2 py-2.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-xs font-semibold rounded-xl text-gray-700 dark:text-slate-200 border border-slate-200/40 dark:border-slate-800/40 transition-all"
                 >
                   <span>View All Tickets</span>
                   <ArrowRight className="w-3.5 h-3.5" />

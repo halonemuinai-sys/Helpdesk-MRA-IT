@@ -88,7 +88,7 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
     <aside 
       className={`${
         isCollapsed ? 'w-20' : 'w-64'
-      } min-h-screen glass-panel flex flex-col justify-between border-r border-gray-200 dark:border-slate-800 transition-all duration-300 ease-in-out relative`}
+      } min-h-screen glass-panel flex flex-col justify-between border-r border-slate-200/65 dark:border-slate-800/70 transition-all duration-300 ease-in-out relative`}
     >
       {/* Collapse Toggle Button */}
       <button
@@ -153,14 +153,16 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center rounded-xl text-sm font-medium transition-all duration-205 relative group ${
-                  isCollapsed ? 'justify-center p-3 w-12 h-12 animate-fade-in' : 'gap-3 px-4 py-3 w-full'
+                className={`flex items-center text-sm font-medium transition-all duration-200 relative group ${
+                  isCollapsed ? 'justify-center p-3 w-12 h-12 rounded-xl animate-fade-in' : 'gap-3 px-4 py-3 w-full'
                 } ${
                   isActive
-                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 scale-[1.02]'
-                    : `text-gray-600 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200 ${
-                        isCollapsed ? 'hover:scale-110' : 'hover:translate-x-1'
-                      }`
+                    ? isCollapsed
+                      ? 'bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400 rounded-xl scale-105 shadow-sm'
+                      : 'bg-brand-50/90 text-brand-600 dark:bg-brand-950/20 dark:text-brand-400 border-l-4 border-brand-500 rounded-r-xl rounded-l-none scale-[1.01]'
+                    : isCollapsed
+                    ? 'text-gray-600 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-slate-800/45 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl hover:scale-110'
+                    : 'text-gray-650 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200 border-l-4 border-transparent hover:translate-x-1'
                 }`}
               >
                 <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'scale-105' : ''}`} />
