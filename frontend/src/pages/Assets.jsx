@@ -413,6 +413,21 @@ const totalAssets = assets.length;
     return 'Rp ' + Number(value).toLocaleString('id-ID');
   };
 
+  const formatDateYYMMDD = (value) => {
+    if (!value) return '-';
+    try {
+      const dateStr = typeof value === 'string' ? value.split('T')[0] : new Date(value).toISOString().split('T')[0];
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return '-';
+      const yy = parts[0].slice(-2);
+      const mm = parts[1];
+      const dd = parts[2];
+      return `${yy}/${mm}/${dd}`;
+    } catch (e) {
+      return '-';
+    }
+  };
+
   // Apply filters
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = 
@@ -690,7 +705,7 @@ const totalAssets = assets.length;
                             <span className="text-gray-400 font-semibold italic text-[10px]">N/A (Milik)</span>
                           ) : (
                             <>
-                              <div>{leaseEnd.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                              <div>{formatDateYYMMDD(asset.rentalEnd)}</div>
                               {isLeaseExpired ? (
                                 <span className="text-[9px] font-black text-red-500 block">Sewa Habis!</span>
                               ) : isLeaseNearExpiry ? (
@@ -795,8 +810,8 @@ const totalAssets = assets.length;
                                       {asset.ownershipType === 'OWNED' ? 'TANGGAL PEMBELIAN:' : 'PERIODE KONTRAK SEWA:'}
                                     </span>
                                     <span className="font-bold text-gray-700 dark:text-slate-300 ml-1.5">
-                                      {new Date(asset.rentalStart).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                      {asset.ownershipType !== 'OWNED' && ` s/d ${new Date(asset.rentalEnd).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}`}
+                                      {formatDateYYMMDD(asset.rentalStart)}
+                                      {asset.ownershipType !== 'OWNED' && ` s/d ${formatDateYYMMDD(asset.rentalEnd)}`}
                                     </span>
                                   </div>
 
