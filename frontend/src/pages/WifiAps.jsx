@@ -464,7 +464,7 @@ export default function WifiAps({ user, token }) {
 
             {/* Modal Form Body */}
             <form onSubmit={handleSubmit}>
-              <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="p-6 space-y-4 max-h-[55vh] overflow-y-auto">
                 
                 {formError && (
                   <div className="p-3.5 rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800 text-red-750 text-xs flex items-center gap-2">
