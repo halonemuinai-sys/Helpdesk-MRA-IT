@@ -36,6 +36,7 @@ model CompanyMaster {
   createdAt     DateTime         @default(now())
   companies     Company[]        // Branches belonging to this master company
   subscriptions ITSubscription[] // Subscriptions belonging to this master company
+  assets        Asset[]          // Assets leased by this master company
 }
 
 model Company {
@@ -47,6 +48,7 @@ model Company {
   users           User[]
   tickets         Ticket[]
   wifiAPs         WifiAccessPoint[]
+  assets          Asset[]          // Assets allocated at this physical branch
   
   // Link to master company
   companyMasterId Int?
@@ -70,6 +72,7 @@ model User {
   
   requestedTickets Ticket[] @relation("RequesterTickets")
   assignedTickets  Ticket[] @relation("AssignedTickets")
+  assets           Asset[]  // Assets currently assigned to this employee
 
   @@index([companyId])
   @@index([role])
@@ -205,4 +208,52 @@ model RenewalHistory {
   cost           Float          // Biaya perpanjangan saat tindakan dilakukan
   period         String         // Durasi perpanjangan (e.g., "1 Tahun")
   notes          String?        // Catatan perpanjangan (e.g., "Diperpanjang 2 tahun per 6 bulan (Rp 300rb)")
+}
+
+model Asset {
+  id              String        @id @default(uuid())
+  assetTag        String        @unique // e.g. AST-MRA-0001
+  
+  // References
+  deviceRef       String?       @unique // e.g. LP10682 (Device code/ID for damage reports)
+  vendorRef       String?       // e.g. ASN/20240318/1621/0001 (Payment/Billing unit code)
+  
+  // Specifications
+  brand           String        // e.g. Lenovo, Dell, HP, Apple
+  model           String        // e.g. ThinkPad L14 Gen 2
+  processor       String?       // e.g. Intel Core i5
+  ram             String?       // e.g. 8GB, 16GB
+  storage         String?       // e.g. 256GB SSD, 512GB SSD
+  os              String?       // e.g. Windows 11 Pro, macOS
+  office          String?       // e.g. Microsoft Office 2021 H&B, M365
+  
+  // Ownership details (focused on Rental/Sewa)
+  ownershipType   String        @default("RENTAL") // RENTAL, OWNED
+  status          String        @default("AVAILABLE") // AVAILABLE, ASSIGNED, MAINTENANCE, DISPOSED
+  
+  // Cost & Rental Schedules
+  rentalCost      Float         // Monthly rental fee in IDR
+  rentalStart     DateTime      // Lease start date
+  rentalEnd       DateTime      // Lease end date
+  
+  notes           String?       // Additional remarks
+  journey         String?       @default("") // Timeline of handovers, returns, and repairs
+  
+  // Relations
+  userId          String?       // Employee ID utilizing the device
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  companyId       Int?          // Physical office location branch
+  company         Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  
+  companyMasterId Int?          // Legal master company owning the lease contract
+  companyMaster   CompanyMaster? @relation(fields: [companyMasterId], references: [id], onDelete: SetNull)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([companyMasterId])
+  @@index([status])
 }

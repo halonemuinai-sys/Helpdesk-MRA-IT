@@ -18,6 +18,7 @@ import Guideline from './pages/Guideline';
 import Categories from './pages/Categories';
 import WifiAps from './pages/WifiAps';
 import Subscriptions from './pages/Subscriptions';
+import Assets from './pages/Assets';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -131,6 +132,10 @@ export default function App() {
             <Route
               path="/subscriptions"
               element={user ? <Subscriptions user={user} token={token} /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/assets"
+              element={user ? <Assets user={user} token={token} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="/guideline"

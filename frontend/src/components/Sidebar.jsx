@@ -17,7 +17,8 @@ import {
   ChevronRight,
   FolderTree,
   Wifi,
-  CreditCard
+  CreditCard,
+  Laptop
 } from 'lucide-react';
 
 export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
@@ -71,6 +72,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           label: 'IT Subscriptions',
           path: '/subscriptions',
           icon: CreditCard,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'Asset Management',
+          path: '/assets',
+          icon: Laptop,
           roles: ['AGENT', 'ADMIN']
         },
         {

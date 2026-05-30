@@ -11,7 +11,7 @@ router.get('/', verifyToken, async (req, res, next) => {
     if (req.user.role === 'USER') {
       return res.status(403).json({ error: 'Access denied.' });
     }
-    const { category, status, search } = req.query;
+    const { category, status, search, limit, skip } = req.query;
 
     const where = {};
     if (category) {
@@ -26,6 +26,9 @@ router.get('/', verifyToken, async (req, res, next) => {
         { vendor: { contains: search, mode: 'insensitive' } }
       ];
     }
+
+    const takeValue = limit ? parseInt(limit) : 50;
+    const skipValue = skip ? parseInt(skip) : 0;
 
     const subscriptions = await prisma.iTSubscription.findMany({
       where,
@@ -43,7 +46,9 @@ router.get('/', verifyToken, async (req, res, next) => {
           select: { id: true, name: true, vendor: true }
         }
       },
-      orderBy: { expiryDate: 'asc' }
+      orderBy: { expiryDate: 'asc' },
+      take: takeValue,
+      skip: skipValue
     });
 
     res.json(subscriptions);
