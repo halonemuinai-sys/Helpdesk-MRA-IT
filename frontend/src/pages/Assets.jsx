@@ -773,6 +773,13 @@ const totalAssets = assets.length;
                                 {asset.user.department}
                               </div>
                             </div>
+                          ) : asset.company ? (
+                            <div>
+                              <div className="font-bold text-slate-700 dark:text-slate-300">Shared / Cabang</div>
+                              <div className="text-[10px] text-gray-405 dark:text-slate-400 font-semibold truncate max-w-[150px]">
+                                {asset.company.location}
+                              </div>
+                            </div>
                           ) : (
                             <span className="text-gray-400 italic font-medium">Tersedia di IT</span>
                           )}
