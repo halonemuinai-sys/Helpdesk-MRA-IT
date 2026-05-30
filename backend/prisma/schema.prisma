@@ -37,6 +37,7 @@ model Company {
   createdAt DateTime @default(now())
   users     User[]
   tickets   Ticket[]
+  wifiAPs   WifiAccessPoint[]
 
   @@unique([name, location])
 }
@@ -126,4 +127,25 @@ model CategoryMetadata {
 
   @@unique([category, subCategory])
   @@index([category])
+}
+
+model WifiAccessPoint {
+  id            String   @id @default(uuid())
+  bssid         String   @unique
+  ssid          String
+  location      String
+  ipAddress     String?
+  vendor        String?
+  modelName     String?
+  frequency     String   @default("5GHz")
+  channel       Int?
+  securityType  String   @default("WPA2-Enterprise")
+  status        String   @default("ACTIVE")
+  companyId     Int
+  company       Company  @relation(fields: [companyId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([ssid])
 }

@@ -15,7 +15,8 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  FolderTree
+  FolderTree,
+  Wifi
 } from 'lucide-react';
 
 export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
@@ -25,59 +26,85 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
 
   if (!user) return null;
 
-  // Navigation schema based on Roles (Only AGENT and ADMIN log in)
-  const navItems = [
+  // Navigation groups based on Roles (Only AGENT and ADMIN log in)
+  const navGroups = [
     {
-      label: 'Dashboard',
-      path: '/dashboard',
-      icon: LayoutDashboard,
-      roles: ['AGENT', 'ADMIN']
+      title: 'Core Helpdesk',
+      items: [
+        {
+          label: 'Dashboard',
+          path: '/dashboard',
+          icon: LayoutDashboard,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'Input Ticket',
+          path: '/input-ticket',
+          icon: FilePlus2,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'Tickets List',
+          path: '/tickets',
+          icon: Ticket,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'Agent Performance (KPI)',
+          path: '/performance',
+          icon: Award,
+          roles: ['AGENT', 'ADMIN']
+        }
+      ]
     },
     {
-      label: 'Input Ticket',
-      path: '/input-ticket',
-      icon: FilePlus2,
-      roles: ['AGENT', 'ADMIN'] // Agents and Admins can input tickets on behalf of employees
+      title: 'Infrastructure',
+      items: [
+        {
+          label: 'WiFi Database',
+          path: '/wifi-aps',
+          icon: Wifi,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'Category Settings',
+          path: '/categories',
+          icon: FolderTree,
+          roles: ['AGENT', 'ADMIN']
+        }
+      ]
     },
     {
-      label: 'Tickets List',
-      path: '/tickets',
-      icon: Ticket,
-      roles: ['AGENT', 'ADMIN']
-    },
-    {
-      label: 'Analysis Reports',
-      path: '/reports',
-      icon: BarChart3,
-      roles: ['ADMIN'] // Admin only
-    },
-    {
-      label: 'Agent Performance (KPI)',
-      path: '/performance',
-      icon: Award,
-      roles: ['AGENT', 'ADMIN'] // Agents and Admins
-    },
-    {
-      label: 'User Management',
-      path: '/users',
-      icon: Users,
-      roles: ['ADMIN'] // Admin only
-    },
-    {
-      label: 'Category Settings',
-      path: '/categories',
-      icon: FolderTree,
-      roles: ['AGENT', 'ADMIN']
-    },
-    {
-      label: 'Guideline',
-      path: '/guideline',
-      icon: HelpCircle,
-      roles: ['AGENT', 'ADMIN']
+      title: 'Administration',
+      items: [
+        {
+          label: 'Analysis Reports',
+          path: '/reports',
+          icon: BarChart3,
+          roles: ['ADMIN']
+        },
+        {
+          label: 'User Management',
+          path: '/users',
+          icon: Users,
+          roles: ['ADMIN']
+        },
+        {
+          label: 'Guideline',
+          path: '/guideline',
+          icon: HelpCircle,
+          roles: ['AGENT', 'ADMIN']
+        }
+      ]
     }
   ];
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(user.role));
+  const filteredGroups = navGroups.map(group => {
+    return {
+      ...group,
+      items: group.items.filter(item => item.roles.includes(user.role))
+    };
+  }).filter(group => group.items.length > 0);
 
   const handleLogoutClick = () => {
     onLogout();
@@ -144,39 +171,55 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           </div>
         )}
 
-        {/* Navigation Items */}
-        <nav className={`px-4 space-y-2 ${isCollapsed ? 'flex flex-col items-center px-2' : ''}`}>
-          {filteredNavItems.map(item => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center text-sm font-medium transition-all duration-200 relative group ${
-                  isCollapsed ? 'justify-center p-3 w-12 h-12 rounded-xl animate-fade-in' : 'gap-3 px-4 py-3 w-full'
-                } ${
-                  isActive
-                    ? isCollapsed
-                      ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 rounded-xl scale-105 shadow-sm'
-                      : 'bg-rose-50/70 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border-l-4 border-rose-500 rounded-r-xl rounded-l-none scale-[1.01] shadow-[0_4px_12px_rgba(244,63,94,0.04)]'
-                    : isCollapsed
-                    ? 'text-gray-600 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-slate-800/45 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl hover:scale-110'
-                    : 'text-gray-650 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200 border-l-4 border-transparent hover:translate-x-1'
-                }`}
-              >
-                <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'scale-105' : ''}`} />
-                {!isCollapsed && <span>{item.label}</span>}
-                
-                {/* Tooltip on Collapsed Hover */}
-                {isCollapsed && (
-                  <span className="absolute left-16 bg-slate-950 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md whitespace-nowrap z-50">
-                    {item.label}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        {/* Navigation Groups */}
+        <nav className={`px-4 space-y-4 ${isCollapsed ? 'flex flex-col items-center px-2 space-y-5' : ''}`}>
+          {filteredGroups.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-1.5 w-full flex flex-col items-start">
+              {/* Group Title or Divider Line */}
+              {!isCollapsed ? (
+                <span className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-slate-500 font-extrabold px-4 mt-2 mb-1">
+                  {group.title}
+                </span>
+              ) : (
+                groupIdx > 0 && <div className="h-[1px] bg-slate-200/50 dark:bg-slate-800/50 my-1 w-8/12 mx-auto" />
+              )}
+              
+              {/* Group Items */}
+              <div className="w-full space-y-1">
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center text-sm font-medium transition-all duration-200 relative group ${
+                        isCollapsed ? 'justify-center p-3 w-12 h-12 rounded-xl animate-fade-in' : 'gap-3 px-4 py-2.5 w-full rounded-xl'
+                      } ${
+                        isActive
+                          ? isCollapsed
+                            ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 rounded-xl scale-105 shadow-sm'
+                            : 'bg-rose-50/70 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border-l-4 border-rose-500 rounded-r-xl rounded-l-none scale-[1.01] shadow-[0_4px_12px_rgba(244,63,94,0.04)]'
+                          : isCollapsed
+                          ? 'text-gray-600 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-slate-800/45 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl hover:scale-110'
+                          : 'text-gray-650 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200 border-l-4 border-transparent hover:translate-x-1'
+                      }`}
+                    >
+                      <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'scale-105' : ''}`} />
+                      {!isCollapsed && <span className="truncate">{item.label}</span>}
+                      
+                      {/* Tooltip on Collapsed Hover */}
+                      {isCollapsed && (
+                        <span className="absolute left-16 bg-slate-950 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md whitespace-nowrap z-50">
+                          {item.label}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
       </div>
 

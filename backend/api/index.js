@@ -24,6 +24,7 @@ app.use('/api/tickets', require('../routes/tickets'));
 app.use('/api/reports', require('../routes/reports'));
 app.use('/api/performance', require('../routes/performance'));
 app.use('/api/users', require('../routes/users'));
+app.use('/api/wifi', require('../routes/wifi'));
 
 // Global Error Handler
 app.use((err, req, res, next) => {
