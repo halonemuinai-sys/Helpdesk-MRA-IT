@@ -750,218 +750,201 @@ export default function Subscriptions({ user, token }) {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
-                  {/* Left Column: Vendor & Identity */}
-                  <div className="space-y-4">
-                    <h4 className="text-[11px] font-extrabold uppercase text-rose-500 tracking-wider pb-1.5 border-b border-gray-100 dark:border-slate-800 flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5" />
-                      Detail Kontrak & Provider
-                    </h4>
-
-                    {/* Company Tagging */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Anak Perusahaan / Entitas MRA *
-                      </label>
-                      <div className="relative group">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
-                        <select
-                          value={formCompanyId}
-                          onChange={(e) => setFormCompanyId(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                          required
-                        >
-                          {companies.map(comp => (
-                            <option key={comp.id} value={comp.id}>
-                              {comp.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Category Selection */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Kategori Layanan *
-                      </label>
+                  {/* Company Tagging */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Anak Perusahaan / Entitas MRA *
+                    </label>
+                    <div className="relative group">
+                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
                       <select
-                        value={formCategory}
-                        onChange={(e) => setFormCategory(e.target.value)}
-                        className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                        value={formCompanyId}
+                        onChange={(e) => setFormCompanyId(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
                         required
                       >
-                        <option value="">-- Pilih Kategori --</option>
-                        {CATEGORIES.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                        {companies.map(comp => (
+                          <option key={comp.id} value={comp.id}>
+                            {comp.name}
+                          </option>
                         ))}
                       </select>
                     </div>
-
-                    {/* Vendor/Provider */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Vendor / Provider *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Google, Niagahoster, Biznet"
-                        value={formVendor}
-                        onChange={(e) => setFormVendor(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                        required
-                      />
-                    </div>
-
-                    {/* Service Name */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Nama Layanan / Domain *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Google Workspace, example.com"
-                        value={formName}
-                        onChange={(e) => setFormName(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                        required
-                      />
-                    </div>
-
-                    {/* Evidence Attachment Link */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Evidence / Tautan Dokumen Kontrak
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ex: https://drive.google.com/..."
-                        value={formEvidenceLink}
-                        onChange={(e) => setFormEvidenceLink(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                      />
-                    </div>
-
                   </div>
 
-                  {/* Right Column: Billing Cycles & Expiry */}
-                  <div className="space-y-4">
-                    <h4 className="text-[11px] font-extrabold uppercase text-rose-500 tracking-wider pb-1.5 border-b border-gray-100 dark:border-slate-800 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" />
-                      Siklus Penagihan & Keaktifan
-                    </h4>
-
-                    {/* Billing Cycle */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Siklus Penagihan *
-                      </label>
-                      <select
-                        value={formBillingCycle}
-                        onChange={(e) => setFormBillingCycle(e.target.value)}
-                        className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                        required
-                      >
-                        {BILLING_CYCLES.map(cycle => (
-                          <option key={cycle} value={cycle}>{cycle}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Cost Input */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Biaya (Rp) *
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="Ex: 150000"
-                        value={formCost}
-                        onChange={(e) => setFormCost(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                        required
-                      />
-                    </div>
-
-                    {/* Start Date & Expiry Date Row */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                          Tanggal Mulai *
-                        </label>
-                        <input
-                          type="date"
-                          value={formStartDate}
-                          onChange={(e) => setFormStartDate(e.target.value)}
-                          className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                          Tanggal Kedaluwarsa *
-                        </label>
-                        <input
-                          type="date"
-                          value={formExpiryDate}
-                          onChange={(e) => setFormExpiryDate(e.target.value)}
-                          className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Status Dropdown */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Status
-                      </label>
-                      <select
-                        value={formStatus}
-                        onChange={(e) => setFormStatus(e.target.value)}
-                        className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                      >
-                        <option value="ACTIVE">Aktif</option>
-                        <option value="EXPIRED">Kedaluwarsa</option>
-                        <option value="INACTIVE">Arsip / Inaktif</option>
-                      </select>
-                    </div>
-
+                  {/* Category Selection */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Kategori Layanan *
+                    </label>
+                    <select
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value)}
+                      className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                      required
+                    >
+                      <option value="">-- Pilih Kategori --</option>
+                      {CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
                   </div>
 
-                </div>
+                  {/* Vendor/Provider */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Vendor / Provider *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Google, Niagahoster, Biznet"
+                      value={formVendor}
+                      onChange={(e) => setFormVendor(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      required
+                    />
+                  </div>
 
-                {/* Additional Notes Textarea */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                    Catatan Tambahan (IP, Link Account, Admin Credentials)
-                  </label>
-                  <textarea
-                    rows="2"
-                    placeholder="Ex: Linked account admin@domain.com, IP: 192.168.1.1"
-                    value={formNotes}
-                    onChange={(e) => setFormNotes(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                  />
-                </div>
+                  {/* Service Name */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Nama Layanan / Domain *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Google Workspace, example.com"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      required
+                    />
+                  </div>
 
-                {/* Update Journey Textarea (Only for Edit/Renew modes) */}
-                {isEditMode && (
-                  <div className="p-4 rounded-2xl bg-brand-50/20 dark:bg-brand-950/10 border border-brand-200/40 dark:border-brand-900/30 space-y-1.5">
-                    <label className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-wider flex items-center gap-1">
-                      <History className="w-3.5 h-3.5 animate-spin-slow" />
-                      Update Journey / Perpanjangan Kontrak
+                  {/* Billing Cycle */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Siklus Penagihan *
+                    </label>
+                    <select
+                      value={formBillingCycle}
+                      onChange={(e) => setFormBillingCycle(e.target.value)}
+                      className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                      required
+                    >
+                      {BILLING_CYCLES.map(cycle => (
+                        <option key={cycle} value={cycle}>{cycle}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Cost Input */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Biaya (Rp) *
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Ex: 150000"
+                      value={formCost}
+                      onChange={(e) => setFormCost(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      required
+                    />
+                  </div>
+
+                  {/* Start Date */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Tanggal Mulai *
+                    </label>
+                    <input
+                      type="date"
+                      value={formStartDate}
+                      onChange={(e) => setFormStartDate(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                      required
+                    />
+                  </div>
+
+                  {/* Expiry Date */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Tanggal Kedaluwarsa *
+                    </label>
+                    <input
+                      type="date"
+                      value={formExpiryDate}
+                      onChange={(e) => setFormExpiryDate(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                      required
+                    />
+                  </div>
+
+                  {/* Status Dropdown */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Status *
+                    </label>
+                    <select
+                      value={formStatus}
+                      onChange={(e) => setFormStatus(e.target.value)}
+                      className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                      required
+                    >
+                      <option value="ACTIVE">Aktif</option>
+                      <option value="EXPIRED">Kedaluwarsa</option>
+                      <option value="INACTIVE">Arsip / Inaktif</option>
+                    </select>
+                  </div>
+
+                  {/* Evidence Attachment Link */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Evidence / Tautan Dokumen Kontrak
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: https://drive.google.com/..."
+                      value={formEvidenceLink}
+                      onChange={(e) => setFormEvidenceLink(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                    />
+                  </div>
+
+                  {/* Additional Notes Textarea */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Catatan Tambahan (IP, Link Account, Admin Credentials)
                     </label>
                     <textarea
                       rows="2"
-                      placeholder="Isi jika Anda baru saja memperpanjang. Contoh: Diperpanjang 2 tahun per 6 bulan (Rp 300rb)"
-                      value={formUpdateJourney}
-                      onChange={(e) => setFormUpdateJourney(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-950/50 border border-brand-200/60 dark:border-brand-900/50 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      placeholder="Ex: Linked account admin@domain.com, IP: 192.168.1.1"
+                      value={formNotes}
+                      onChange={(e) => setFormNotes(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                     />
                   </div>
-                )}
+
+                  {/* Update Journey Textarea (Only for Edit/Renew modes) */}
+                  {isEditMode && (
+                    <div className="p-4 rounded-2xl bg-brand-50/20 dark:bg-brand-950/10 border border-brand-200/40 dark:border-brand-900/30 space-y-1.5 md:col-span-2">
+                      <label className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-wider flex items-center gap-1">
+                        <History className="w-3.5 h-3.5 animate-spin-slow" />
+                        Update Journey / Perpanjangan Kontrak
+                      </label>
+                      <textarea
+                        rows="2"
+                        placeholder="Isi jika Anda baru saja memperpanjang. Contoh: Diperpanjang 2 tahun per 6 bulan (Rp 300rb)"
+                        value={formUpdateJourney}
+                        onChange={(e) => setFormUpdateJourney(e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-950/50 border border-brand-200/60 dark:border-brand-900/50 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      />
+                    </div>
+                  )}
+
+                </div>
 
               </div>
 

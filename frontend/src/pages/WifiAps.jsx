@@ -512,240 +512,220 @@ export default function WifiAps({ user, token }) {
                   </div>
                 )}
 
-                {/* Grid Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
-                  {/* Left Column: Network Identity & Location */}
-                  <div className="space-y-4">
-                    <h4 className="text-[11px] font-extrabold uppercase text-rose-500 tracking-wider pb-1.5 border-b border-gray-100 dark:border-slate-800 flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5" />
-                      Identity & Location
-                    </h4>
-
-                    {/* SSID Name */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        SSID (Wi-Fi Name) *
-                      </label>
-                      <div className="relative group">
-                        <Wifi className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
-                        <input
-                          type="text"
-                          placeholder="e.g. MRA-Corporate"
-                          value={formSsid}
-                          onChange={(e) => setFormSsid(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition animate-input-focus"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Wi-Fi Password */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Wi-Fi Password / Security Key
-                      </label>
-                      <div className="relative group">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
-                        <input
-                          type={showFormPassword ? 'text' : 'password'}
-                          placeholder="e.g. SecretPassword123"
-                          value={formPassword}
-                          onChange={(e) => setFormPassword(e.target.value)}
-                          className="w-full pl-9 pr-10 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowFormPassword(!showFormPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-450 hover:text-rose-500 transition duration-150"
-                        >
-                          {showFormPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* MAC Address (BSSID) */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        MAC Address (BSSID) *
-                      </label>
-                      <div className="relative group">
-                        <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
-                        <input
-                          type="text"
-                          placeholder="e.g. 74:ac:b9:2d:11:a4"
-                          value={formBssid}
-                          onChange={(e) => setFormBssid(e.target.value)}
-                          disabled={isEditMode}
-                          className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          required
-                        />
-                      </div>
-                      {!isEditMode && (
-                        <p className="text-[9px] text-gray-400">Must be unique format `xx:xx:xx:xx:xx:xx`</p>
-                      )}
-                    </div>
-
-                    {/* Company Select */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Subsidiary Entity *
-                      </label>
-                      <div className="relative group">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
-                        <select
-                          value={formCompanyId}
-                          onChange={(e) => setFormCompanyId(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                          required
-                        >
-                          {companies.map(comp => (
-                            <option key={comp.id} value={comp.id}>
-                              {comp.name} ({comp.location})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Location Detail */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Placement Location *
-                      </label>
-                      <div className="relative group">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
-                        <input
-                          type="text"
-                          placeholder="e.g. Gedung Wisma Lantai 4, Ruang Finance"
-                          value={formLocation}
-                          onChange={(e) => setFormLocation(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Status Options */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Operation Status
-                      </label>
+                  {/* Subsidiary Entity */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Subsidiary Entity *
+                    </label>
+                    <div className="relative group">
+                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
                       <select
-                        value={formStatus}
-                        onChange={(e) => setFormStatus(e.target.value)}
-                        className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                        value={formCompanyId}
+                        onChange={(e) => setFormCompanyId(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                        required
                       >
-                        <option value="ACTIVE">ACTIVE</option>
-                        <option value="MAINTENANCE">MAINTENANCE</option>
-                        <option value="INACTIVE">INACTIVE</option>
+                        {companies.map(comp => (
+                          <option key={comp.id} value={comp.id}>
+                            {comp.name} ({comp.location})
+                          </option>
+                        ))}
                       </select>
                     </div>
-
                   </div>
-                  
-                  {/* Right Column: Specs & Management */}
-                  <div className="space-y-4">
-                    <h4 className="text-[11px] font-extrabold uppercase text-rose-500 tracking-wider pb-1.5 border-b border-gray-100 dark:border-slate-800 flex items-center gap-1.5">
-                      <Cpu className="w-3.5 h-3.5" />
-                      Hardware Specs & Network
-                    </h4>
 
-                    {/* IP Address */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Management IP Address
-                      </label>
+                  {/* SSID Name */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      SSID (Wi-Fi Name) *
+                    </label>
+                    <div className="relative group">
+                      <Wifi className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
                       <input
                         type="text"
-                        placeholder="e.g. 192.168.1.50"
-                        value={formIpAddress}
-                        onChange={(e) => setFormIpAddress(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                        placeholder="e.g. MRA-Corporate"
+                        value={formSsid}
+                        onChange={(e) => setFormSsid(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                        required
                       />
                     </div>
+                  </div>
 
-                    {/* Vendor */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        AP Hardware Vendor
-                      </label>
+                  {/* Wi-Fi Password */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Wi-Fi Password / Security Key
+                    </label>
+                    <div className="relative group">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
                       <input
-                        type="text"
-                        placeholder="e.g. Ubiquiti"
-                        value={formVendor}
-                        onChange={(e) => setFormVendor(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                        type={showFormPassword ? 'text' : 'password'}
+                        placeholder="e.g. SecretPassword123"
+                        value={formPassword}
+                        onChange={(e) => setFormPassword(e.target.value)}
+                        className="w-full pl-9 pr-10 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                       />
-                    </div>
-
-                    {/* Model Name */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Hardware Model Serial
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. UniFi AP-AC-Pro"
-                        value={formModelName}
-                        onChange={(e) => setFormModelName(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                      />
-                    </div>
-
-                    {/* Row: Freq & Channel */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                          Frequency Band
-                        </label>
-                        <select
-                          value={formFrequency}
-                          onChange={(e) => setFormFrequency(e.target.value)}
-                          className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                        >
-                          <option value="5GHz">5 GHz</option>
-                          <option value="2.4GHz">2.4 GHz</option>
-                          <option value="6GHz">6 GHz</option>
-                          <option value="Dual-Band">Dual-Band</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                          Channel
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="e.g. 149"
-                          value={formChannel}
-                          onChange={(e) => setFormChannel(e.target.value)}
-                          className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Security Protection */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                        Security Protection
-                      </label>
-                      <select
-                        value={formSecurityType}
-                        onChange={(e) => setFormSecurityType(e.target.value)}
-                        className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => setShowFormPassword(!showFormPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-450 hover:text-rose-500 transition duration-150"
                       >
-                        <option value="WPA2-Enterprise">WPA2-Enterprise</option>
-                        <option value="WPA2-Personal">WPA2-Personal</option>
-                        <option value="WPA3-Personal">WPA3-Personal</option>
-                        <option value="WPA3-Enterprise">WPA3-Enterprise</option>
-                        <option value="Open">Open (No Security)</option>
-                      </select>
+                        {showFormPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
+                  </div>
 
+                  {/* MAC Address (BSSID) */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      MAC Address (BSSID) *
+                    </label>
+                    <div className="relative group">
+                      <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
+                      <input
+                        type="text"
+                        placeholder="e.g. 74:ac:b9:2d:11:a4"
+                        value={formBssid}
+                        onChange={(e) => setFormBssid(e.target.value)}
+                        disabled={isEditMode}
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        required
+                      />
+                    </div>
+                    {!isEditMode && (
+                      <p className="text-[9px] text-gray-400 mt-0.5">Must be unique format `xx:xx:xx:xx:xx:xx`</p>
+                    )}
+                  </div>
+
+                  {/* Location Detail */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Placement Location *
+                    </label>
+                    <div className="relative group">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
+                      <input
+                        type="text"
+                        placeholder="e.g. Gedung Wisma Lantai 4, Ruang Finance"
+                        value={formLocation}
+                        onChange={(e) => setFormLocation(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* IP Address */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Management IP Address
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 192.168.1.50"
+                      value={formIpAddress}
+                      onChange={(e) => setFormIpAddress(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                    />
+                  </div>
+
+                  {/* AP Hardware Vendor */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      AP Hardware Vendor
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Ubiquiti"
+                      value={formVendor}
+                      onChange={(e) => setFormVendor(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                    />
+                  </div>
+
+                  {/* Model Name */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Hardware Model Serial
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. UniFi AP-AC-Pro"
+                      value={formModelName}
+                      onChange={(e) => setFormModelName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                    />
+                  </div>
+
+                  {/* Status Options */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Operation Status
+                    </label>
+                    <select
+                      value={formStatus}
+                      onChange={(e) => setFormStatus(e.target.value)}
+                      className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="MAINTENANCE">MAINTENANCE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                  </div>
+
+                  {/* Frequency Band */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Frequency Band
+                    </label>
+                    <select
+                      value={formFrequency}
+                      onChange={(e) => setFormFrequency(e.target.value)}
+                      className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                    >
+                      <option value="5GHz">5 GHz</option>
+                      <option value="2.4GHz">2.4 GHz</option>
+                      <option value="6GHz">6 GHz</option>
+                      <option value="Dual-Band">Dual-Band</option>
+                    </select>
+                  </div>
+
+                  {/* Channel */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Channel
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 149"
+                      value={formChannel}
+                      onChange={(e) => setFormChannel(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                    />
+                  </div>
+
+                  {/* Security Protection */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                      Security Protection
+                    </label>
+                    <select
+                      value={formSecurityType}
+                      onChange={(e) => setFormSecurityType(e.target.value)}
+                      className="w-full px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                    >
+                      <option value="WPA2-Enterprise">WPA2-Enterprise</option>
+                      <option value="WPA2-Personal">WPA2-Personal</option>
+                      <option value="WPA3-Personal">WPA3-Personal</option>
+                      <option value="WPA3-Enterprise">WPA3-Enterprise</option>
+                      <option value="Open">Open (No Security)</option>
+                    </select>
                   </div>
 
                 </div>
-
               </div>
 
               {/* Modal Action Buttons */}
