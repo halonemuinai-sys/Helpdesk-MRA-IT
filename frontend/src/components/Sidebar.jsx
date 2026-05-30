@@ -158,8 +158,8 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
                 } ${
                   isActive
                     ? isCollapsed
-                      ? 'bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400 rounded-xl scale-105 shadow-sm'
-                      : 'bg-brand-50/90 text-brand-600 dark:bg-brand-950/20 dark:text-brand-400 border-l-4 border-brand-500 rounded-r-xl rounded-l-none scale-[1.01]'
+                      ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 rounded-xl scale-105 shadow-sm'
+                      : 'bg-rose-50/70 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border-l-4 border-rose-500 rounded-r-xl rounded-l-none scale-[1.01] shadow-[0_4px_12px_rgba(244,63,94,0.04)]'
                     : isCollapsed
                     ? 'text-gray-600 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-slate-800/45 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl hover:scale-110'
                     : 'text-gray-650 dark:text-slate-400 hover:bg-gray-100/50 dark:hover:bg-slate-800/40 hover:text-gray-900 dark:hover:text-slate-200 border-l-4 border-transparent hover:translate-x-1'
