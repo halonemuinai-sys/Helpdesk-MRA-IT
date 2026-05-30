@@ -29,6 +29,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [selectedYear, setSelectedYear] = useState('2026');
+  const [selectedCategory, setSelectedCategory] = useState('ALL'); // ALL, LAPTOP, SMARTPHONE
   
   // Collapse state for employee details per company master
   const [expandedCompanyId, setExpandedCompanyId] = useState(null);
@@ -45,6 +46,11 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   const [editingCompanyBudget, setEditingCompanyBudget] = useState('');
 
   const YEARS = ['2026', '2025', '2024'];
+  const CATEGORIES = [
+    { value: 'ALL', label: 'Semua Kategori' },
+    { value: 'LAPTOP', label: 'Laptop / PC' },
+    { value: 'SMARTPHONE', label: 'Smartphone' }
+  ];
   const headers = {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -53,7 +59,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   const fetchAnalysisData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/reports/rental-analysis?year=${selectedYear}`, { headers });
+      const res = await fetch(`${API_URL}/reports/rental-analysis?year=${selectedYear}&category=${selectedCategory}`, { headers });
       if (!res.ok) throw new Error('Gagal mengambil data analisa biaya sewa.');
       const result = await res.json();
       setData(result);
@@ -68,7 +74,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
 
   useEffect(() => {
     fetchAnalysisData();
-  }, [selectedYear]);
+  }, [selectedYear, selectedCategory]);
 
   // Format currency with standard dot separator
   const formatNumber = (num) => {
@@ -222,17 +228,32 @@ export default function RentalAnalysis({ user, token, darkMode }) {
             Proyeksi pengeluaran bulanan aset sewa <span className="text-rose-500 font-bold">(Global)</span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Periode:</label>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer hover:border-rose-500 transition shadow-sm"
-          >
-            {YEARS.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Kategori:</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer hover:border-rose-500 transition shadow-sm"
+            >
+              {CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Periode:</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer hover:border-rose-500 transition shadow-sm"
+            >
+              {YEARS.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

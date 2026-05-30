@@ -191,6 +191,7 @@ router.get('/', verifyToken, async (req, res, next) => {
 router.get('/rental-analysis', verifyToken, async (req, res, next) => {
   try {
     const year = parseInt(req.query.year || new Date().getFullYear());
+    const category = req.query.category || 'ALL'; // ALL, LAPTOP, SMARTPHONE
     
     // 1. Fetch all rental assets (excluding status DISPOSED)
     const assets = await prisma.asset.findMany({
@@ -203,6 +204,33 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
         user: true
       }
     });
+
+    const isSmartphone = (asset) => {
+      const brand = (asset.brand || '').toLowerCase();
+      const model = (asset.model || '').toLowerCase();
+      const os = (asset.os || '').toLowerCase();
+      const ram = (asset.ram || '').toLowerCase();
+
+      return (brand === 'apple' && model.includes('iphone')) ||
+             os.includes('ios') ||
+             os.includes('android') ||
+             brand === 'samsung' ||
+             brand === 'oppo' ||
+             brand === 'vivo' ||
+             brand === 'xiaomi' ||
+             brand === 'realme' ||
+             brand === 'infinix' ||
+             brand === 'iqoo' ||
+             ram.includes('4 gb') ||
+             ram.includes('4gb');
+    };
+
+    let filteredAssets = assets;
+    if (category === 'LAPTOP') {
+      filteredAssets = assets.filter(a => !isSmartphone(a));
+    } else if (category === 'SMARTPHONE') {
+      filteredAssets = assets.filter(a => isSmartphone(a));
+    }
 
     // 2. Fetch all company masters with their branches and users to aggregate budgets
     const companyMasters = await prisma.companyMaster.findMany({
@@ -236,7 +264,7 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
       const yearlyBudget = uniqueUsers.reduce((sum, u) => sum + u.yearlyBudget, 0);
 
       // Find rental assets for this company master
-      const companyAssets = assets.filter(a => a.companyMasterId === master.id);
+      const companyAssets = filteredAssets.filter(a => a.companyMasterId === master.id);
       
       // Calculate monthly costs for each month of the selected year
       const monthlyCosts = Array(12).fill(0);
