@@ -12,7 +12,10 @@ import {
   DollarSign, 
   X, 
   CheckCircle2, 
-  Loader2 
+  Loader2,
+  Wallet,
+  Activity,
+  ArrowUpRight 
 } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 import Swal from 'sweetalert2';
@@ -33,6 +36,9 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   
   // Collapse state for employee details per company master
   const [expandedCompanyId, setExpandedCompanyId] = useState(null);
+  
+  // Interactive chart hover tracking
+  const [hoveredPointIdx, setHoveredPointIdx] = useState(null);
   
   // Breakdown modal states
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
@@ -238,70 +244,228 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   // SVG Line path string
   const linePath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   // SVG Area path string (goes down to closing bottom axis)
-  const areaPath = points.length > 0 
+const areaPath = points.length > 0 
     ? `${linePath} L ${points[points.length - 1].x} ${padTop + chartHeight} L ${points[0].x} ${padTop + chartHeight} Z`
     : '';
 
   return (
-    <div className="space-y-6">
-      
+    <div className="space-y-6 animate-fade-in">
+      {/* Premium Injected Styles */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleUp {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { box-shadow: 0 0 12px rgba(244, 63, 94, 0.2); }
+          50% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.45); }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-scale-up {
+          animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .glass-card {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(12px);
+          border: 1px border;
+          border-color: rgba(226, 232, 240, 0.8);
+        }
+        .dark .glass-card {
+          background: rgba(15, 23, 42, 0.7);
+          backdrop-filter: blur(12px);
+          border-color: rgba(30, 41, 59, 0.8);
+        }
+        .glow-border:hover {
+          border-color: rgba(244, 63, 94, 0.4) !important;
+          box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.08);
+          transform: translateY(-2px);
+          transition: all 0.25s ease;
+        }
+        .active-glow {
+          animation: pulseGlow 3s infinite ease-in-out;
+        }
+        .gradient-text {
+          background: linear-gradient(135deg, #f43f5e 0%, #d946ef 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar {
+          height: 6px;
+          width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+          background: rgba(244, 63, 94, 0.25);
+          border-radius: 99px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(244, 63, 94, 0.45);
+        }
+      `}</style>
+
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-5">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
-            <TrendingUp className="w-7 h-7 text-rose-500" />
-            Analisa Biaya Sewa
-          </h1>
-          <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold mt-1">
-            Proyeksi pengeluaran bulanan aset sewa <span className="text-rose-500 font-bold">(Global)</span>
-          </p>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-rose-500/10 dark:bg-rose-500/20 text-rose-500 rounded-2xl">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-slate-100">
+                Analisa Biaya Sewa
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold mt-0.5">
+                Proyeksi pengeluaran bulanan dan efisiensi anggaran sewa perangkat
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Kategori:</label>
+
+        {/* Dropdowns */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-850 rounded-2xl px-3 py-1.5 shadow-sm">
+            <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider">Kategori:</span>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer hover:border-rose-500 transition shadow-sm"
+              className="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer hover:text-rose-500 transition"
             >
               {CATEGORIES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+                <option key={c.value} className="dark:bg-slate-950" value={c.value}>{c.label}</option>
               ))}
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Periode:</label>
+          <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-850 rounded-2xl px-3 py-1.5 shadow-sm">
+            <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tahun:</span>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer hover:border-rose-500 transition shadow-sm"
+              className="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer hover:text-rose-500 transition"
             >
               {YEARS.map(y => (
-                <option key={y} value={y}>{y}</option>
+                <option key={y} className="dark:bg-slate-950" value={y}>{y}</option>
               ))}
             </select>
           </div>
         </div>
       </div>
 
-      {/* 1. Line Chart Section */}
-      <div className="glass-panel p-5 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 shadow-sm">
-        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Grafik Proyeksi Pengeluaran Bulanan</h3>
-        
-        {/* Custom SVG Line Chart */}
-        <div className="w-full overflow-x-auto">
+      {/* 4 Premium Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Cost Card */}
+        <div className="glass-card glow-border rounded-3xl p-5 shadow-sm transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 dark:bg-rose-500/10 rounded-full blur-3xl -mr-8 -mt-8 pointer-events-none"></div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Total Biaya (Proyeksi)</span>
+            <div className="p-2 bg-rose-500/10 dark:bg-rose-500/20 text-rose-500 rounded-xl">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-xl font-black text-slate-850 dark:text-slate-100 font-mono tracking-tight">
+              {formatCurrency(grandTotalCost)}
+            </h3>
+            <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase mt-1">12 Bulan Proyeksi</p>
+          </div>
+        </div>
+
+        {/* Budget Card */}
+        <div className="glass-card glow-border rounded-3xl p-5 shadow-sm transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl -mr-8 -mt-8 pointer-events-none"></div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-gray-455 dark:text-slate-400 uppercase tracking-wider">Batas Anggaran (Budget)</span>
+            <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500 rounded-xl">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-xl font-black text-slate-850 dark:text-slate-100 font-mono tracking-tight">
+              {formatCurrency(grandTotalBudget)}
+            </h3>
+            <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase mt-1">
+              Rp {formatNumber(grandTotalBudget / 12)} / Bulan
+            </p>
+          </div>
+        </div>
+
+        {/* Difference Card */}
+        <div className={`glass-card glow-border rounded-3xl p-5 shadow-sm transition-all duration-200 flex flex-col justify-between relative overflow-hidden`}>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 dark:bg-sky-500/10 rounded-full blur-3xl -mr-8 -mt-8 pointer-events-none"></div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-gray-455 dark:text-slate-400 uppercase tracking-wider">Sisa Anggaran</span>
+            <div className={`p-2 rounded-xl ${grandTotalDifference >= 0 ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/10 dark:bg-rose-500/20 text-rose-500'}`}>
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className={`text-xl font-black font-mono tracking-tight ${grandTotalDifference >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-600 dark:text-rose-455'}`}>
+              {grandTotalDifference >= 0 ? '+' : '-'}{formatCurrency(Math.abs(grandTotalDifference))}
+            </h3>
+            <span className={`inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded mt-1.5 ${grandTotalDifference >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+              {grandTotalDifference >= 0 ? 'Hemat / Under' : 'Over Budget'}
+            </span>
+          </div>
+        </div>
+
+        {/* Devices Density Card */}
+        <div className="glass-card glow-border rounded-3xl p-5 shadow-sm transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl -mr-8 -mt-8 pointer-events-none"></div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-gray-455 dark:text-slate-400 uppercase tracking-wider">Kepadatan Perangkat</span>
+            <div className="p-2 bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-500 rounded-xl">
+              <Activity className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-xl font-black text-slate-850 dark:text-slate-100 font-mono tracking-tight">
+              {grandTotalDevices} Perangkat
+            </h3>
+            <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase mt-1">
+              {Math.round(grandTotalUtilization)}% Utilitas Budget
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* SVG Line Chart Section */}
+      <div className="glass-card rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800/80 shadow-sm relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div>
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Proyeksi Arus Kas Pengeluaran Sewa</h3>
+            <p className="text-[10px] text-gray-450 dark:text-slate-500 font-medium">Arahkan kursor pada poin grafik untuk melihat nominal detail bulanan</p>
+          </div>
+          {/* Hover Status Output */}
+          <div className="text-right">
+            <span className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Live Cost Preview:</span>
+            <span className="text-sm font-black text-rose-500 font-mono">
+              {hoveredPointIdx !== null 
+                ? `${MONTH_NAMES[hoveredPointIdx]}: ${formatCurrency(monthlyTotals[hoveredPointIdx])}`
+                : `Rata-rata: ${formatCurrency(monthlyTotals.reduce((s,v)=>s+v,0)/12)}`
+              }
+            </span>
+          </div>
+        </div>
+
+        {/* SVG Container */}
+        <div className="w-full overflow-x-auto custom-scroll pb-2">
           <svg 
             viewBox={`0 0 ${totalChartWidth} ${totalChartHeight}`} 
-            className="w-full min-w-[750px] overflow-visible"
+            className="w-full min-w-[800px] overflow-visible"
           >
             <defs>
-              {/* Fade Area Gradient */}
               <linearGradient id="chartAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.18" />
+                <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.22" />
                 <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.0" />
               </linearGradient>
-              {/* Line Stroke Gradient */}
               <linearGradient id="chartLineGradient" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#f43f5e" />
                 <stop offset="100%" stopColor="#ec4899" />
@@ -314,23 +478,23 @@ export default function RentalAnalysis({ user, token, darkMode }) {
               const val = maxMonthlyVal * fraction;
               const y = padTop + chartHeight - (fraction * chartHeight);
               return (
-                <g key={idx} className="opacity-40">
+                <g key={idx} className="opacity-60">
                   <line 
                     x1={padLeft} 
                     y1={y} 
                     x2={padLeft + chartWidth} 
                     y2={y} 
                     stroke="currentColor" 
-                    strokeDasharray="4 4"
-                    className="text-gray-200 dark:text-slate-800"
+                    strokeDasharray="5 5"
+                    className="text-slate-100 dark:text-slate-850"
                   />
                   <text 
-                    x={padLeft - 10} 
+                    x={padLeft - 12} 
                     y={y + 4} 
                     textAnchor="end" 
-                    className="text-[9px] font-bold fill-gray-400 dark:fill-slate-500 font-mono"
+                    className="text-[9px] font-black fill-gray-400 dark:fill-slate-500 font-mono"
                   >
-                    {val >= 1000000 ? `${(val / 1000000).toFixed(0)} Jt` : formatNumber(val)}
+                    {val >= 1000000 ? `${(val / 1000000).toFixed(1)}jt` : formatNumber(val)}
                   </text>
                 </g>
               );
@@ -341,7 +505,20 @@ export default function RentalAnalysis({ user, token, darkMode }) {
               <path d={areaPath} fill="url(#chartAreaGradient)" />
             )}
 
-            {/* Line Path */}
+            {/* Glowing Line Shadow */}
+            {linePath && (
+              <path 
+                d={linePath} 
+                fill="none" 
+                stroke="#f43f5e" 
+                strokeWidth="7" 
+                opacity="0.12"
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+              />
+            )}
+
+            {/* Main Line Path */}
             {linePath && (
               <path 
                 d={linePath} 
@@ -353,119 +530,144 @@ export default function RentalAnalysis({ user, token, darkMode }) {
               />
             )}
 
-            {/* Data Dots and X-axis Labels */}
-            {points.map((p, idx) => (
-              <g key={idx} className="group cursor-pointer">
-                {/* Highlight Hover Circle */}
-                <circle 
-                  cx={p.x} 
-                  cy={p.y} 
-                  r="7" 
-                  fill="#f43f5e" 
-                  className="opacity-0 group-hover:opacity-30 transition-opacity duration-150" 
-                />
-                {/* Point dot */}
-                <circle 
-                  cx={p.x} 
-                  cy={p.y} 
-                  r="4" 
-                  fill="#ffffff" 
-                  stroke="#f43f5e" 
-                  strokeWidth="2.5" 
-                />
-                {/* Tooltip value */}
-                <g className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                  {/* Tooltip Card Background */}
-                  <rect 
-                    x={p.x - 70} 
-                    y={p.y - 32} 
-                    width="140" 
-                    height="22" 
-                    rx="6" 
-                    fill="#1e293b" 
-                    className="shadow-md"
+            {/* Vertical Indicator Line */}
+            {hoveredPointIdx !== null && (
+              <line
+                x1={points[hoveredPointIdx].x}
+                y1={padTop}
+                x2={points[hoveredPointIdx].x}
+                y2={padTop + chartHeight}
+                stroke="#f43f5e"
+                strokeWidth="1.5"
+                strokeDasharray="4 4"
+                opacity="0.5"
+                className="pointer-events-none"
+              />
+            )}
+
+            {/* Chart Interactive Points */}
+            {points.map((p, idx) => {
+              const isHovered = hoveredPointIdx === idx;
+              return (
+                <g key={idx} className="pointer-events-none">
+                  {/* Outer glow ring when hovered */}
+                  {isHovered && (
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r="9"
+                      fill="#f43f5e"
+                      opacity="0.35"
+                      className="animate-ping"
+                    />
+                  )}
+                  {/* Point core */}
+                  <circle 
+                    cx={p.x} 
+                    cy={p.y} 
+                    r={isHovered ? "5.5" : "3.5"} 
+                    fill={isHovered ? "#f43f5e" : "#ffffff"} 
+                    stroke="#f43f5e" 
+                    strokeWidth="2.5" 
+                    className="transition-all duration-150"
                   />
+                  {/* X Axis labels */}
                   <text 
                     x={p.x} 
-                    y={p.y - 17} 
+                    y={padTop + chartHeight + 20} 
                     textAnchor="middle" 
-                    fill="#ffffff" 
-                    className="text-[9px] font-bold font-sans"
+                    className={`text-[9px] font-black ${isHovered ? 'fill-rose-500 scale-110 font-black' : 'fill-gray-450 dark:fill-slate-450'}`}
                   >
-                    {p.month}: {formatCurrency(p.value)}
+                    {p.month}
                   </text>
                 </g>
-                {/* X Axis Month Name */}
-                <text 
-                  x={p.x} 
-                  y={padTop + chartHeight + 20} 
-                  textAnchor="middle" 
-                  className="text-[9px] font-extrabold fill-gray-400 dark:fill-slate-400"
-                >
-                  {p.month}
-                </text>
-              </g>
-            ))}
+              );
+            })}
+
+            {/* Invisible tracking columns for smooth mouse hover */}
+            {points.map((p, idx) => {
+              const colWidth = chartWidth / 11;
+              const colX = p.x - colWidth / 2;
+              return (
+                <rect
+                  key={idx}
+                  x={colX}
+                  y={padTop}
+                  width={colWidth}
+                  height={chartHeight}
+                  fill="transparent"
+                  className="cursor-pointer pointer-events-auto"
+                  onMouseEnter={() => setHoveredPointIdx(idx)}
+                  onMouseLeave={() => setHoveredPointIdx(null)}
+                />
+              );
+            })}
           </svg>
         </div>
       </div>
 
-      {/* 2. Monthly Cost Table Section */}
-      <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden shadow-sm">
-        <div className="p-5 border-b border-gray-150 dark:border-slate-850 flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Breakdown Biaya Bulanan</h3>
-          <span className="text-[10px] text-gray-500 font-bold px-2 py-0.5 bg-gray-100 dark:bg-slate-800 rounded-md">IDR (Rupiah)</span>
+      {/* Breakdown Cost Table Section */}
+      <div className="glass-card rounded-3xl border border-slate-200/60 dark:border-slate-800/80 overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Matriks Anggaran Bulanan</h3>
+            <p className="text-[10px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">Detail biaya bulanan per badan usaha dalam Rupiah (IDR)</p>
+          </div>
+          <span className="text-[9px] text-rose-500 font-black px-2.5 py-1 bg-rose-500/10 rounded-xl uppercase tracking-wider">Unit: Rupiah</span>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scroll">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-gray-500 dark:text-slate-450 border-b border-gray-150 dark:border-slate-850 font-bold uppercase tracking-wider text-[9px]">
-                <th className="py-3 px-4 min-w-[200px]">Unit Bisnis</th>
+              <tr className="bg-slate-50/50 dark:bg-slate-950/20 text-gray-500 dark:text-slate-450 border-b border-slate-100 dark:border-slate-850 font-black uppercase tracking-wider text-[9px]">
+                <th className="py-4.5 px-5 min-w-[240px]">Unit Bisnis</th>
                 {MONTH_NAMES.map(m => (
-                  <th key={m} className="py-3 px-3 text-right">{m}</th>
+                  <th key={m} className="py-4.5 px-3 text-right">{m}</th>
                 ))}
-                <th className="py-3 px-4 text-right">Total</th>
+                <th className="py-4.5 px-5 text-right bg-rose-500/[0.02] dark:bg-rose-500/[0.01]">Total Proyeksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-150 dark:divide-slate-850">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-850/60">
               {companyStats.map(comp => (
-                <tr key={comp.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                  <td className="py-3 px-4 font-bold text-brand-600 dark:text-brand-400">
+                <tr key={comp.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-900/20 transition-colors duration-150">
+                  <td className="py-4 px-5 font-bold">
                     <button
                       onClick={() => {
                         setBreakdownCompany(comp);
                         setIsBreakdownModalOpen(true);
                       }}
-                      className="hover:underline hover:text-brand-500 text-left focus:outline-none flex items-center gap-1.5"
+                      className="hover:text-rose-500 text-left focus:outline-none flex items-center gap-2 group"
                       title="Lihat Detail Aset Sewa"
                     >
-                      <Building2 className="w-3.5 h-3.5 text-slate-450 shrink-0" />
-                      <span>{comp.name}</span>
+                      <div className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-rose-500/10 group-hover:text-rose-500 transition duration-150">
+                        <Building2 className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-[12px] text-slate-800 dark:text-slate-200 font-bold tracking-tight">{comp.name}</span>
+                      <ArrowUpRight className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition duration-150" />
                     </button>
                   </td>
                   {comp.monthlyCosts.map((cost, idx) => (
-                    <td key={idx} className="py-3 px-3 text-right font-semibold text-gray-700 dark:text-slate-350">
-                      {cost > 0 ? formatNumber(cost) : '-'}
+                    <td key={idx} className="py-4 px-3 text-right font-mono font-bold text-slate-600 dark:text-slate-350">
+                      {cost > 0 ? formatNumber(cost) : <span className="text-gray-300 dark:text-slate-800">-</span>}
                     </td>
                   ))}
-                  <td className="py-3 px-4 text-right font-black text-slate-800 dark:text-slate-200">
-                    {formatNumber(comp.totalCost)}
+                  <td className="py-4 px-5 text-right font-black text-slate-800 dark:text-slate-100 font-mono text-[12px] bg-rose-500/[0.02] dark:bg-rose-500/[0.01]">
+                    {formatCurrency(comp.totalCost)}
                   </td>
                 </tr>
               ))}
               
-              {/* Table Total Row */}
-              <tr className="bg-slate-50/50 dark:bg-slate-950/10 border-t-2 border-gray-200 dark:border-slate-800 font-bold">
-                <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
+              {/* Grand Total Row */}
+              <tr className="bg-slate-50/50 dark:bg-slate-950/20 font-bold border-t-2 border-slate-200 dark:border-slate-800">
+                <td className="py-4 px-5 font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider text-[10px]">
                   TOTAL BULANAN
                 </td>
                 {monthlyTotals.map((tot, idx) => (
-                  <td key={idx} className="py-3.5 px-3 text-right font-extrabold text-slate-800 dark:text-slate-200">
+                  <td key={idx} className="py-4 px-3 text-right font-extrabold text-slate-800 dark:text-slate-100 font-mono text-[12px]">
                     {tot > 0 ? formatNumber(tot) : '-'}
                   </td>
                 ))}
-                <td className="py-3.5 px-4 text-right font-black text-rose-600 dark:text-rose-455 text-sm">
-                  {formatNumber(companyStats.reduce((sum, c) => sum + c.totalCost, 0))}
+                <td className="py-4 px-5 text-right font-black text-rose-500 text-sm font-mono bg-rose-500/5 dark:bg-rose-500/10">
+                  {formatCurrency(companyStats.reduce((sum, c) => sum + c.totalCost, 0))}
                 </td>
               </tr>
             </tbody>
@@ -473,70 +675,78 @@ export default function RentalAnalysis({ user, token, darkMode }) {
         </div>
       </div>
 
-      {/* 3. Validation Table & Budgets */}
-      <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden shadow-sm">
-        <div className="p-5 border-b border-gray-150 dark:border-slate-850">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Validasi Tahunan vs Budget</h3>
-          <p className="text-[10px] text-gray-500 font-semibold mt-1">Berdasarkan akumulasi budget bulanan karyawan yang dikalkulasi ke setahun per Unit Bisnis</p>
+      {/* Validation vs Budget Table Section */}
+      <div className="glass-card rounded-3xl border border-slate-200/60 dark:border-slate-800/80 overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Validasi Tahunan vs Anggaran</h3>
+            <p className="text-[10px] text-gray-455 dark:text-slate-500 font-semibold mt-0.5">Analisa efisiensi beban biaya sewa tahunan terhadap plafon anggaran teralokasi</p>
+          </div>
+          <span className="text-[9px] text-slate-455 dark:text-slate-400 font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-xl">Banding Tahunan</span>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scroll">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-gray-500 dark:text-slate-450 border-b border-gray-150 dark:border-slate-850 font-bold uppercase tracking-wider text-[9px]">
-                <th className="py-3 px-4">Unit Bisnis</th>
-                <th className="py-3 px-3 text-center">Total Device</th>
-                <th className="py-3 px-3 text-right">Budget Tahunan</th>
-                <th className="py-3 px-3 text-right">Proyeksi Biaya Sewa</th>
-                <th className="py-3 px-3 text-right">Sisa / Selisih</th>
-                <th className="py-3 px-3 text-center">Status</th>
-                <th className="py-3 px-4 min-w-[200px]">Beban Budget</th>
+              <tr className="bg-slate-50/50 dark:bg-slate-950/20 text-gray-500 dark:text-slate-450 border-b border-slate-100 dark:border-slate-850 font-black uppercase tracking-wider text-[9px]">
+                <th className="py-4.5 px-5">Unit Bisnis</th>
+                <th className="py-4.5 px-3 text-center">Jumlah Device</th>
+                <th className="py-4.5 px-3 text-right">Budget Tahunan</th>
+                <th className="py-4.5 px-3 text-right">Biaya Sewa</th>
+                <th className="py-4.5 px-3 text-right">Sisa Selisih</th>
+                <th className="py-4.5 px-3 text-center">Status Beban</th>
+                <th className="py-4.5 px-5 min-w-[200px]">Utilisasi Budget</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-150 dark:divide-slate-850">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-850/60">
               {companyStats.map(comp => {
                 const diff = comp.yearlyBudget - comp.totalCost;
                 const util = comp.yearlyBudget > 0 ? (comp.totalCost / comp.yearlyBudget) * 100 : 0;
                 const isUnderBudget = diff >= 0;
                 
-                // Color formatting for progress bar
-                let progressColor = 'bg-emerald-500';
-                if (util > 100) progressColor = 'bg-rose-500';
-                else if (util > 80) progressColor = 'bg-amber-500';
+                let progressColor = 'from-emerald-500 to-teal-500';
+                let progressGlow = 'rgba(16, 185, 129, 0.2)';
+                if (util > 100) {
+                  progressColor = 'from-rose-500 to-pink-500';
+                  progressGlow = 'rgba(244, 63, 94, 0.2)';
+                } else if (util > 80) {
+                  progressColor = 'from-amber-500 to-orange-500';
+                  progressGlow = 'rgba(245, 158, 11, 0.2)';
+                }
 
                 const isExpanded = expandedCompanyId === comp.id;
 
                 return (
                   <React.Fragment key={comp.id}>
                     {/* Main Company Row */}
-                    <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">
+                    <tr className="hover:bg-slate-50/30 dark:hover:bg-slate-900/10 transition-colors duration-150">
+                      <td className="py-4.5 px-5 font-bold">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setExpandedCompanyId(isExpanded ? null : comp.id)}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 rounded-md transition"
+                            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg transition"
                             title="Tampilkan Detail Karyawan"
                           >
-                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           </button>
                           <button
                             onClick={() => {
                               setBreakdownCompany(comp);
                               setIsBreakdownModalOpen(true);
                             }}
-                            className="hover:underline hover:text-rose-500 text-left focus:outline-none flex items-center gap-1.5"
+                            className="hover:text-rose-500 text-left focus:outline-none flex items-center gap-1.5 font-bold tracking-tight"
                             title="Lihat Detail Aset Sewa"
                           >
                             <Building2 className="w-3.5 h-3.5 text-slate-450 shrink-0" />
-                            <span>{comp.name}</span>
+                            <span className="text-[12px] text-slate-850 dark:text-slate-200 font-bold tracking-tight">{comp.name}</span>
                           </button>
                         </div>
                       </td>
-                      <td className="py-3 px-3 text-center font-bold text-slate-600 dark:text-slate-350">{comp.totalDevices} Unit</td>
-                      <td className="py-3 px-3 text-right font-extrabold text-slate-800 dark:text-slate-200">
+                      <td className="py-4.5 px-3 text-center font-extrabold text-slate-600 dark:text-slate-350">{comp.totalDevices} Unit</td>
+                      <td className="py-4.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <div className="text-right">
-                            <p>{formatCurrency(comp.yearlyBudget)}</p>
-                            <p className="text-[9px] text-gray-400 font-normal">Rp {formatNumber(comp.monthlyBudget)}/bln</p>
+                            <p className="font-extrabold text-slate-850 dark:text-slate-200 font-mono">{formatCurrency(comp.yearlyBudget)}</p>
+                            <p className="text-[9px] text-gray-400 dark:text-slate-500 font-semibold">Rp {formatNumber(comp.monthlyBudget)}/bln</p>
                           </div>
                           <button
                             onClick={() => {
@@ -546,28 +756,32 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                               setEditingCompanySharedBudget(formatNumberForInput(comp.sharedBudget));
                               setIsEditCompanyModalOpen(true);
                             }}
-                            className="p-1 text-gray-400 hover:text-rose-500 rounded transition"
+                            className="p-1.5 bg-slate-100 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 rounded-lg transition"
                             title="Atur Budget Unit Bisnis"
                           >
-                            <Edit3 className="w-3 h-3" />
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
-                      <td className="py-3 px-3 text-right font-extrabold text-slate-800 dark:text-slate-200">{formatCurrency(comp.totalCost)}</td>
-                      <td className={`py-3 px-3 text-right font-bold ${isUnderBudget ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {isUnderBudget ? '+ ' : '- '}{formatCurrency(Math.abs(diff))}
+                      <td className="py-4.5 px-3 text-right font-extrabold text-slate-850 dark:text-slate-200 font-mono">{formatCurrency(comp.totalCost)}</td>
+                      <td className={`py-4.5 px-3 text-right font-black font-mono ${isUnderBudget ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-600 dark:text-rose-455'}`}>
+                        {isUnderBudget ? '+' : '-'}{formatCurrency(Math.abs(diff))}
                       </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${isUnderBudget ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
+                      <td className="py-4.5 px-3 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${isUnderBudget ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isUnderBudget ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
                           {isUnderBudget ? 'Aman' : 'Over Budget'}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-4.5 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex-1 h-2 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full transition-all duration-500 ${progressColor}`} style={{ width: `${Math.min(util, 100)}%` }}></div>
+                          <div className="flex-1 h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative shadow-inner">
+                            <div 
+                              className={`h-full rounded-full bg-gradient-to-r ${progressColor} transition-all duration-500`} 
+                              style={{ width: `${Math.min(util, 100)}%`, boxShadow: `0 0 8px ${progressGlow}` }}
+                            ></div>
                           </div>
-                          <span className="font-extrabold text-slate-600 dark:text-slate-350 min-w-[32px] text-right font-mono">{Math.round(util)}%</span>
+                          <span className="font-extrabold text-slate-700 dark:text-slate-350 min-w-[34px] text-right font-mono text-[11px]">{Math.round(util)}%</span>
                         </div>
                       </td>
                     </tr>
@@ -575,23 +789,23 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                     {/* Collapsible Employee Budget Details */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan="7" className="bg-slate-50/50 dark:bg-slate-950/15 px-4 py-3 border-l-4 border-l-rose-500">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wider mb-2">
+                        <td colSpan="7" className="bg-slate-50/30 dark:bg-slate-950/10 px-5 py-4 border-l-4 border-l-rose-500">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase tracking-wider mb-1">
                               <Users className="w-3.5 h-3.5 text-rose-500" />
-                              Detail Budget Karyawan ({comp.name})
+                              Breakdown Alokasi Anggaran ({comp.name})
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                               {/* Shared/Branch Budget Card */}
-                              <div className="bg-rose-500/[0.03] dark:bg-slate-900/60 border border-rose-500/10 dark:border-slate-800 rounded-xl p-3 flex justify-between items-center shadow-sm">
+                              <div className="bg-rose-500/[0.02] dark:bg-slate-900/40 border border-rose-500/10 dark:border-slate-800/80 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:border-rose-500/35 transition duration-200">
                                 <div>
-                                  <p className="font-bold text-rose-600 dark:text-rose-400">Shared / Cabang (Operasional)</p>
-                                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Budget Khusus Perangkat Bersama</p>
+                                  <p className="font-bold text-slate-850 dark:text-slate-200 text-xs">Shared / Cabang (Operasional)</p>
+                                  <p className="text-[9px] text-gray-400 dark:text-slate-500 font-semibold mt-0.5 uppercase tracking-wider">Perangkat Bersama Kantor</p>
                                 </div>
-                                <div className="text-right flex items-center gap-2">
+                                <div className="text-right flex items-center gap-3">
                                   <div>
-                                    <p className="font-black text-rose-600 dark:text-rose-455 font-mono text-[11px]">{formatCurrency(comp.sharedBudget)}</p>
-                                    <p className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">Per Bulan</p>
+                                    <p className="font-black text-rose-500 font-mono text-[11px]">{formatCurrency(comp.sharedBudget)}</p>
+                                    <p className="text-[8px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-widest">Per Bulan</p>
                                   </div>
                                   <button
                                     onClick={() => {
@@ -601,7 +815,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                                       setEditingCompanySharedBudget(formatNumberForInput(comp.sharedBudget));
                                       setIsEditCompanyModalOpen(true);
                                     }}
-                                    className="p-1 hover:bg-gray-50 dark:hover:bg-slate-855 border border-gray-150 dark:border-slate-800 text-gray-455 hover:text-rose-500 rounded-lg transition"
+                                    className="p-1.5 hover:bg-rose-500/15 border border-slate-200/50 dark:border-slate-800 text-slate-455 hover:text-rose-500 rounded-lg transition"
                                     title="Atur Budget Unit Bisnis"
                                   >
                                     <Edit3 className="w-3 h-3" />
@@ -609,16 +823,22 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                                 </div>
                               </div>
 
+                              {/* Employees mapping */}
                               {comp.users.map(u => (
-                                <div key={u.id} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-slate-800 rounded-xl p-3 flex justify-between items-center shadow-sm">
-                                  <div>
-                                    <p className="font-bold text-slate-800 dark:text-slate-200">{u.name}</p>
-                                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">NIP: {u.id}</p>
-                                  </div>
-                                  <div className="text-right flex items-center gap-2">
+                                <div key={u.id} className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:border-rose-500/25 transition duration-200">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-xs flex items-center justify-center border border-slate-200/20 uppercase">
+                                      {u.name ? u.name.split(' ').map(n=>n[0]).slice(0,2).join('') : '?'}
+                                    </div>
                                     <div>
-                                      <p className="font-black text-rose-600 dark:text-rose-455 font-mono text-[11px]">{formatCurrency(u.monthlyBudget)}</p>
-                                      <p className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">Per Bulan</p>
+                                      <p className="font-bold text-slate-800 dark:text-slate-200 text-xs tracking-tight">{u.name}</p>
+                                      <p className="text-[9px] text-gray-400 dark:text-slate-500 font-mono mt-0.5">NIP: {u.id}</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right flex items-center gap-3">
+                                    <div>
+                                      <p className="font-black text-slate-850 dark:text-slate-100 font-mono text-[11px]">{formatCurrency(u.monthlyBudget)}</p>
+                                      <p className="text-[8px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-widest">Per Bulan</p>
                                     </div>
                                     <button
                                       onClick={() => {
@@ -626,7 +846,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                                         setEditingUserBudget(formatNumberForInput(u.monthlyBudget));
                                         setIsEditUserModalOpen(true);
                                       }}
-                                      className="p-1 hover:bg-gray-50 dark:hover:bg-slate-855 border border-gray-150 dark:border-slate-800 text-gray-455 hover:text-rose-500 rounded-lg transition"
+                                      className="p-1.5 hover:bg-rose-500/15 border border-slate-200/50 dark:border-slate-800 text-slate-455 hover:text-rose-500 rounded-lg transition"
                                       title="Edit Budget Karyawan"
                                     >
                                       <Edit3 className="w-3 h-3" />
@@ -644,30 +864,31 @@ export default function RentalAnalysis({ user, token, darkMode }) {
               })}
               
               {/* Grand Total Row */}
-              <tr className="bg-slate-50 dark:bg-slate-950/20 border-t-2 border-gray-200 dark:border-slate-800 font-bold">
-                <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
+              <tr className="bg-slate-50 dark:bg-slate-950/20 border-t-2 border-slate-200 dark:border-slate-800 font-bold">
+                <td className="py-4.5 px-5 font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[10px]">
                   GRAND TOTAL
                 </td>
-                <td className="py-3.5 px-3 text-center font-extrabold text-slate-700 dark:text-slate-300">{grandTotalDevices} Unit</td>
-                <td className="py-3.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">{formatCurrency(grandTotalBudget)}</td>
-                <td className="py-3.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">{formatCurrency(grandTotalCost)}</td>
-                <td className={`py-3.5 px-3 text-right font-black ${grandTotalDifference >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                  {grandTotalDifference >= 0 ? '+ ' : '- '}{formatCurrency(Math.abs(grandTotalDifference))}
+                <td className="py-4.5 px-3 text-center font-extrabold text-slate-700 dark:text-slate-350">{grandTotalDevices} Unit</td>
+                <td className="py-4.5 px-3 text-right font-black text-slate-900 dark:text-slate-100 font-mono">{formatCurrency(grandTotalBudget)}</td>
+                <td className="py-4.5 px-3 text-right font-black text-slate-900 dark:text-slate-100 font-mono">{formatCurrency(grandTotalCost)}</td>
+                <td className={`py-4.5 px-3 text-right font-black font-mono ${grandTotalDifference >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-600 dark:text-rose-455'}`}>
+                  {grandTotalDifference >= 0 ? '+' : '-'}{formatCurrency(Math.abs(grandTotalDifference))}
                 </td>
-                <td className="py-3.5 px-3 text-center">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${grandTotalDifference >= 0 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
+                <td className="py-4.5 px-3 text-center">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${grandTotalDifference >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${grandTotalDifference >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
                     {grandTotalDifference >= 0 ? 'Aman' : 'Over Budget'}
                   </span>
                 </td>
-                <td className="py-3.5 px-4">
+                <td className="py-4.5 px-5">
                   <div className="flex items-center gap-3">
-                    <div className="flex-1 h-2 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2.5 bg-slate-200 dark:bg-slate-850 rounded-full overflow-hidden relative shadow-inner">
                       <div 
-                        className={`h-full rounded-full transition-all duration-500 ${grandTotalUtilization > 100 ? 'bg-rose-500' : grandTotalUtilization > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
-                        style={{ width: `${Math.min(grandTotalUtilization, 100)}%` }}
+                        className={`h-full rounded-full bg-gradient-to-r ${grandTotalUtilization > 100 ? 'from-rose-500 to-pink-500' : grandTotalUtilization > 80 ? 'from-amber-500 to-orange-500' : 'from-emerald-500 to-teal-500'} transition-all duration-500`} 
+                        style={{ width: `${Math.min(grandTotalUtilization, 100)}%`, boxShadow: `0 0 8px ${grandTotalUtilization > 100 ? 'rgba(244,63,94,0.3)' : 'rgba(16,185,129,0.3)'}` }}
                       ></div>
                     </div>
-                    <span className="font-extrabold text-slate-700 dark:text-slate-200 min-w-[32px] text-right font-mono text-xs">{Math.round(grandTotalUtilization)}% Used</span>
+                    <span className="font-extrabold text-slate-800 dark:text-slate-200 min-w-[34px] text-right font-mono text-[11px]">{Math.round(grandTotalUtilization)}%</span>
                   </div>
                 </td>
               </tr>
@@ -676,53 +897,53 @@ export default function RentalAnalysis({ user, token, darkMode }) {
         </div>
       </div>
 
-      {/* 4. Asset Rental Cost Breakdown Modal */}
+      {/* Modal 1: Asset Rental Cost Breakdown */}
       {isBreakdownModalOpen && breakdownCompany && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800 shadow-2xl w-full max-w-4xl overflow-hidden animate-scale-up">
-            
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-850 shadow-2xl w-full max-w-4xl overflow-hidden animate-scale-up">
             {/* Header */}
-            <div className="p-6 border-b border-gray-150 dark:border-slate-850 flex items-start justify-between">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">
-                  Breakdown Biaya Sewa: {breakdownCompany.name}
+                <h3 className="text-base font-black text-slate-850 dark:text-slate-100 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-rose-500" />
+                  Breakdown Aset Sewa: {breakdownCompany.name}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold mt-1">
-                  Breakdown aset sewa
+                <p className="text-xs text-gray-400 dark:text-slate-500 font-semibold mt-0.5">
+                  Daftar rinician unit sewa aktif beserta biaya masing-masing
                 </p>
               </div>
               <button 
                 onClick={() => setIsBreakdownModalOpen(false)}
-                className="text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-lg p-1.5 transition"
+                className="text-gray-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg p-1.5 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            {/* Table */}
-            <div className="overflow-x-auto p-4">
+            {/* Content Table */}
+            <div className="overflow-x-auto max-h-[380px] custom-scroll p-4">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-gray-500 dark:text-slate-450 border-b border-gray-150 dark:border-slate-850 font-extrabold uppercase tracking-wider text-[9px]">
-                    <th className="py-3 px-4">Perangkat</th>
-                    <th className="py-3 px-4">Pengguna</th>
-                    <th className="py-3 px-4">Vendor</th>
-                    <th className="py-3 px-4">Periode Sewa</th>
-                    <th className="py-3 px-4 text-right">Biaya / Bulan</th>
+                  <tr className="bg-slate-50/70 dark:bg-slate-950/20 text-gray-500 dark:text-slate-450 border-b border-slate-100 dark:border-slate-850 font-black uppercase tracking-wider text-[9px]">
+                    <th className="py-3.5 px-4">Nama Perangkat</th>
+                    <th className="py-3.5 px-4">Nama Karyawan</th>
+                    <th className="py-3.5 px-4">Vendor Jasa</th>
+                    <th className="py-3.5 px-4">Periode Kontrak</th>
+                    <th className="py-3.5 px-4 text-right">Biaya / Bulan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-150 dark:divide-slate-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-850/60">
                   {breakdownCompany.assets && breakdownCompany.assets.length > 0 ? (
                     breakdownCompany.assets.map(asset => {
                       const startStr = formatDateDMY(asset.rentalStart);
                       const endStr = formatDateDMY(asset.rentalEnd);
                       
                       return (
-                        <tr key={asset.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors">
+                        <tr key={asset.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-900/10 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="font-bold text-slate-800 dark:text-slate-100">{asset.brand} {asset.model}</div>
-                            <div className="text-[9px] text-gray-400 font-mono mt-0.5">
-                              SN: {asset.assetTag || asset.deviceRef || '-'}
+                            <div className="text-[9px] text-gray-400 dark:text-slate-500 font-mono mt-0.5">
+                              ID/Tag: {asset.assetTag || asset.deviceRef || '-'}
                             </div>
                           </td>
                           <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
@@ -730,11 +951,11 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                               <div>
                                 <span className="font-bold text-slate-800 dark:text-slate-200">{asset.user.name}</span>
                                 {asset.user.department && (
-                                  <span className="text-[10px] text-gray-450 block font-medium">({asset.user.department})</span>
+                                  <span className="text-[9px] text-gray-450 dark:text-slate-500 block font-semibold">({asset.user.department})</span>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-gray-400 italic font-medium">Tersedia di IT</span>
+                              <span className="inline-flex px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded text-[9px] font-black uppercase tracking-wider">Shared / Cabang</span>
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-semibold">
@@ -743,7 +964,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                           <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-mono font-bold">
                             {startStr} s/d {endStr}
                           </td>
-                          <td className="py-3.5 px-4 text-right font-black text-slate-800 dark:text-slate-100 font-mono text-[11px]">
+                          <td className="py-3.5 px-4 text-right font-black text-slate-850 dark:text-slate-100 font-mono text-[11px]">
                             {formatCurrency(asset.rentalCost)}
                           </td>
                         </tr>
@@ -751,8 +972,8 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-gray-450 italic font-semibold">
-                        Tidak ada aset sewa aktif di bawah unit bisnis ini.
+                      <td colSpan="5" className="py-12 text-center text-gray-400 dark:text-slate-500 italic font-semibold">
+                        Tidak ada aset sewa aktif yang tercatat untuk unit bisnis ini.
                       </td>
                     </tr>
                   )}
@@ -761,35 +982,34 @@ export default function RentalAnalysis({ user, token, darkMode }) {
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-gray-150 dark:border-slate-850 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/10">
-              <div className="text-xs text-slate-750 dark:text-slate-300 font-semibold">
-                Estimasi Total Proyeksi Tahun <span className="font-extrabold text-slate-900 dark:text-slate-100">{selectedYear}</span>: <span className="font-black text-rose-500 text-sm ml-1.5">{formatCurrency(breakdownCompany.totalCost)}</span>
+            <div className="p-6 border-t border-slate-100 dark:border-slate-850 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/15">
+              <div className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                Total Proyeksi Tahun {selectedYear}: <span className="font-black text-rose-500 text-sm ml-1">{formatCurrency(breakdownCompany.totalCost)}</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsBreakdownModalOpen(false)}
-                className="px-5 py-2 bg-slate-150 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition"
+                className="px-5 py-2 bg-slate-150 hover:bg-slate-250 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-750 dark:text-slate-200 text-xs font-bold rounded-xl transition"
               >
                 Tutup
               </button>
             </div>
-            
           </div>
         </div>
       )}
 
-      {/* Edit User Budget Modal */}
+      {/* Modal 2: Edit User Budget */}
       {isEditUserModalOpen && editingUser && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
-            <div className="p-5 border-b border-gray-150 dark:border-slate-850 flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-850 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
               <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-4 h-4 text-rose-500" />
-                Edit Budget Karyawan
+                <Users className="w-4.5 h-4.5 text-rose-500" />
+                Atur Anggaran Karyawan
               </h3>
               <button 
                 onClick={() => setIsEditUserModalOpen(false)}
-                className="text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-lg p-1 transition"
+                className="text-gray-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg p-1 transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -797,34 +1017,34 @@ export default function RentalAnalysis({ user, token, darkMode }) {
             
             <form onSubmit={handleUserBudgetSubmit}>
               <div className="p-6 space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block mb-1">Nama Karyawan</label>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{editingUser.name}</p>
-                  <p className="text-xs text-gray-400 font-mono mt-0.5">NIP: {editingUser.id}</p>
+                <div className="bg-slate-50/50 dark:bg-slate-950/15 p-4 rounded-2xl border border-slate-100 dark:border-slate-850">
+                  <span className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider block mb-0.5">Karyawan</span>
+                  <p className="text-sm font-black text-slate-800 dark:text-slate-100">{editingUser.name}</p>
+                  <p className="text-xs text-gray-405 dark:text-slate-500 font-mono mt-0.5">NIP: {editingUser.id}</p>
                 </div>
                 
                 <div>
-                  <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Budget Bulanan (IDR) *</label>
+                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider block mb-2">Batas Budget Bulanan (IDR) *</label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">Rp</span>
                     <input
                       type="text"
                       required
                       value={editingUserBudget}
                       onChange={(e) => setEditingUserBudget(formatNumberForInput(e.target.value))}
                       placeholder="e.g. 500.000"
-                      className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      className="w-full pl-9 pr-4 py-2.5 text-xs font-bold rounded-2xl bg-slate-50/60 dark:bg-slate-955/35 border border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition shadow-inner"
                     />
                   </div>
-                  <p className="text-[9px] text-gray-400 mt-1">Nominal Rupiah akan diformat otomatis dengan titik.</p>
+                  <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-1">Anggaran diset per bulan untuk tagihan sewa laptop/smartphone user ini.</p>
                 </div>
               </div>
               
-              <div className="flex justify-end items-center gap-3 p-5 border-t border-gray-150 dark:border-slate-850">
+              <div className="flex justify-end items-center gap-3 p-5 border-t border-slate-100 dark:border-slate-850">
                 <button
                   type="button"
                   onClick={() => setIsEditUserModalOpen(false)}
-                  className="px-4 py-2 border border-gray-250 dark:border-slate-850 hover:bg-gray-50 dark:hover:bg-slate-800/50 text-gray-655 dark:text-slate-300 text-xs font-bold rounded-xl transition"
+                  className="px-4 py-2 border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-600 dark:text-slate-350 text-xs font-bold rounded-xl transition"
                 >
                   Batal
                 </button>
@@ -843,18 +1063,18 @@ export default function RentalAnalysis({ user, token, darkMode }) {
         </div>
       )}
 
-      {/* Edit Company Budget Distribution Modal */}
+      {/* Modal 3: Edit Company Budget Distribution */}
       {isEditCompanyModalOpen && editingCompany && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
-            <div className="p-5 border-b border-gray-150 dark:border-slate-850 flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-850 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
               <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-rose-500" />
-                Atur Total Budget Unit Bisnis
+                <Building2 className="w-4.5 h-4.5 text-rose-500" />
+                Atur Anggaran Unit Bisnis
               </h3>
               <button 
                 onClick={() => setIsEditCompanyModalOpen(false)}
-                className="text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-lg p-1 transition"
+                className="text-gray-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg p-1 transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -862,65 +1082,69 @@ export default function RentalAnalysis({ user, token, darkMode }) {
             
             <form onSubmit={handleCompanyBudgetSubmit}>
               <div className="p-6 space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block mb-1">Nama Unit Bisnis</label>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{editingCompany.name}</p>
+                <div className="bg-slate-50/50 dark:bg-slate-950/15 p-4 rounded-2xl border border-slate-100 dark:border-slate-850">
+                  <span className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider block mb-0.5">Badan Usaha</span>
+                  <p className="text-sm font-black text-slate-800 dark:text-slate-100">{editingCompany.name}</p>
                 </div>
                 
-                {/* 1. Employee Budget Section */}
-                <div className="space-y-2 border-t border-gray-100 dark:border-slate-850 pt-3">
-                  <label className="text-[10px] font-extrabold text-rose-500 uppercase tracking-wider block">A. Budget Karyawan (Didistribusikan)</label>
-                  <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-slate-950/40 border border-blue-100 dark:border-slate-800/80 text-xs text-blue-700 dark:text-blue-400 flex items-start gap-2.5">
-                    <Info className="w-4.5 h-4.5 text-blue-500 shrink-0 mt-0.5" />
+                {/* Employee Budget Distribution Section */}
+                <div className="space-y-3 border-t border-slate-100 dark:border-slate-850/80 pt-4">
+                  <span className="text-[10px] font-extrabold text-rose-500 uppercase tracking-wider block">A. Anggaran Karyawan (Distribusi)</span>
+                  
+                  <div className="p-3 bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/10 dark:border-sky-500/20 rounded-2xl text-[11px] text-sky-700 dark:text-sky-400 flex items-start gap-2">
+                    <Info className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold">Info Distribusi:</span> Nominal budget ini akan didistribusikan secara merata kepada seluruh karyawan ({editingCompany.users.length} karyawan).
+                      Anggaran ini akan dibagi rata untuk seluruh karyawan aktif di unit bisnis ini (**{editingCompany.users.length} karyawan**).
                     </div>
                   </div>
+
                   <div>
-                    <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Total Budget Bulanan Karyawan (IDR) *</label>
+                    <label className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Total Anggaran Bulanan Karyawan</label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">Rp</span>
                       <input
                         type="text"
                         required
                         value={editingCompanyBudget}
                         onChange={(e) => setEditingCompanyBudget(formatNumberForInput(e.target.value))}
                         placeholder="e.g. 5.000.000"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-bold rounded-2xl bg-slate-50/60 dark:bg-slate-955/35 border border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition shadow-inner"
                       />
                     </div>
-                    <p className="text-[9px] text-gray-400 mt-1">
-                      Rata-rata per karyawan per bulan: {editingCompanyBudget ? formatCurrency((parseFloat(editingCompanyBudget.toString().replace(/\./g, '')) || 0) / editingCompany.users.length) : '-'}
-                    </p>
+                    {editingCompany.users.length > 0 && (
+                      <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-1">
+                        Rata-rata alokasi: {formatCurrency((parseFloat(editingCompanyBudget.toString().replace(/\./g, '')) || 0) / editingCompany.users.length)} / Karyawan
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* 2. Shared/Branch Budget Section */}
-                <div className="space-y-2 border-t border-gray-100 dark:border-slate-850 pt-3">
-                  <label className="text-[10px] font-extrabold text-rose-500 uppercase tracking-wider block">B. Budget Perangkat Shared / Cabang</label>
+                {/* Shared Budget Section */}
+                <div className="space-y-3 border-t border-slate-100 dark:border-slate-850/80 pt-4">
+                  <span className="text-[10px] font-extrabold text-rose-500 uppercase tracking-wider block">B. Anggaran Perangkat Bersama (Shared)</span>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Budget Bulanan Shared / Cabang (IDR) *</label>
+                    <label className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Anggaran Bulanan Shared / Cabang</label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">Rp</span>
                       <input
                         type="text"
                         required
                         value={editingCompanySharedBudget}
                         onChange={(e) => setEditingCompanySharedBudget(formatNumberForInput(e.target.value))}
                         placeholder="e.g. 1.000.000"
-                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-bold rounded-2xl bg-slate-50/60 dark:bg-slate-955/35 border border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition shadow-inner"
                       />
                     </div>
-                    <p className="text-[9px] text-gray-400 mt-1">Nominal budget khusus perangkat operasional bersama (non-karyawan) di cabang/toko.</p>
+                    <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-1">Khusus alokasi sewa perangkat bersama di toko/cabang (non-personal).</p>
                   </div>
                 </div>
               </div>
               
-              <div className="flex justify-end items-center gap-3 p-5 border-t border-gray-150 dark:border-slate-850">
+              <div className="flex justify-end items-center gap-3 p-5 border-t border-slate-100 dark:border-slate-850">
                 <button
                   type="button"
                   onClick={() => setIsEditCompanyModalOpen(false)}
-                  className="px-4 py-2 border border-gray-250 dark:border-slate-850 hover:bg-gray-50 dark:hover:bg-slate-800/50 text-gray-655 dark:text-slate-350 text-xs font-bold rounded-xl transition"
+                  className="px-4 py-2 border border-slate-250 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-600 dark:text-slate-350 text-xs font-bold rounded-xl transition"
                 >
                   Batal
                 </button>
