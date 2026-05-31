@@ -34,6 +34,13 @@ const STATUS_OPTIONS = [
 ];
 
 export default function Assets({ user, token }) {
+  const formatNumberForInput = (value) => {
+    if (value === undefined || value === null || value === '') return '';
+    const raw = value.toString().replace(/\D/g, '');
+    if (!raw) return '';
+    return parseInt(raw, 10).toLocaleString('id-ID');
+  };
+
   const [assets, setAssets] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [companyMasters, setCompanyMasters] = useState([]);
@@ -224,7 +231,7 @@ export default function Assets({ user, token }) {
     setFormOs(asset.os || '');
     setFormOffice(asset.office || '');
     setFormStatus(asset.status);
-    setFormRentalCost(asset.rentalCost.toString());
+    setFormRentalCost(formatNumberForInput(asset.rentalCost));
     setFormRentalStart(asset.rentalStart.split('T')[0]);
     setFormRentalEnd(asset.rentalEnd.split('T')[0]);
     setFormNotes(asset.notes || '');
@@ -323,7 +330,7 @@ export default function Assets({ user, token }) {
         office: formDeviceCategory === 'LAPTOP' ? (formOffice || null) : 'None',
         ownershipType: formOwnershipType,
         status: formStatus,
-        rentalCost: parseFloat(finalRentalCost || 0),
+        rentalCost: parseFloat(formRentalCost.toString().replace(/\./g, '')) || 0,
         rentalStart: new Date(finalRentalStart).toISOString(),
         rentalEnd: new Date(finalRentalEnd).toISOString(),
         notes: formNotes || null,
@@ -1258,10 +1265,10 @@ const totalAssets = assets.length;
                             {formOwnershipType === 'RENTAL' ? 'Biaya Sewa Bulanan (IDR) *' : 'Harga Pembelian (IDR) *'}
                           </label>
                           <input
-                            type="number"
+                            type="text"
                             value={formRentalCost}
-                            onChange={(e) => setFormRentalCost(e.target.value)}
-                            placeholder={formOwnershipType === 'RENTAL' ? 'e.g. 450000' : 'e.g. 15000000'}
+                            onChange={(e) => setFormRentalCost(formatNumberForInput(e.target.value))}
+                            placeholder={formOwnershipType === 'RENTAL' ? 'e.g. 450.000' : 'e.g. 15.000.000'}
                             className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                             required
                           />
@@ -1337,7 +1344,7 @@ const totalAssets = assets.length;
                       {/* Employee Assignee */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          Karyawan Pengguna {formStatus === 'ASSIGNED' && <span className="text-red-500 font-bold">*</span>}
+                          Karyawan Pengguna <span className="text-gray-400 normal-case font-normal">(Kosongkan jika Shared / Cabang)</span>
                         </label>
                         <select
                           value={formUserId}
@@ -1346,12 +1353,9 @@ const totalAssets = assets.length;
                             // If user is selected, auto set status to ASSIGNED
                             if (e.target.value) {
                               setFormStatus('ASSIGNED');
-                            } else {
-                              setFormStatus('AVAILABLE');
                             }
                           }}
                           className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                          required={formStatus === 'ASSIGNED'}
                         >
                           <option value="">-- Tanpa Karyawan (Simpan di Inventory IT) --</option>
                           {users.map(u => (

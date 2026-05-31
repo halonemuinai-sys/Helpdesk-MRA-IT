@@ -63,6 +63,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   const [isEditCompanyModalOpen, setIsEditCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
   const [editingCompanyBudget, setEditingCompanyBudget] = useState('');
+  const [editingCompanySharedBudget, setEditingCompanySharedBudget] = useState('');
 
   const YEARS = ['2026', '2025', '2024'];
   const CATEGORIES = [
@@ -104,6 +105,13 @@ export default function RentalAnalysis({ user, token, darkMode }) {
     return `Rp ${formatNumber(num)}`;
   };
 
+  const formatNumberForInput = (value) => {
+    if (value === undefined || value === null || value === '') return '';
+    const raw = value.toString().replace(/\D/g, '');
+    if (!raw) return '';
+    return parseInt(raw, 10).toLocaleString('id-ID');
+  };
+
   // Handle individual user budget edit submit
   const handleUserBudgetSubmit = async (e) => {
     e.preventDefault();
@@ -116,7 +124,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
         headers,
         body: JSON.stringify({
           userId: editingUser.id,
-          monthlyBudget: parseFloat(editingUserBudget)
+          monthlyBudget: parseFloat(editingUserBudget.toString().replace(/\./g, '')) || 0
         })
       });
       
@@ -155,7 +163,8 @@ export default function RentalAnalysis({ user, token, darkMode }) {
         headers,
         body: JSON.stringify({
           companyMasterId: editingCompany.id,
-          totalBudget: parseFloat(editingCompanyBudget)
+          totalBudget: parseFloat(editingCompanyBudget.toString().replace(/\./g, '')) || 0,
+          sharedBudget: parseFloat(editingCompanySharedBudget.toString().replace(/\./g, '')) || 0
         })
       });
       
@@ -532,11 +541,13 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                           <button
                             onClick={() => {
                               setEditingCompany(comp);
-                              setEditingCompanyBudget(comp.monthlyBudget.toString());
+                              const empTotal = comp.monthlyBudget - comp.sharedBudget;
+                              setEditingCompanyBudget(formatNumberForInput(empTotal));
+                              setEditingCompanySharedBudget(formatNumberForInput(comp.sharedBudget));
                               setIsEditCompanyModalOpen(true);
                             }}
                             className="p-1 text-gray-400 hover:text-rose-500 rounded transition"
-                            title="Distribusikan Budget Perusahaan"
+                            title="Atur Budget Unit Bisnis"
                           >
                             <Edit3 className="w-3 h-3" />
                           </button>
@@ -571,6 +582,33 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                               Detail Budget Karyawan ({comp.name})
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {/* Shared/Branch Budget Card */}
+                              <div className="bg-rose-500/[0.03] dark:bg-slate-900/60 border border-rose-500/10 dark:border-slate-800 rounded-xl p-3 flex justify-between items-center shadow-sm">
+                                <div>
+                                  <p className="font-bold text-rose-600 dark:text-rose-400">Shared / Cabang (Operasional)</p>
+                                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Budget Khusus Perangkat Bersama</p>
+                                </div>
+                                <div className="text-right flex items-center gap-2">
+                                  <div>
+                                    <p className="font-black text-rose-600 dark:text-rose-455 font-mono text-[11px]">{formatCurrency(comp.sharedBudget)}</p>
+                                    <p className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">Per Bulan</p>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      setEditingCompany(comp);
+                                      const empTotal = comp.monthlyBudget - comp.sharedBudget;
+                                      setEditingCompanyBudget(formatNumberForInput(empTotal));
+                                      setEditingCompanySharedBudget(formatNumberForInput(comp.sharedBudget));
+                                      setIsEditCompanyModalOpen(true);
+                                    }}
+                                    className="p-1 hover:bg-gray-50 dark:hover:bg-slate-855 border border-gray-150 dark:border-slate-800 text-gray-455 hover:text-rose-500 rounded-lg transition"
+                                    title="Atur Budget Unit Bisnis"
+                                  >
+                                    <Edit3 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+
                               {comp.users.map(u => (
                                 <div key={u.id} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-slate-800 rounded-xl p-3 flex justify-between items-center shadow-sm">
                                   <div>
@@ -585,10 +623,10 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                                     <button
                                       onClick={() => {
                                         setEditingUser(u);
-                                        setEditingUserBudget(u.monthlyBudget.toString());
+                                        setEditingUserBudget(formatNumberForInput(u.monthlyBudget));
                                         setIsEditUserModalOpen(true);
                                       }}
-                                      className="p-1 hover:bg-gray-50 dark:hover:bg-slate-855 border border-gray-150 dark:border-slate-800 text-gray-450 hover:text-rose-500 rounded-lg transition"
+                                      className="p-1 hover:bg-gray-50 dark:hover:bg-slate-855 border border-gray-150 dark:border-slate-800 text-gray-455 hover:text-rose-500 rounded-lg transition"
                                       title="Edit Budget Karyawan"
                                     >
                                       <Edit3 className="w-3 h-3" />
@@ -766,20 +804,19 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                 </div>
                 
                 <div>
-                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Budget Bulanan (IDR) *</label>
+                  <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Budget Bulanan (IDR) *</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
                     <input
-                      type="number"
+                      type="text"
                       required
-                      min="0"
                       value={editingUserBudget}
-                      onChange={(e) => setEditingUserBudget(e.target.value)}
-                      placeholder="e.g. 500000"
-                      className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      onChange={(e) => setEditingUserBudget(formatNumberForInput(e.target.value))}
+                      placeholder="e.g. 500.000"
+                      className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                     />
                   </div>
-                  <p className="text-[9px] text-gray-400 mt-1">Isi dengan nominal Rupiah tanpa tanda titik atau koma.</p>
+                  <p className="text-[9px] text-gray-400 mt-1">Nominal Rupiah akan diformat otomatis dengan titik.</p>
                 </div>
               </div>
               
@@ -830,28 +867,52 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{editingCompany.name}</p>
                 </div>
                 
-                <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-slate-950/40 border border-blue-100 dark:border-slate-800/80 text-xs text-blue-700 dark:text-blue-400 flex items-start gap-2.5">
-                  <Info className="w-4.5 h-4.5 text-blue-500 shrink-0 mt-0.5" />
+                {/* 1. Employee Budget Section */}
+                <div className="space-y-2 border-t border-gray-100 dark:border-slate-850 pt-3">
+                  <label className="text-[10px] font-extrabold text-rose-500 uppercase tracking-wider block">A. Budget Karyawan (Didistribusikan)</label>
+                  <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-slate-950/40 border border-blue-100 dark:border-slate-800/80 text-xs text-blue-700 dark:text-blue-400 flex items-start gap-2.5">
+                    <Info className="w-4.5 h-4.5 text-blue-500 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Info Distribusi:</span> Nominal budget ini akan didistribusikan secara merata kepada seluruh karyawan ({editingCompany.users.length} karyawan).
+                    </div>
+                  </div>
                   <div>
-                    <span className="font-bold">Info Distribusi:</span> Nominal budget baru akan didistribusikan secara merata kepada seluruh karyawan yang terdaftar di bawah unit bisnis ini ({editingCompany.users.length} karyawan).
+                    <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Total Budget Bulanan Karyawan (IDR) *</label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
+                      <input
+                        type="text"
+                        required
+                        value={editingCompanyBudget}
+                        onChange={(e) => setEditingCompanyBudget(formatNumberForInput(e.target.value))}
+                        placeholder="e.g. 5.000.000"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      />
+                    </div>
+                    <p className="text-[9px] text-gray-400 mt-1">
+                      Rata-rata per karyawan per bulan: {editingCompanyBudget ? formatCurrency((parseFloat(editingCompanyBudget.toString().replace(/\./g, '')) || 0) / editingCompany.users.length) : '-'}
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Total Budget Bulanan Unit Bisnis (IDR) *</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      value={editingCompanyBudget}
-                      onChange={(e) => setEditingCompanyBudget(e.target.value)}
-                      placeholder="e.g. 5000000"
-                      className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                    />
+                {/* 2. Shared/Branch Budget Section */}
+                <div className="space-y-2 border-t border-gray-100 dark:border-slate-850 pt-3">
+                  <label className="text-[10px] font-extrabold text-rose-500 uppercase tracking-wider block">B. Budget Perangkat Shared / Cabang</label>
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider block mb-1.5">Budget Bulanan Shared / Cabang (IDR) *</label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 font-sans">Rp</span>
+                      <input
+                        type="text"
+                        required
+                        value={editingCompanySharedBudget}
+                        onChange={(e) => setEditingCompanySharedBudget(formatNumberForInput(e.target.value))}
+                        placeholder="e.g. 1.000.000"
+                        className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-755 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      />
+                    </div>
+                    <p className="text-[9px] text-gray-400 mt-1">Nominal budget khusus perangkat operasional bersama (non-karyawan) di cabang/toko.</p>
                   </div>
-                  <p className="text-[9px] text-gray-400 mt-1">Rata-rata per karyawan per bulan: {editingCompanyBudget ? formatCurrency(parseFloat(editingCompanyBudget) / editingCompany.users.length) : '-'}</p>
                 </div>
               </div>
               
@@ -870,7 +931,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
                   style={{ backgroundColor: '#f43f5e', color: '#ffffff' }}
                 >
                   {savingBudget ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  <span>Distribusikan</span>
+                  <span>Simpan Perubahan</span>
                 </button>
               </div>
             </form>

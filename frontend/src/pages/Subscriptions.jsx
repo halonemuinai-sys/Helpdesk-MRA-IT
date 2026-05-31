@@ -29,6 +29,13 @@ const CATEGORIES = ['Hosting', 'Domain', 'VPN', 'ISP', 'Subscription', 'Security
 const BILLING_CYCLES = ['1 Bulan', '3 Bulan', '6 Bulan', '1 Tahun', '2 Tahun', '3 Tahun'];
 
 export default function Subscriptions({ user, token }) {
+  const formatNumberForInput = (value) => {
+    if (value === undefined || value === null || value === '') return '';
+    const raw = value.toString().replace(/\D/g, '');
+    if (!raw) return '';
+    return parseInt(raw, 10).toLocaleString('id-ID');
+  };
+
   const [subscriptions, setSubscriptions] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -599,7 +606,7 @@ export default function Subscriptions({ user, token }) {
     setFormVendor(sub.vendor);
     setFormName(sub.name);
     setFormBillingCycle(sub.billingCycle);
-    setFormCost(sub.cost.toString());
+    setFormCost(formatNumberForInput(sub.cost));
     setFormStartDate(sub.startDate.split('T')[0]);
     setFormExpiryDate(sub.expiryDate.split('T')[0]);
     setFormStatus(sub.status);
@@ -621,7 +628,7 @@ export default function Subscriptions({ user, token }) {
     setFormVendor(sub.vendor);
     setFormName(sub.name + ' (Baru)');
     setFormBillingCycle(sub.billingCycle);
-    setFormCost(sub.cost.toString());
+    setFormCost(formatNumberForInput(sub.cost));
     
     // New start date is the day after the old expiry date
     const oldExpiry = new Date(sub.expiryDate);
@@ -677,7 +684,7 @@ export default function Subscriptions({ user, token }) {
         vendor: formVendor,
         name: formName,
         billingCycle: formBillingCycle,
-        cost: parseFloat(formCost),
+        cost: parseFloat(formCost.toString().replace(/\./g, '')) || 0,
         startDate: new Date(formStartDate).toISOString(),
         expiryDate: new Date(formExpiryDate).toISOString(),
         status: formStatus,
@@ -1348,10 +1355,10 @@ export default function Subscriptions({ user, token }) {
                       Biaya (Rp) *
                     </label>
                     <input
-                      type="number"
-                      placeholder="Ex: 150000"
+                      type="text"
+                      placeholder="Ex: 150.000"
                       value={formCost}
-                      onChange={(e) => setFormCost(e.target.value)}
+                      onChange={(e) => setFormCost(formatNumberForInput(e.target.value))}
                       className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                       required
                     />

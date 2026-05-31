@@ -11,8 +11,11 @@ router.get('/', verifyToken, async (req, res, next) => {
     const { companyId, startDate, endDate } = req.query;
     const where = {};
 
-    if (companyId) {
-      where.companyId = parseInt(companyId);
+    if (companyId && companyId !== 'undefined' && companyId !== 'null' && companyId !== '') {
+      const parsedId = parseInt(companyId);
+      if (!isNaN(parsedId)) {
+        where.companyId = parsedId;
+      }
     }
 
     if (startDate || endDate) {
@@ -240,7 +243,8 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
               select: {
                 id: true,
                 name: true,
-                monthlyBudget: true
+                monthlyBudget: true,
+                jobPosition: true
               }
             }
           }
@@ -252,15 +256,19 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
     const monthlyTotals = Array(12).fill(0);
 
     for (const master of companyMasters) {
-      // Flatten all users belonging to this company master
+      // Flatten all users belonging to this company master, excluding Office Boy, Office Girl, and Driver
       const usersMap = new Map();
       master.companies.forEach(c => {
         c.users.forEach(u => {
-          usersMap.set(u.id, u);
+          const position = (u.jobPosition || '').toLowerCase().trim();
+          if (position !== 'office boy' && position !== 'office girl' && position !== 'driver') {
+            usersMap.set(u.id, u);
+          }
         });
       });
       const uniqueUsers = Array.from(usersMap.values());
-      const monthlyBudget = uniqueUsers.reduce((sum, u) => sum + (u.monthlyBudget || 0), 0);
+      const empMonthlyBudget = uniqueUsers.reduce((sum, u) => sum + (u.monthlyBudget || 0), 0);
+      const monthlyBudget = empMonthlyBudget + (master.sharedBudget || 0);
       const yearlyBudget = monthlyBudget * 12;
 
       // Find rental assets for this company master
@@ -323,6 +331,7 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
         companyStats.push({
           id: master.id,
           name: master.name,
+          sharedBudget: master.sharedBudget || 0,
           monthlyBudget,
           yearlyBudget,
           monthlyCosts,
@@ -383,43 +392,81 @@ router.put('/rental-budget/user', verifyToken, async (req, res, next) => {
 });
 
 // PUT /api/reports/rental-budget/company
-// Updates a company's total monthly budget by distributing it evenly among all its users
+// Updates a company's total monthly budget (distributing it among users) and/or its shared budget
 router.put('/rental-budget/company', verifyToken, async (req, res, next) => {
   try {
-    const { companyMasterId, totalBudget } = req.body;
-    if (!companyMasterId || totalBudget === undefined) {
-      return res.status(400).json({ error: 'companyMasterId and totalBudget are required.' });
+    const { companyMasterId, totalBudget, sharedBudget } = req.body;
+    if (!companyMasterId) {
+      return res.status(400).json({ error: 'companyMasterId is required.' });
     }
 
-    const parsedBudget = parseFloat(totalBudget);
-    
-    // Find all users belonging to this master company
-    const users = await prisma.user.findMany({
-      where: {
-        company: {
-          companyMasterId: parseInt(companyMasterId)
-        }
-      }
-    });
-
-    if (users.length === 0) {
-      return res.status(400).json({ error: 'No employees found under this company master to distribute budget to.' });
+    if (totalBudget === undefined && sharedBudget === undefined) {
+      return res.status(400).json({ error: 'At least totalBudget or sharedBudget is required.' });
     }
 
-    const N = users.length;
-    const baseBudget = Math.floor(parsedBudget / N);
-    const remainder = parsedBudget % N;
-
-    // Distribute budget
-    for (let i = 0; i < N; i++) {
-      const userBudget = i < remainder ? baseBudget + 1 : baseBudget;
-      await prisma.user.update({
-        where: { id: users[i].id },
-        data: { monthlyBudget: userBudget }
+    // 1. Update sharedBudget if provided
+    if (sharedBudget !== undefined) {
+      await prisma.companyMaster.update({
+        where: { id: parseInt(companyMasterId) },
+        data: { sharedBudget: parseFloat(sharedBudget) }
       });
     }
 
-    res.json({ message: `Successfully distributed Rp ${parsedBudget.toLocaleString('id-ID')} among ${N} employees.` });
+    // 2. Distribute totalBudget if provided
+    let N = 0;
+    let parsedBudget = 0;
+    if (totalBudget !== undefined) {
+      parsedBudget = parseFloat(totalBudget);
+      
+      const allUsers = await prisma.user.findMany({
+        where: {
+          company: {
+            companyMasterId: parseInt(companyMasterId)
+          }
+        }
+      });
+
+      const users = allUsers.filter(u => {
+        const position = (u.jobPosition || '').toLowerCase().trim();
+        return position !== 'office boy' && position !== 'office girl' && position !== 'driver';
+      });
+
+      const excludedUsers = allUsers.filter(u => {
+        const position = (u.jobPosition || '').toLowerCase().trim();
+        return position === 'office boy' || position === 'office girl' || position === 'driver';
+      });
+
+      // Reset budget for excluded positions to 0
+      for (const eu of excludedUsers) {
+        if (eu.monthlyBudget !== 0) {
+          await prisma.user.update({
+            where: { id: eu.id },
+            data: { monthlyBudget: 0 }
+          });
+        }
+      }
+
+      if (users.length > 0) {
+        N = users.length;
+        const baseBudget = Math.floor(parsedBudget / N);
+        const remainder = parsedBudget % N;
+
+        for (let i = 0; i < N; i++) {
+          const userBudget = i < remainder ? baseBudget + 1 : baseBudget;
+          await prisma.user.update({
+            where: { id: users[i].id },
+            data: { monthlyBudget: userBudget }
+          });
+        }
+      }
+    }
+
+    res.json({ 
+      message: 'Budget updated successfully.',
+      distributedCount: N,
+      distributedAmount: parsedBudget,
+      sharedBudget: sharedBudget !== undefined ? parseFloat(sharedBudget) : undefined
+    });
   } catch (err) {
     next(err);
   }

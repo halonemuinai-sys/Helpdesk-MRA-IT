@@ -72,8 +72,11 @@ router.get('/', verifyToken, async (req, res, next) => {
     if (priority) {
       where.priority = priority;
     }
-    if (companyId) {
-      where.companyId = parseInt(companyId);
+    if (companyId && companyId !== 'undefined' && companyId !== 'null' && companyId !== '') {
+      const parsedId = parseInt(companyId);
+      if (!isNaN(parsedId)) {
+        where.companyId = parsedId;
+      }
     }
     if (search) {
       where.OR = [

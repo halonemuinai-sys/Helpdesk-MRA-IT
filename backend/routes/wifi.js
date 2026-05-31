@@ -13,8 +13,11 @@ router.get('/', verifyToken, async (req, res, next) => {
     }
     const { companyId } = req.query;
     const where = {};
-    if (companyId) {
-      where.companyId = parseInt(companyId);
+    if (companyId && companyId !== 'undefined' && companyId !== 'null' && companyId !== '') {
+      const parsedId = parseInt(companyId);
+      if (!isNaN(parsedId)) {
+        where.companyId = parsedId;
+      }
     }
     const wifiAPs = await prisma.wifiAccessPoint.findMany({
       where,

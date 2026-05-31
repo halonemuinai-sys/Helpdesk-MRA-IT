@@ -7,7 +7,10 @@
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
     "prisma:generate": "prisma generate",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "sewa:clean": "python prisma/process_sewa.py",
+    "sewa:import": "node prisma/import_cleaned_assets.js",
+    "sewa:pipeline": "python prisma/process_sewa.py && node prisma/import_cleaned_assets.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

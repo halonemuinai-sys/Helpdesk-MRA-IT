@@ -175,8 +175,8 @@ router.post('/', verifyToken, async (req, res, next) => {
         notes: notes || null,
         journey: journeyLog,
         userId: userId || null,
-        companyId: companyId ? parseInt(companyId) : null,
-        companyMasterId: companyMasterId ? parseInt(companyMasterId) : null
+        companyId: companyId && !isNaN(parseInt(companyId)) ? parseInt(companyId) : null,
+        companyMasterId: companyMasterId && !isNaN(parseInt(companyMasterId)) ? parseInt(companyMasterId) : null
       }
     });
 
@@ -260,8 +260,8 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     
     // Assignee and location mapping
     if (userId !== undefined) updateData.userId = userId || null;
-    if (companyId !== undefined) updateData.companyId = companyId ? parseInt(companyId) : null;
-    if (companyMasterId !== undefined) updateData.companyMasterId = companyMasterId ? parseInt(companyMasterId) : null;
+    if (companyId !== undefined) updateData.companyId = companyId && !isNaN(parseInt(companyId)) ? parseInt(companyId) : null;
+    if (companyMasterId !== undefined) updateData.companyMasterId = companyMasterId && !isNaN(parseInt(companyMasterId)) ? parseInt(companyMasterId) : null;
 
     // Automatic journey logger for assignments & status changes
     const todayStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });

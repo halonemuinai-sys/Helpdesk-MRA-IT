@@ -33,6 +33,7 @@ model CompanyMaster {
   id            Int              @id @default(autoincrement())
   name          String           @unique
   sector        String           // GENERAL, FB, RADIO, RETAIL, MEDIA
+  sharedBudget  Float            @default(0) // Budget for shared/branch devices (monthly)
   createdAt     DateTime         @default(now())
   companies     Company[]        // Branches belonging to this master company
   subscriptions ITSubscription[] // Subscriptions belonging to this master company
