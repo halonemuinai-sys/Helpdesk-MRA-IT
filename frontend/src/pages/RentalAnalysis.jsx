@@ -40,6 +40,9 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   // Interactive chart hover tracking
   const [hoveredPointIdx, setHoveredPointIdx] = useState(null);
   
+  // Toggle between line and bar chart views
+  const [chartType, setChartType] = useState('line'); // line | bar
+  
   // Breakdown modal states
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
   const [breakdownCompany, setBreakdownCompany] = useState(null);
@@ -248,6 +251,11 @@ const areaPath = points.length > 0
     ? `${linePath} L ${points[points.length - 1].x} ${padTop + chartHeight} L ${points[0].x} ${padTop + chartHeight} Z`
     : '';
 
+  const maxCost = Math.max(...monthlyTotals);
+  const minCost = Math.min(...monthlyTotals);
+  const maxCostIdx = monthlyTotals.indexOf(maxCost);
+  const minCostIdx = monthlyTotals.indexOf(minCost);
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Premium Injected Styles */}
@@ -263,6 +271,19 @@ const areaPath = points.length > 0
         @keyframes pulseGlow {
           0%, 100% { box-shadow: 0 0 12px rgba(244, 63, 94, 0.2); }
           50% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.45); }
+        }
+        @keyframes drawPath {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+        @keyframes scaleBar {
+          from {
+            transform: scaleY(0);
+          }
+          to {
+            transform: scaleY(1);
+          }
         }
         .animate-fade-in {
           animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -436,27 +457,45 @@ const areaPath = points.length > 0
         </div>
       </div>
 
-      {/* SVG Line Chart Section */}
-      <div className="glass-card rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800/80 shadow-sm relative">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+      {/* SVG & Bar Chart Toggle Section */}
+      <div className="glass-card rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800/80 shadow-sm relative group/chart">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Proyeksi Arus Kas Pengeluaran Sewa</h3>
-            <p className="text-[10px] text-gray-450 dark:text-slate-500 font-medium">Arahkan kursor pada poin grafik untuk melihat nominal detail bulanan</p>
+            <p className="text-[10px] text-gray-405 dark:text-slate-500 font-semibold mt-0.5">Visualisasi proyeksi biaya bulanan selama tahun {selectedYear}</p>
           </div>
-          {/* Hover Status Output */}
-          <div className="text-right">
-            <span className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Live Cost Preview:</span>
-            <span className="text-sm font-black text-rose-500 font-mono">
-              {hoveredPointIdx !== null 
-                ? `${MONTH_NAMES[hoveredPointIdx]}: ${formatCurrency(monthlyTotals[hoveredPointIdx])}`
-                : `Rata-rata: ${formatCurrency(monthlyTotals.reduce((s,v)=>s+v,0)/12)}`
-              }
-            </span>
+
+          <div className="flex items-center gap-3">
+            {/* Chart Type Toggle */}
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl shadow-inner border border-slate-200/20">
+              <button
+                type="button"
+                onClick={() => setChartType('line')}
+                className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition duration-150 ${chartType === 'line' ? 'bg-white dark:bg-slate-900 text-rose-500 shadow-sm' : 'text-gray-450 hover:text-slate-700 dark:hover:text-slate-300'}`}
+              >
+                Line
+              </button>
+              <button
+                type="button"
+                onClick={() => setChartType('bar')}
+                className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition duration-150 ${chartType === 'bar' ? 'bg-white dark:bg-slate-900 text-rose-500 shadow-sm' : 'text-gray-450 hover:text-slate-700 dark:hover:text-slate-300'}`}
+              >
+                Bar
+              </button>
+            </div>
+
+            {/* Live Cost Preview */}
+            <div className="text-right border-l border-slate-200/50 dark:border-slate-800/80 pl-3">
+              <span className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Total Rata-rata:</span>
+              <span className="text-xs font-black text-slate-800 dark:text-slate-200 font-mono">
+                {formatCurrency(monthlyTotals.reduce((s,v)=>s+v,0)/12)}/bln
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* SVG Container */}
-        <div className="w-full overflow-x-auto custom-scroll pb-2">
+        {/* Chart Viewbox Area */}
+        <div className="w-full overflow-x-auto custom-scroll pb-2 relative">
           <svg 
             viewBox={`0 0 ${totalChartWidth} ${totalChartHeight}`} 
             className="w-full min-w-[800px] overflow-visible"
@@ -469,6 +508,10 @@ const areaPath = points.length > 0
               <linearGradient id="chartLineGradient" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#f43f5e" />
                 <stop offset="100%" stopColor="#ec4899" />
+              </linearGradient>
+              <linearGradient id="chartBarGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#ec4899" stopOpacity="0.25" />
               </linearGradient>
             </defs>
 
@@ -500,37 +543,133 @@ const areaPath = points.length > 0
               );
             })}
 
-            {/* Area Path */}
-            {areaPath && (
-              <path d={areaPath} fill="url(#chartAreaGradient)" />
+            {/* LINE CHART GRAPHICS */}
+            {chartType === 'line' && (
+              <>
+                {/* Area Under Path */}
+                {areaPath && (
+                  <path 
+                    key={`area-${selectedYear}-${selectedCategory}`}
+                    d={areaPath} 
+                    fill="url(#chartAreaGradient)" 
+                    className="animate-fade-in"
+                  />
+                )}
+
+                {/* Glowing Line Shadow */}
+                {linePath && (
+                  <path 
+                    key={`shadow-${selectedYear}-${selectedCategory}`}
+                    d={linePath} 
+                    fill="none" 
+                    stroke="#f43f5e" 
+                    strokeWidth="8" 
+                    opacity="0.12"
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="animate-fade-in"
+                  />
+                )}
+
+                {/* Animated Drawing Path */}
+                {linePath && (
+                  <path 
+                    key={`line-${selectedYear}-${selectedCategory}`}
+                    d={linePath} 
+                    fill="none" 
+                    stroke="url(#chartLineGradient)" 
+                    strokeWidth="3.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    style={{
+                      strokeDasharray: '2000',
+                      strokeDashoffset: '2000',
+                      animation: 'drawPath 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards'
+                    }}
+                  />
+                )}
+
+                {/* Peak Cost Badge Indicator */}
+                {maxCostIdx !== -1 && (
+                  <g className="opacity-90 animate-fade-in">
+                    <rect
+                      x={points[maxCostIdx].x - 20}
+                      y={points[maxCostIdx].y - 24}
+                      width="40"
+                      height="13"
+                      rx="4"
+                      fill="#f43f5e"
+                      className="shadow-sm"
+                    />
+                    <text
+                      x={points[maxCostIdx].x}
+                      y={points[maxCostIdx].y - 15}
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      className="text-[7px] font-black uppercase tracking-wider"
+                    >
+                      Puncak
+                    </text>
+                  </g>
+                )}
+
+                {/* Lowest Cost Badge Indicator */}
+                {minCostIdx !== -1 && minCost > 0 && (
+                  <g className="opacity-90 animate-fade-in">
+                    <rect
+                      x={points[minCostIdx].x - 20}
+                      y={points[minCostIdx].y - 24}
+                      width="40"
+                      height="13"
+                      rx="4"
+                      fill="#0ea5e9"
+                      className="shadow-sm"
+                    />
+                    <text
+                      x={points[minCostIdx].x}
+                      y={points[minCostIdx].y - 15}
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      className="text-[7px] font-black uppercase tracking-wider"
+                    >
+                      Terendah
+                    </text>
+                  </g>
+                )}
+              </>
             )}
 
-            {/* Glowing Line Shadow */}
-            {linePath && (
-              <path 
-                d={linePath} 
-                fill="none" 
-                stroke="#f43f5e" 
-                strokeWidth="7" 
-                opacity="0.12"
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-              />
+            {/* BAR CHART GRAPHICS */}
+            {chartType === 'bar' && (
+              <g className="animate-fade-in">
+                {points.map((p, idx) => {
+                  const barWidth = 36;
+                  const colHeight = (p.value / maxMonthlyVal) * chartHeight;
+                  const barX = p.x - barWidth / 2;
+                  const barY = padTop + chartHeight - colHeight;
+                  const isHovered = hoveredPointIdx === idx;
+                  return (
+                    <rect
+                      key={idx}
+                      x={barX}
+                      y={barY}
+                      width={barWidth}
+                      height={colHeight}
+                      rx="7"
+                      fill={isHovered ? "url(#chartLineGradient)" : "url(#chartBarGradient)"}
+                      opacity={isHovered ? "1" : "0.75"}
+                      style={{
+                        transformOrigin: `${barX + barWidth/2}px ${padTop + chartHeight}px`,
+                        animation: 'scaleBar 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
+                      }}
+                      className="transition-all duration-200"
+                    />
+                  );
+                })}
+              </g>
             )}
 
-            {/* Main Line Path */}
-            {linePath && (
-              <path 
-                d={linePath} 
-                fill="none" 
-                stroke="url(#chartLineGradient)" 
-                strokeWidth="3.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-              />
-            )}
-
-            {/* Vertical Indicator Line */}
+            {/* Vertical Guide Pointer Line */}
             {hoveredPointIdx !== null && (
               <line
                 x1={points[hoveredPointIdx].x}
@@ -540,43 +679,40 @@ const areaPath = points.length > 0
                 stroke="#f43f5e"
                 strokeWidth="1.5"
                 strokeDasharray="4 4"
-                opacity="0.5"
-                className="pointer-events-none"
+                opacity="0.55"
+                className="pointer-events-none animate-fade-in"
               />
             )}
 
-            {/* Chart Interactive Points */}
-            {points.map((p, idx) => {
+            {/* Point indicators for Line Chart */}
+            {chartType === 'line' && points.map((p, idx) => {
               const isHovered = hoveredPointIdx === idx;
               return (
                 <g key={idx} className="pointer-events-none">
-                  {/* Outer glow ring when hovered */}
                   {isHovered && (
                     <circle
                       cx={p.x}
                       cy={p.y}
-                      r="9"
+                      r="9.5"
                       fill="#f43f5e"
-                      opacity="0.35"
+                      opacity="0.3"
                       className="animate-ping"
                     />
                   )}
-                  {/* Point core */}
                   <circle 
                     cx={p.x} 
                     cy={p.y} 
-                    r={isHovered ? "5.5" : "3.5"} 
+                    r={isHovered ? "6" : "3.5"} 
                     fill={isHovered ? "#f43f5e" : "#ffffff"} 
                     stroke="#f43f5e" 
                     strokeWidth="2.5" 
                     className="transition-all duration-150"
                   />
-                  {/* X Axis labels */}
                   <text 
                     x={p.x} 
                     y={padTop + chartHeight + 20} 
                     textAnchor="middle" 
-                    className={`text-[9px] font-black ${isHovered ? 'fill-rose-500 scale-110 font-black' : 'fill-gray-450 dark:fill-slate-450'}`}
+                    className={`text-[9px] font-black transition-all ${isHovered ? 'fill-rose-500 font-extrabold scale-110' : 'fill-gray-450 dark:fill-slate-450'}`}
                   >
                     {p.month}
                   </text>
@@ -584,7 +720,23 @@ const areaPath = points.length > 0
               );
             })}
 
-            {/* Invisible tracking columns for smooth mouse hover */}
+            {/* Month labels for Bar Chart */}
+            {chartType === 'bar' && points.map((p, idx) => {
+              const isHovered = hoveredPointIdx === idx;
+              return (
+                <text 
+                  key={idx}
+                  x={p.x} 
+                  y={padTop + chartHeight + 20} 
+                  textAnchor="middle" 
+                  className={`text-[9px] font-black transition-all ${isHovered ? 'fill-rose-500 font-extrabold scale-110' : 'fill-gray-450 dark:fill-slate-450'}`}
+                >
+                  {p.month}
+                </text>
+              );
+            })}
+
+            {/* Invisible mouse capture columns */}
             {points.map((p, idx) => {
               const colWidth = chartWidth / 11;
               const colX = p.x - colWidth / 2;
@@ -603,6 +755,37 @@ const areaPath = points.length > 0
               );
             })}
           </svg>
+
+          {/* Premium React-Style Floating HTML Tooltip */}
+          {hoveredPointIdx !== null && (
+            <div 
+              className="absolute pointer-events-none bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md border border-slate-700/80 rounded-2xl p-3.5 shadow-2xl text-white transition-all duration-150 ease-out z-20 animate-scale-up"
+              style={{
+                left: `${(points[hoveredPointIdx].x / totalChartWidth) * 100}%`,
+                top: `${(points[hoveredPointIdx].y / totalChartHeight) * 100}%`,
+                transform: 'translate(-50%, -120%)'
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                <span className="text-[9px] font-black uppercase text-rose-450 tracking-wider">
+                  {points[hoveredPointIdx].month} {selectedYear}
+                </span>
+              </div>
+              <div className="text-xs font-black font-mono mt-1 text-slate-100">
+                {formatCurrency(points[hoveredPointIdx].value)}
+              </div>
+              <div className="border-t border-slate-800/80 mt-1.5 pt-1 flex items-center justify-between gap-4 text-[8px] font-bold text-slate-400">
+                <span>Rata-rata:</span>
+                <span className={points[hoveredPointIdx].value > (monthlyTotals.reduce((s,v)=>s+v,0)/12) ? 'text-rose-500 font-extrabold' : 'text-emerald-500 font-extrabold'}>
+                  {points[hoveredPointIdx].value > (monthlyTotals.reduce((s,v)=>s+v,0)/12) 
+                    ? `▲ +${Math.round((points[hoveredPointIdx].value / (monthlyTotals.reduce((s,v)=>s+v,0)/12) - 1) * 100)}%`
+                    : `▼ -${Math.round((1 - points[hoveredPointIdx].value / (monthlyTotals.reduce((s,v)=>s+v,0)/12)) * 100)}%`
+                  }
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
