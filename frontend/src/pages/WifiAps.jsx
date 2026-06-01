@@ -67,16 +67,21 @@ export default function WifiAps({ user, token }) {
       setLoading(true);
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      // 1. Fetch Wi-Fi Access Points
-      const apRes = await fetch(`${API_URL}/wifi`, { headers });
-      if (!apRes.ok) throw new Error('Failed to load Wi-Fi Access Points.');
-      const apData = await apRes.json();
-      setWifiAPs(apData);
+      // Fetch both API endpoints in parallel to reduce load time
+      const [apRes, compRes] = await Promise.all([
+        fetch(`${API_URL}/wifi`, { headers }),
+        fetch(`${API_URL}/companies`, { headers })
+      ]);
 
-      // 2. Fetch Companies list
-      const compRes = await fetch(`${API_URL}/companies`, { headers });
+      if (!apRes.ok) throw new Error('Failed to load Wi-Fi Access Points.');
       if (!compRes.ok) throw new Error('Failed to load companies.');
-      const compData = await compRes.json();
+
+      const [apData, compData] = await Promise.all([
+        apRes.json(),
+        compRes.json()
+      ]);
+
+      setWifiAPs(apData);
       setCompanies(compData);
 
     } catch (err) {
