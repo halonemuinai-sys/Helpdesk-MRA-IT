@@ -110,13 +110,29 @@ export default function Login({ onLogin }) {
       </div>
 
       {/* Right side: Forms */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 md:px-16 lg:px-24 bg-slate-50 text-slate-900 relative overflow-hidden">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 md:px-16 lg:px-24 bg-slate-100 text-slate-900 relative overflow-hidden">
         {/* Subtle Cyber Grid (Light Mode) */}
-        <div className="absolute inset-0 cyber-grid-light pointer-events-none opacity-80"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.03),transparent)] pointer-events-none"></div>
+        <div className="absolute inset-0 cyber-grid-light pointer-events-none opacity-40"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.02),transparent)] pointer-events-none"></div>
         
-        {/* IT-themed Scanning Laser Line */}
-        <div className="cyber-scan-line"></div>
+        {/* IT Network Nodes (Floating interconnected grid) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
+          <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <line x1="15%" y1="20%" x2="35%" y2="45%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-1" />
+            <line x1="35%" y1="45%" x2="20%" y2="75%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-2" />
+            <line x1="35%" y1="45%" x2="65%" y2="30%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-1" />
+            <line x1="65%" y1="30%" x2="85%" y2="55%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-3" />
+            <line x1="85%" y1="55%" x2="75%" y2="85%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-2" />
+            <line x1="20%" y1="75%" x2="75%" y2="85%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-3" />
+          </svg>
+          
+          <div className="absolute w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 shadow-sm top-[20%] left-[15%] animate-node-1"></div>
+          <div className="absolute w-3.5 h-3.5 rounded-full bg-teal-500/20 border border-teal-500/40 shadow-sm top-[45%] left-[35%] animate-node-2"></div>
+          <div className="absolute w-2 h-2 rounded-full bg-emerald-500/20 border border-emerald-500/40 shadow-sm top-[75%] left-[20%] animate-node-3"></div>
+          <div className="absolute w-3 h-3 rounded-full bg-green-500/20 border border-green-500/40 shadow-sm top-[30%] left-[65%] animate-node-1"></div>
+          <div className="absolute w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 shadow-sm top-[55%] left-[85%] animate-node-2"></div>
+          <div className="absolute w-3.5 h-3.5 rounded-full bg-teal-500/20 border border-teal-500/40 shadow-sm top-[85%] left-[75%] animate-node-3"></div>
+        </div>
 
         {/* Animated Floating Aurora Orbs (Softer colors for light theme) */}
         <div className="absolute top-1/4 -right-1/4 w-[400px] h-[400px] rounded-full bg-emerald-500/5 blur-[120px] animate-float-orb-1 pointer-events-none"></div>
