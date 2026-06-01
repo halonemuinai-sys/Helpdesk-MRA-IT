@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, AlertCircle, Loader2, ArrowLeft, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader2, ArrowLeft, CheckCircle2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -110,62 +110,49 @@ export default function Login({ onLogin }) {
       </div>
 
       {/* Right side: Forms */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 md:px-16 lg:px-24 bg-slate-100 text-slate-900 relative overflow-hidden">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-6 py-16 md:px-12 bg-slate-50 text-slate-900 relative overflow-hidden">
         {/* Subtle Cyber Grid (Light Mode) */}
-        <div className="absolute inset-0 cyber-grid-light pointer-events-none opacity-40"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.02),transparent)] pointer-events-none"></div>
-        
-        {/* IT Network Nodes (Floating interconnected grid) */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
-          <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <line x1="15%" y1="20%" x2="35%" y2="45%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-1" />
-            <line x1="35%" y1="45%" x2="20%" y2="75%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-2" />
-            <line x1="35%" y1="45%" x2="65%" y2="30%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-1" />
-            <line x1="65%" y1="30%" x2="85%" y2="55%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-3" />
-            <line x1="85%" y1="55%" x2="75%" y2="85%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-2" />
-            <line x1="20%" y1="75%" x2="75%" y2="85%" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="1" className="animate-node-3" />
-          </svg>
-          
-          <div className="absolute w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 shadow-sm top-[20%] left-[15%] animate-node-1"></div>
-          <div className="absolute w-3.5 h-3.5 rounded-full bg-teal-500/20 border border-teal-500/40 shadow-sm top-[45%] left-[35%] animate-node-2"></div>
-          <div className="absolute w-2 h-2 rounded-full bg-emerald-500/20 border border-emerald-500/40 shadow-sm top-[75%] left-[20%] animate-node-3"></div>
-          <div className="absolute w-3 h-3 rounded-full bg-green-500/20 border border-green-500/40 shadow-sm top-[30%] left-[65%] animate-node-1"></div>
-          <div className="absolute w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 shadow-sm top-[55%] left-[85%] animate-node-2"></div>
-          <div className="absolute w-3.5 h-3.5 rounded-full bg-teal-500/20 border border-teal-500/40 shadow-sm top-[85%] left-[75%] animate-node-3"></div>
-        </div>
+        <div className="absolute inset-0 cyber-grid-light pointer-events-none opacity-30"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.02),transparent)] pointer-events-none"></div>
 
-        {/* Animated Floating Aurora Orbs (Softer colors for light theme) */}
-        <div className="absolute top-1/4 -right-1/4 w-[400px] h-[400px] rounded-full bg-emerald-500/5 blur-[120px] animate-float-orb-1 pointer-events-none"></div>
-        <div className="absolute bottom-1/4 -left-1/4 w-[350px] h-[350px] rounded-full bg-teal-500/5 blur-[100px] animate-float-orb-2 pointer-events-none"></div>
-        <div className="absolute -bottom-10 right-1/4 w-[300px] h-[300px] rounded-full bg-green-400/5 blur-[90px] animate-float-orb-3 pointer-events-none"></div>
-
-        <div className="w-full max-w-md mx-auto space-y-8 animate-fade-in relative z-10">
+        {/* Card Container */}
+        <div className="bg-white rounded-[2rem] shadow-xl p-8 md:p-10 border border-slate-100/80 max-w-md w-full relative z-10 mt-12">
           
-          {/* Logo on Mobile Only */}
-          <div className="flex lg:hidden items-center justify-center mb-6">
-            <img src="/mra-logo.png" alt="MRA Group Logo" className="h-11 w-auto object-contain" />
+          {/* Floating Lock Icon with Radar Rings */}
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-20">
+            {/* Animated Radar Rings */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-indigo-500/10 bg-indigo-500/[0.02] animate-radar-1"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border border-indigo-500/5 bg-indigo-500/[0.01] animate-radar-2"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full border border-indigo-500/[0.02] bg-indigo-500/[0.005] animate-radar-3"></div>
+            
+            {/* White Circle Container */}
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg border border-slate-100">
+              <div className="w-14 h-14 bg-indigo-50 rounded-full flex items-center justify-center">
+                <Lock className="w-6 h-6 text-indigo-500" />
+              </div>
+            </div>
           </div>
 
           {/* VIEW: LOGIN FORM */}
           {view === 'login' && (
             <>
-              <div className="text-center lg:text-left space-y-2">
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Sign In</h2>
-                <p className="text-sm text-slate-500">
-                  Access the IT dashboard console with your email.
+              <div className="text-center space-y-2 mt-8 mb-8">
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Welcome Back</h2>
+                <p className="text-sm text-slate-500 px-2 leading-relaxed">
+                  Sign in to access the IT dashboard and manage tickets efficiently.
                 </p>
               </div>
 
               {error && (
-                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-3 animate-pulse">
-                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div className="p-3 mb-6 rounded-xl bg-red-50 border border-red-100 text-red-700 text-xs font-semibold flex items-start gap-2.5 animate-pulse">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                     Email Address
                   </label>
                   <div className="relative">
@@ -175,15 +162,15 @@ export default function Login({ onLogin }) {
                       placeholder="e.g. john@mragroup.co.id"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs shadow-sm"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-xs shadow-sm"
                     />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-[14px]" />
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                       Password
                     </label>
                     <button
@@ -192,7 +179,7 @@ export default function Login({ onLogin }) {
                         setView('forgot');
                         setError(null);
                       }}
-                      className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors font-bold focus:outline-none"
+                      className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors font-bold focus:outline-none"
                     >
                       Forgot Password?
                     </button>
@@ -204,23 +191,34 @@ export default function Login({ onLogin }) {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs shadow-sm"
+                      className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-xs shadow-sm"
                     />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-[14px]" />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      className="absolute right-4 top-[14px] text-slate-400 hover:text-slate-600 focus:outline-none"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
+                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <label htmlFor="rememberMe" className="text-xs font-semibold text-slate-500 cursor-pointer select-none">
+                    Remember me
+                  </label>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 text-xs"
                 >
                   {loading ? (
                     <>
@@ -228,7 +226,10 @@ export default function Login({ onLogin }) {
                       <span>Signing In...</span>
                     </>
                   ) : (
-                    <span>Sign In</span>
+                    <>
+                      <span>Sign In</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
                   )}
                 </button>
               </form>
@@ -238,7 +239,7 @@ export default function Login({ onLogin }) {
           {/* VIEW: FORGOT PASSWORD */}
           {view === 'forgot' && (
             <>
-              <div className="space-y-2">
+              <div className="space-y-2 mt-8 mb-8">
                 <button
                   type="button"
                   onClick={() => {
@@ -250,22 +251,22 @@ export default function Login({ onLogin }) {
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Sign In</span>
                 </button>
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Reset Password</h2>
-                <p className="text-sm text-slate-500">
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight text-center">Reset Password</h2>
+                <p className="text-sm text-slate-500 text-center leading-relaxed">
                   Enter your registered email address and we will generate a password reset link.
                 </p>
               </div>
 
               {error && (
-                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-3 animate-pulse">
-                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div className="p-3 mb-6 rounded-xl bg-red-50 border border-red-100 text-red-700 text-xs font-semibold flex items-start gap-2.5 animate-pulse">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
 
               <form onSubmit={handleForgotSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                     Email Address
                   </label>
                   <div className="relative">
@@ -275,16 +276,16 @@ export default function Login({ onLogin }) {
                       placeholder="e.g. john@mragroup.co.id"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs shadow-sm"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-xs shadow-sm"
                     />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-[14px]" />
                   </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 text-xs"
                 >
                   {loading ? (
                     <>
@@ -292,7 +293,10 @@ export default function Login({ onLogin }) {
                       <span>Generating link...</span>
                     </>
                   ) : (
-                    <span>Send Reset Link</span>
+                    <>
+                      <span>Send Reset Link</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
                   )}
                 </button>
               </form>
@@ -301,8 +305,8 @@ export default function Login({ onLogin }) {
 
           {/* VIEW: FORGOT SUCCESS */}
           {view === 'forgot-success' && (
-            <div className="text-center space-y-6 py-6">
-              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
+            <div className="text-center space-y-6 py-6 mt-8">
+              <div className="w-16 h-16 bg-emerald-50/50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
                 <CheckCircle2 className="w-10 h-10 animate-bounce" />
               </div>
               
@@ -312,7 +316,7 @@ export default function Login({ onLogin }) {
                   If that email is registered, we have sent instructions to reset your password. 
                 </p>
                 {window.location.hostname === 'localhost' && (
-                  <p className="text-xs text-amber-600/90 leading-relaxed max-w-sm mx-auto pt-2 bg-amber-500/5 p-3 border border-amber-500/10 rounded-2xl">
+                  <p className="text-xs text-amber-600/90 leading-relaxed max-w-sm mx-auto pt-2 bg-amber-50/5 p-3 border border-amber-500/10 rounded-2xl">
                     💡 <strong>Local Dev tip:</strong> Check the backend server terminal console logs to view the generated link!
                   </p>
                 )}
@@ -321,7 +325,7 @@ export default function Login({ onLogin }) {
               <button
                 type="button"
                 onClick={() => setView('login')}
-                className="px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-xs font-semibold rounded-xl text-slate-700 transition-colors shadow-sm focus:outline-none"
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-colors focus:outline-none"
               >
                 Back to Sign In
               </button>
@@ -330,7 +334,6 @@ export default function Login({ onLogin }) {
 
         </div>
       </div>
-
     </div>
   );
 }

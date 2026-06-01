@@ -396,4 +396,31 @@
   transform-origin: center;
 }
 
+/* Radar Ripple Animation */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.animate-radar-1 {
+  animation: radar-pulse 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.animate-radar-2 {
+  animation: radar-pulse 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  animation-delay: 1s;
+}
+
+.animate-radar-3 {
+  animation: radar-pulse 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  animation-delay: 2s;
+}
+
+
 
