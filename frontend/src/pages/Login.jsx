@@ -292,9 +292,11 @@ export default function Login({ onLogin }) {
                 <p className="text-sm text-slate-400 leading-relaxed max-w-sm mx-auto">
                   If that email is registered, we have sent instructions to reset your password. 
                 </p>
-                <p className="text-xs text-amber-500/80 leading-relaxed max-w-sm mx-auto pt-2 bg-amber-500/5 p-3 border border-amber-500/10 rounded-2xl">
-                  💡 <strong>Local Dev tip:</strong> Check the backend server terminal console logs to view the generated link!
-                </p>
+                {window.location.hostname === 'localhost' && (
+                  <p className="text-xs text-amber-500/80 leading-relaxed max-w-sm mx-auto pt-2 bg-amber-500/5 p-3 border border-amber-500/10 rounded-2xl">
+                    💡 <strong>Local Dev tip:</strong> Check the backend server terminal console logs to view the generated link!
+                  </p>
+                )}
               </div>
 
               <button
