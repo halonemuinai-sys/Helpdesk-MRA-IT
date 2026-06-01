@@ -20,6 +20,18 @@ import WifiAps from './pages/WifiAps';
 import Subscriptions from './pages/Subscriptions';
 import Assets from './pages/Assets';
 import RentalAnalysis from './pages/RentalAnalysis';
+import Approvals from './pages/Approvals';
+import AuditTrail from './pages/AuditTrail';
+
+function ProtectedRoute({ user, allowedRoles, children }) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to={user.role === 'AUDITOR' ? '/approvals' : '/dashboard'} replace />;
+  }
+  return children;
+}
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -100,67 +112,131 @@ export default function App() {
             {/* Authenticated Routes */}
             <Route
               path="/dashboard"
-              element={user ? <Dashboard user={user} token={token} darkMode={darkMode} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <Dashboard user={user} token={token} darkMode={darkMode} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/input-ticket"
-              element={user ? <InputTicket user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <InputTicket user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/tickets"
-              element={user ? <TicketsSummary user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <TicketsSummary user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/reports"
-              element={user ? <Reports user={user} token={token} darkMode={darkMode} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['ADMIN']}>
+                  <Reports user={user} token={token} darkMode={darkMode} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/performance"
-              element={user ? <AgentPerformance user={user} token={token} darkMode={darkMode} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <AgentPerformance user={user} token={token} darkMode={darkMode} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/users"
-              element={user ? <Users user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['ADMIN', 'AGENT']}>
+                  <Users user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/categories"
-              element={user ? <Categories user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <Categories user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/wifi-aps"
-              element={user ? <WifiAps user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <WifiAps user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/subscriptions"
-              element={user ? <Subscriptions user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <Subscriptions user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/assets"
-              element={user ? <Assets user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <Assets user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/rental-analysis"
-              element={user ? <RentalAnalysis user={user} token={token} darkMode={darkMode} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <RentalAnalysis user={user} token={token} darkMode={darkMode} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/approvals"
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN', 'AUDITOR']}>
+                  <Approvals user={user} token={token} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/audit-trail"
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN', 'AUDITOR']}>
+                  <AuditTrail user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/guideline"
-              element={user ? <Guideline user={user} token={token} /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <Guideline user={user} token={token} />
+                </ProtectedRoute>
+              }
             />
 
             {/* Unauthenticated Route */}
             <Route
               path="/login"
-              element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/dashboard" replace />}
+              element={!user ? <Login onLogin={handleLogin} /> : <Navigate to={user.role === 'AUDITOR' ? '/approvals' : '/dashboard'} replace />}
             />
             <Route
               path="/reset-password"
-              element={!user ? <ResetPassword /> : <Navigate to="/dashboard" replace />}
+              element={!user ? <ResetPassword /> : <Navigate to={user.role === 'AUDITOR' ? '/approvals' : '/dashboard'} replace />}
             />
 
             {/* Catch All Redirect */}
             <Route
               path="*"
-              element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
+              element={<Navigate to={user ? (user.role === 'AUDITOR' ? '/approvals' : '/dashboard') : '/login'} replace />}
             />
           </Routes>
         </main>

@@ -111,6 +111,15 @@ router.post('/', verifyToken, async (req, res, next) => {
       }
     });
 
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'SUBSCRIPTION_CREATED',
+        details: `Subscription ${subscription.vendor} - ${subscription.name} created. Cost: Rp ${subscription.cost.toLocaleString('id-ID')}/${subscription.billingCycle}`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
     res.json(subscription);
   } catch (err) {
     next(err);
@@ -192,6 +201,15 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       data: updateData
     });
 
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'SUBSCRIPTION_UPDATED',
+        details: `Subscription ${updated.vendor} - ${updated.name} updated. Status: ${updated.status}`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
     res.json(updated);
   } catch (err) {
     next(err);
@@ -199,17 +217,64 @@ router.put('/:id', verifyToken, async (req, res, next) => {
 });
 
 // DELETE /api/subscriptions/:id
-// Deletes a subscription record
+// Deletes a subscription record (ADMIN deletes immediately, AGENT creates an ApprovalRequest)
 router.delete('/:id', verifyToken, async (req, res, next) => {
   try {
-    if (req.user.role === 'USER') {
+    const { role, id: userId, name: userName, email: userEmail } = req.user;
+    if (role === 'USER') {
       return res.status(403).json({ error: 'Access denied.' });
     }
     const { id } = req.params;
-    await prisma.iTSubscription.delete({
-      where: { id }
-    });
-    res.json({ success: true });
+    const { reason } = req.body;
+
+    const sub = await prisma.iTSubscription.findUnique({ where: { id } });
+    if (!sub) {
+      return res.status(404).json({ error: 'Subscription not found.' });
+    }
+
+    if (role === 'ADMIN') {
+      await prisma.iTSubscription.delete({
+        where: { id }
+      });
+      
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'SUBSCRIPTION_DELETED',
+          details: `Subscription ${sub.vendor} - ${sub.name} deleted directly by Admin.`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({ success: true, message: 'Subscription deleted successfully.' });
+    } else {
+      // AGENT: create approval request
+      const request = await prisma.approvalRequest.create({
+        data: {
+          entityType: 'SUBSCRIPTION',
+          entityId: id,
+          entityName: `${sub.vendor} - ${sub.name}`,
+          reason: reason || 'No reason provided',
+          requestedById: userId
+        }
+      });
+
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'SUBSCRIPTION_DELETE_REQUESTED',
+          details: `Delete approval requested for Subscription ${sub.vendor} - ${sub.name}. Reason: ${reason || '-'}`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({ 
+        success: true, 
+        approvalPending: true, 
+        message: 'Permintaan penghapusan subskripsi telah diajukan ke Admin untuk persetujuan.',
+        request 
+      });
+    }
   } catch (err) {
     next(err);
   }

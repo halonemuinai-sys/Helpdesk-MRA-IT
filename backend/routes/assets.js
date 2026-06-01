@@ -180,6 +180,15 @@ router.post('/', verifyToken, async (req, res, next) => {
       }
     });
 
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'ASSET_CREATED',
+        details: `Asset Tag ${asset.assetTag} (${asset.brand} ${asset.model}) created by IT Agent. Status: ${asset.status}`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
     res.json(asset);
   } catch (err) {
     next(err);
@@ -304,6 +313,15 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       data: updateData
     });
 
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'ASSET_UPDATED',
+        details: `Asset Tag ${updatedAsset.assetTag} (${updatedAsset.brand} ${updatedAsset.model}) updated. Status: ${updatedAsset.status}`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
     res.json(updatedAsset);
   } catch (err) {
     next(err);
@@ -311,17 +329,64 @@ router.put('/:id', verifyToken, async (req, res, next) => {
 });
 
 // DELETE /api/assets/:id
-// Deletes an asset record
+// Deletes an asset record (ADMIN deletes immediately, AGENT creates an ApprovalRequest)
 router.delete('/:id', verifyToken, async (req, res, next) => {
   try {
-    if (req.user.role === 'USER') {
+    const { role, id: userId, name: userName, email: userEmail } = req.user;
+    if (role === 'USER') {
       return res.status(403).json({ error: 'Access denied.' });
     }
     const { id } = req.params;
-    await prisma.asset.delete({
-      where: { id }
-    });
-    res.json({ success: true });
+    const { reason } = req.body;
+
+    const asset = await prisma.asset.findUnique({ where: { id } });
+    if (!asset) {
+      return res.status(404).json({ error: 'Asset not found.' });
+    }
+
+    if (role === 'ADMIN') {
+      await prisma.asset.delete({
+        where: { id }
+      });
+      
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'ASSET_DELETED',
+          details: `Asset Tag ${asset.assetTag} (${asset.brand} ${asset.model}) deleted directly by Admin.`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({ success: true, message: 'Asset deleted successfully.' });
+    } else {
+      // AGENT: create approval request
+      const request = await prisma.approvalRequest.create({
+        data: {
+          entityType: 'ASSET',
+          entityId: id,
+          entityName: `${asset.assetTag} (${asset.brand} ${asset.model})`,
+          reason: reason || 'No reason provided',
+          requestedById: userId
+        }
+      });
+
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'ASSET_DELETE_REQUESTED',
+          details: `Delete approval requested for Asset Tag ${asset.assetTag} (${asset.brand} ${asset.model}). Reason: ${reason || '-'}`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({ 
+        success: true, 
+        approvalPending: true, 
+        message: 'Permintaan penghapusan aset telah diajukan ke Admin untuk persetujuan.',
+        request 
+      });
+    }
   } catch (err) {
     next(err);
   }

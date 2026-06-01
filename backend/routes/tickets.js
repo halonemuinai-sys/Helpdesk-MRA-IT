@@ -161,10 +161,15 @@ router.post('/categories', verifyToken, async (req, res, next) => {
 });
 
 // DELETE /api/tickets/categories/:id
-// Delete category metadata by ID
+// Delete category metadata by ID (ADMIN deletes immediately, AGENT creates an ApprovalRequest)
 router.delete('/categories/:id', verifyToken, async (req, res, next) => {
   try {
+    const { role, id: userId, name: userName, email: userEmail } = req.user;
+    if (role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
     const { id } = req.params;
+    const { reason } = req.body;
     
     // Check if category metadata exists
     const meta = await prisma.categoryMetadata.findUnique({
@@ -175,11 +180,49 @@ router.delete('/categories/:id', verifyToken, async (req, res, next) => {
       return res.status(404).json({ error: 'Category metadata not found.' });
     }
 
-    await prisma.categoryMetadata.delete({
-      where: { id: parseInt(id) }
-    });
+    if (role === 'ADMIN') {
+      await prisma.categoryMetadata.delete({
+        where: { id: parseInt(id) }
+      });
 
-    res.json({ message: `Category mapping for ${meta.category} - ${meta.subCategory} deleted.` });
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'CATEGORY_DELETED',
+          details: `Category Metadata ${meta.category} - ${meta.subCategory} deleted directly by Admin.`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      res.json({ success: true, message: `Category mapping for ${meta.category} - ${meta.subCategory} deleted.` });
+    } else {
+      // AGENT: create approval request
+      const request = await prisma.approvalRequest.create({
+        data: {
+          entityType: 'CATEGORY',
+          entityId: id,
+          entityName: `${meta.category} - ${meta.subCategory}`,
+          reason: reason || 'No reason provided',
+          requestedById: userId
+        }
+      });
+
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'CATEGORY_DELETE_REQUESTED',
+          details: `Delete approval requested for Category Metadata ${meta.category} - ${meta.subCategory}. Reason: ${reason || '-'}`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({ 
+        success: true, 
+        approvalPending: true, 
+        message: 'Permintaan penghapusan sub-kategori telah diajukan ke Admin untuk persetujuan.',
+        request 
+      });
+    }
   } catch (err) {
     next(err);
   }

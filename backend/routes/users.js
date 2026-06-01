@@ -192,4 +192,65 @@ router.patch('/:id/password', verifyToken, checkRole(['ADMIN']), async (req, res
   }
 });
 
+// PATCH /api/users/:id/email
+// Update user email (ADMIN and AGENT only)
+router.patch('/:id/email', verifyToken, checkRole(['ADMIN', 'AGENT']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required.' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format.' });
+    }
+
+    // Check if user exists
+    const userExists = await prisma.user.findUnique({
+      where: { id }
+    });
+    if (!userExists) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Check if email already exists for another user
+    const emailConflict = await prisma.user.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        NOT: { id }
+      }
+    });
+    if (emailConflict) {
+      return res.status(400).json({ error: 'Email already in use by another user.' });
+    }
+
+    // Update email
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { email: email.toLowerCase() },
+      include: { company: true }
+    });
+
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'USER_EMAIL_UPDATED',
+        details: `User "${userExists.name}" email updated from "${userExists.email}" to "${updatedUser.email}" by ${req.user.name}.`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
+    const { password, ...safeUser } = updatedUser;
+    res.json({
+      message: `Email for user ${safeUser.name} updated successfully.`,
+      user: safeUser
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

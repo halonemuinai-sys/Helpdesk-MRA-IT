@@ -141,6 +141,22 @@ async function main() {
       companyId: adminCompanyId
     }
   });
+
+  // Upsert Auditor
+  await prisma.user.upsert({
+    where: { email: 'audit@mragroup.co.id' },
+    update: {},
+    create: {
+      id: 'AUDITOR-01',
+      email: 'audit@mragroup.co.id',
+      password: defaultPasswordHash,
+      name: 'IT Auditor Admin',
+      department: 'IT Audit & Compliance',
+      jobPosition: 'IT Auditor',
+      role: 'AUDITOR',
+      companyId: adminCompanyId
+    }
+  });
   
   console.log('Default accounts seeded.');
   

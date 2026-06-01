@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users as UsersIcon, ShieldAlert, Building2, Search, Filter, ShieldCheck, Loader2, Plus, X, Key } from 'lucide-react';
+import { Users as UsersIcon, ShieldAlert, Building2, Search, Filter, ShieldCheck, Loader2, Plus, X, Key, Mail } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -36,6 +36,12 @@ export default function Users({ user: currentUser, token }) {
   const [newResetPassword, setNewResetPassword] = useState('');
   const [resetError, setResetError] = useState(null);
   const [resetSubmitting, setResetSubmitting] = useState(false);
+
+  // Edit Email states
+  const [editEmailUser, setEditEmailUser] = useState(null);
+  const [newEditEmail, setNewEditEmail] = useState('');
+  const [editEmailError, setEditEmailError] = useState(null);
+  const [editEmailSubmitting, setEditEmailSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCompanies();
@@ -214,14 +220,47 @@ export default function Users({ user: currentUser, token }) {
     }
   };
 
-  // Safe Role check: Admin only page
-  if (currentUser.role !== 'ADMIN') {
+  const handleEditEmail = async (e) => {
+    e.preventDefault();
+    if (!editEmailUser) return;
+    try {
+      setEditEmailError(null);
+      setEditEmailSubmitting(true);
+
+      const res = await fetch(`${API_URL}/users/${editEmailUser.id}/email`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ email: newEditEmail })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update email.');
+      }
+
+      // Success
+      alert(`Email for ${editEmailUser.name} updated successfully to ${newEditEmail}!`);
+      setEditEmailUser(null);
+      setNewEditEmail('');
+      fetchUsers(); // Refresh list
+    } catch (err) {
+      setEditEmailError(err.message);
+    } finally {
+      setEditEmailSubmitting(false);
+    }
+  };
+
+  // Safe Role check: Admin and Agent only page
+  if (currentUser.role !== 'ADMIN' && currentUser.role !== 'AGENT') {
     return (
       <div className="min-h-[400px] flex flex-col items-center justify-center space-y-4">
         <ShieldAlert className="w-16 h-16 text-red-500 animate-bounce" />
         <h3 className="text-xl font-bold text-gray-800 dark:text-slate-200">Access Denied</h3>
         <p className="text-sm text-gray-500 dark:text-slate-400 text-center max-w-md">
-          The Employee & IT Agent Management page is only accessible by system administrators.
+          The Employee & IT Agent Management page is only accessible by system administrators and IT agents.
         </p>
       </div>
     );
@@ -244,14 +283,16 @@ export default function Users({ user: currentUser, token }) {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-5 py-3 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-brand-500/15 shrink-0"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Add New User</span>
-        </button>
+        {currentUser.role === 'ADMIN' && (
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-5 py-3 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-brand-500/15 shrink-0"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Add New User</span>
+          </button>
+        )}
       </div>
 
       {/* Advanced Filter Options Panel */}
@@ -429,7 +470,7 @@ export default function Users({ user: currentUser, token }) {
                                 u.role === 'ADMIN' ? 'text-red-500' : u.role === 'AGENT' ? 'text-brand-500' : 'text-slate-400'
                               }`} />
                               <select
-                                disabled={u.id === currentUser.id} // Cannot edit own role to prevent lockout
+                                disabled={u.id === currentUser.id || currentUser.role !== 'ADMIN'} // Cannot edit own role to prevent lockout; Only Admins can modify roles
                                 value={u.role}
                                 onChange={(e) => handleRoleChange(u.id, e.target.value)}
                                 className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none pr-4 cursor-pointer"
@@ -443,19 +484,37 @@ export default function Users({ user: currentUser, token }) {
                         </div>
                       </td>
                       <td className="py-4 px-6 text-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setResetPasswordUser(u);
-                            setNewResetPassword('');
-                            setResetError(null);
-                          }}
-                          className="p-1.5 bg-gray-50 hover:bg-gray-150 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-gray-600 dark:text-slate-350 rounded-lg text-xs font-bold transition-all border border-gray-200/50 dark:border-slate-700/50 inline-flex items-center gap-1.5 shadow-sm"
-                          title="Set new password for this user"
-                        >
-                          <Key className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Set Password</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditEmailUser(u);
+                              setNewEditEmail(u.email);
+                              setEditEmailError(null);
+                            }}
+                            className="p-1.5 bg-gray-50 hover:bg-gray-150 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-gray-600 dark:text-slate-350 rounded-lg text-xs font-bold transition-all border border-gray-200/50 dark:border-slate-700/50 inline-flex items-center gap-1.5 shadow-sm"
+                            title="Edit user email address"
+                          >
+                            <Mail className="w-3.5 h-3.5 text-brand-500" />
+                            <span>Edit Email</span>
+                          </button>
+                          
+                          {currentUser.role === 'ADMIN' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setResetPasswordUser(u);
+                                setNewResetPassword('');
+                                setResetError(null);
+                              }}
+                              className="p-1.5 bg-gray-50 hover:bg-gray-150 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-gray-600 dark:text-slate-350 rounded-lg text-xs font-bold transition-all border border-gray-200/50 dark:border-slate-700/50 inline-flex items-center gap-1.5 shadow-sm"
+                              title="Set new password for this user"
+                            >
+                              <Key className="w-3.5 h-3.5 text-amber-500" />
+                              <span>Set Password</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -695,6 +754,67 @@ export default function Users({ user: currentUser, token }) {
         </div>
       )}
 
+      {/* Edit Email Modal */}
+      {editEmailUser && (
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="absolute inset-0" onClick={() => setEditEmailUser(null)}></div>
+          
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl relative z-10 p-6 border border-gray-200 dark:border-slate-800">
+            <div className="flex justify-between items-start gap-4 mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100">Edit User Email</h3>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  Update email address for <strong>{editEmailUser.name}</strong> (ID: {editEmailUser.id}).
+                </p>
+              </div>
+              <button 
+                onClick={() => setEditEmailUser(null)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 dark:text-slate-400 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editEmailError && (
+              <div className="p-3 mb-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-semibold animate-pulse">
+                {editEmailError}
+              </div>
+            )}
+
+            <form onSubmit={handleEditEmail} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">New Email Address</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. name@mragroup.co.id"
+                  value={newEditEmail}
+                  onChange={(e) => setNewEditEmail(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditEmailUser(null)}
+                  className="px-4 py-2 border border-gray-200 dark:border-slate-800 text-gray-600 dark:text-slate-400 text-xs font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editEmailSubmitting}
+                  className="px-5 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-lg shadow-brand-500/10 flex items-center gap-1.5 transition-colors"
+                >
+                  {editEmailSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Email</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

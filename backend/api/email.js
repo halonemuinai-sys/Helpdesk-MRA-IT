@@ -41,77 +41,71 @@ async function sendTicketCreatedEmail(ticket) {
     return;
   }
 
-  const subject = `[MRA IT Helpdesk] Tiket Baru Terdaftar: ${ticket.id} - ${ticket.title}`;
+  const subject = `[MRA IT Helpdesk] New Ticket Registered: ${ticket.id} - ${ticket.title}`;
   
-  const formattedDate = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-';
-  const responseTarget = ticket.slaResponseLimit ? new Date(ticket.slaResponseLimit).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-';
-  const resolutionTarget = ticket.slaResolutionLimit ? new Date(ticket.slaResolutionLimit).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-';
+  const formattedDate = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }) : '-';
 
   const html = `
-    <div style="font-family: 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; padding: 0; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
       
+      <!-- Top Accent Bar -->
+      <div style="height: 6px; background-color: #0ea5e9;"></div>
+
       <!-- Header -->
-      <div style="text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
-        <h2 style="color: #1d4ed8; margin: 0 0 5px 0; font-size: 22px;">MRA IT HELPDESK</h2>
-        <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Konfirmasi Registrasi Tiket</span>
+      <div style="padding: 32px 24px 24px 24px; text-align: center; background-color: #fafafa;">
+        <h2 style="color: #0f172a; margin: 0 0 6px 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">MRA IT HELPDESK</h2>
+        <span style="font-size: 11px; color: #0ea5e9; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; background-color: #e0f2fe; padding: 4px 10px; border-radius: 9999px;">Ticket Registration Confirmation</span>
       </div>
 
-      <!-- Greeting -->
-      <p style="font-size: 15px; line-height: 1.6; margin-bottom: 15px;">Halo <strong>${ticket.requester.name}</strong>,</p>
-      <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; color: #475569;">
-        Kami informasikan bahwa pengaduan / laporan kendala IT Anda telah berhasil terdaftar di sistem pusat IT Helpdesk MRA Group dengan detail sebagai berikut:
-      </p>
+      <!-- Content Area -->
+      <div style="padding: 24px 32px 32px 32px;">
+        <!-- Greeting -->
+        <p style="font-size: 15px; line-height: 1.6; color: #1e293b; margin: 0 0 12px 0;">Hello <strong>${ticket.requester.name}</strong>,</p>
+        <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 24px 0;">
+          Your IT support ticket has been successfully registered in the MRA Group Helpdesk system. Here are the ticket details for your reference:
+        </p>
 
-      <!-- Details Card -->
-      <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b; width: 35%;">ID Tiket:</td>
-            <td style="padding: 6px 0; font-weight: bold; color: #1e293b; font-size: 14px;">${ticket.id}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Subjek / Masalah:</td>
-            <td style="padding: 6px 0; color: #1e293b;">${ticket.title}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Kategori:</td>
-            <td style="padding: 6px 0; color: #1e293b;">${ticket.category} ${ticket.subCategory && ticket.subCategory !== '-' ? `(${ticket.subCategory})` : ''}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Prioritas:</td>
-            <td style="padding: 6px 0; color: #1e293b;">
-              <span style="font-weight: bold; color: ${ticket.priority === 'HIGH' ? '#ef4444' : ticket.priority === 'MEDIUM' ? '#f59e0b' : '#3b82f6'};">${ticket.priority}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Sumber Laporan:</td>
-            <td style="padding: 6px 0; color: #1e293b;">${ticket.source || 'System'}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Waktu Kejadian:</td>
-            <td style="padding: 6px 0; color: #1e293b;">${formattedDate}</td>
-          </tr>
-        </table>
-      </div>
+        <!-- Details Card -->
+        <div style="background-color: #f8fafc; border-left: 4px solid #0ea5e9; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 0 12px 12px 0; padding: 20px; margin-bottom: 24px;">
+          <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #64748b; width: 35%; border-bottom: 1px dashed #e2e8f0;">Ticket ID</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #0f172a; font-size: 14px; border-bottom: 1px dashed #e2e8f0;">${ticket.id}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #64748b; border-bottom: 1px dashed #e2e8f0;">Subject / Issue</td>
+              <td style="padding: 8px 0; color: #334155; border-bottom: 1px dashed #e2e8f0;">${ticket.title}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #64748b; border-bottom: 1px dashed #e2e8f0;">Category</td>
+              <td style="padding: 8px 0; color: #334155; border-bottom: 1px dashed #e2e8f0;">${ticket.category} ${ticket.subCategory && ticket.subCategory !== '-' ? `(${ticket.subCategory})` : ''}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #64748b; border-bottom: 1px dashed #e2e8f0;">Priority</td>
+              <td style="padding: 8px 0; border-bottom: 1px dashed #e2e8f0;">
+                <span style="font-weight: bold; color: ${ticket.priority === 'HIGH' || ticket.priority === 'CRITICAL' ? '#ef4444' : ticket.priority === 'MEDIUM' ? '#f59e0b' : '#0ea5e9'}; font-size: 12px; background-color: ${ticket.priority === 'HIGH' || ticket.priority === 'CRITICAL' ? '#fef2f2' : ticket.priority === 'MEDIUM' ? '#fffbeb' : '#f0f9ff'}; padding: 2px 8px; border-radius: 4px; display: inline-block;">${ticket.priority}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #64748b; border-bottom: 1px dashed #e2e8f0;">Source</td>
+              <td style="padding: 8px 0; color: #334155; border-bottom: 1px dashed #e2e8f0;">${ticket.source || 'System'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Created At</td>
+              <td style="padding: 8px 0; color: #334155;">${formattedDate}</td>
+            </tr>
+          </table>
+        </div>
 
-      <!-- SLA Commitments -->
-      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 12px; color: #1e3a8a;">
-        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">🎯 Komitmen Target Layanan (SLA):</h4>
-        <ul style="margin: 0; padding-left: 20px; line-height: 1.5;">
-          <li><strong>Target Respon Pertama:</strong> Sebelum ${responseTarget} (IT Agent akan memberikan tanggapan awal).</li>
-          <li><strong>Target Penyelesaian Masalah:</strong> Sebelum ${resolutionTarget} (Estimasi tiket diselesaikan).</li>
-        </ul>
-      </div>
+        <p style="font-size: 13px; line-height: 1.6; color: #64748b; margin: 0 0 32px 0; font-style: italic;">
+          Our IT Support Engineers will review and analyze your request. You will receive email notifications as the ticket status is updated.
+        </p>
 
-      <p style="font-size: 13px; line-height: 1.6; color: #475569; margin-bottom: 25px;">
-        IT Support Engineer kami akan segera menganalisis laporan Anda dan menghubungi Anda untuk koordinasi lebih lanjut jika diperlukan.
-      </p>
-
-      <!-- Footer -->
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 11px; color: #94a3b8;">
-        <p style="margin: 0 0 5px 0;">Terima Kasih atas Kerjasamanya.</p>
-        <p style="margin: 0; font-weight: bold;">MRA Group IT Infrastructure & Support Team</p>
-        <p style="margin: 5px 0 0 0; color: #cbd5e1;">Pesan ini dibuat secara otomatis oleh sistem, mohon tidak membalas email ini.</p>
+        <!-- Footer -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center; font-size: 11px; color: #94a3b8; line-height: 1.5;">
+          <p style="margin: 0 0 4px 0; font-weight: bold; color: #64748b;">MRA Group IT Infrastructure & Support Team</p>
+          <p style="margin: 0; color: #cbd5e1;">This is an automated system notification. Please do not reply directly to this email.</p>
+        </div>
       </div>
 
     </div>

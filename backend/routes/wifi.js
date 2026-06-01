@@ -78,6 +78,16 @@ router.post('/', verifyToken, async (req, res, next) => {
         status: status || 'ACTIVE'
       }
     });
+
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'WIFI_AP_CREATED',
+        details: `Wi-Fi AP SSID: ${ap.ssid} (BSSID: ${ap.bssid}) created at location ${ap.location}.`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
     res.json(ap);
   } catch (err) {
     next(err);
@@ -128,6 +138,16 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       where: { id },
       data: updateData
     });
+
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'WIFI_AP_UPDATED',
+        details: `Wi-Fi AP SSID: ${ap.ssid} (BSSID: ${ap.bssid}) updated. Status: ${ap.status}`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
     res.json(ap);
   } catch (err) {
     next(err);
@@ -135,17 +155,64 @@ router.put('/:id', verifyToken, async (req, res, next) => {
 });
 
 // DELETE /api/wifi/:id
-// Deletes a Wi-Fi AP record
+// Deletes a Wi-Fi AP record (ADMIN deletes immediately, AGENT creates an ApprovalRequest)
 router.delete('/:id', verifyToken, async (req, res, next) => {
   try {
-    if (req.user.role === 'USER') {
+    const { role, id: userId, name: userName, email: userEmail } = req.user;
+    if (role === 'USER') {
       return res.status(403).json({ error: 'Access denied.' });
     }
     const { id } = req.params;
-    await prisma.wifiAccessPoint.delete({
-      where: { id }
-    });
-    res.json({ success: true });
+    const { reason } = req.body;
+
+    const ap = await prisma.wifiAccessPoint.findUnique({ where: { id } });
+    if (!ap) {
+      return res.status(404).json({ error: 'Wifi AP not found.' });
+    }
+
+    if (role === 'ADMIN') {
+      await prisma.wifiAccessPoint.delete({
+        where: { id }
+      });
+      
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'WIFI_AP_DELETED',
+          details: `Wi-Fi AP SSID ${ap.ssid} (${ap.location}) deleted directly by Admin.`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({ success: true, message: 'Wifi AP deleted successfully.' });
+    } else {
+      // AGENT: create approval request
+      const request = await prisma.approvalRequest.create({
+        data: {
+          entityType: 'WIFI_AP',
+          entityId: id,
+          entityName: `${ap.ssid} (${ap.location})`,
+          reason: reason || 'No reason provided',
+          requestedById: userId
+        }
+      });
+
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'WIFI_AP_DELETE_REQUESTED',
+          details: `Delete approval requested for Wi-Fi AP SSID ${ap.ssid} (${ap.location}). Reason: ${reason || '-'}`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({ 
+        success: true, 
+        approvalPending: true, 
+        message: 'Permintaan penghapusan AP Wi-Fi telah diajukan ke Admin untuk persetujuan.',
+        request 
+      });
+    }
   } catch (err) {
     next(err);
   }

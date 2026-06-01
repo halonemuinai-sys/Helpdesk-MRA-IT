@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:seed": "node prisma/seed.js",
     "sewa:clean": "python prisma/process_sewa.py",

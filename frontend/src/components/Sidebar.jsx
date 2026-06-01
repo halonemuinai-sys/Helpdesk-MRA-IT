@@ -11,6 +11,7 @@ import {
   Sun,
   Moon,
   ShieldCheck,
+  History,
   Building2,
   HelpCircle,
   ChevronLeft,
@@ -105,10 +106,22 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           roles: ['ADMIN']
         },
         {
+          label: 'Delete Approvals',
+          path: '/approvals',
+          icon: ShieldCheck,
+          roles: ['AGENT', 'ADMIN', 'AUDITOR']
+        },
+        {
+          label: 'System Audit Logs',
+          path: '/audit-trail',
+          icon: History,
+          roles: ['AGENT', 'ADMIN', 'AUDITOR']
+        },
+        {
           label: 'User Management',
           path: '/users',
           icon: Users,
-          roles: ['ADMIN']
+          roles: ['ADMIN', 'AGENT']
         },
         {
           label: 'Guideline',

@@ -12,6 +12,7 @@ enum Role {
   USER
   AGENT
   ADMIN
+  AUDITOR
 }
 
 enum TicketStatus {
@@ -75,6 +76,8 @@ model User {
   requestedTickets Ticket[] @relation("RequesterTickets")
   assignedTickets  Ticket[] @relation("AssignedTickets")
   assets           Asset[]  // Assets currently assigned to this employee
+  requestedApprovals ApprovalRequest[] @relation("RequestedApprovals")
+  handledApprovals   ApprovalRequest[] @relation("HandledApprovals")
 
   @@index([companyId])
   @@index([role])
@@ -258,4 +261,36 @@ model Asset {
   @@index([companyId])
   @@index([companyMasterId])
   @@index([status])
+}
+
+model ApprovalRequest {
+  id            String   @id @default(uuid())
+  entityType    String   // "ASSET", "SUBSCRIPTION", "WIFI_AP", "CATEGORY"
+  entityId      String
+  entityName    String   // e.g., "AST-MRA-0001" or "Google Workspace"
+  reason        String?  // Reason for delete written by Agent
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminNotes    String?  // Admin review notes
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Requesting Agent
+  requestedById String
+  requestedBy   User     @relation("RequestedApprovals", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  // Reviewing Admin
+  handledById   String?
+  handledBy     User?    @relation("HandledApprovals", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model SystemAuditLog {
+  id          String   @id @default(uuid())
+  action      String   // e.g. "ASSET_CREATE", "ASSET_DELETE_REQUESTED", "ASSET_DELETED", etc.
+  details     String   // Description of changes/parameters
+  performedBy String   // Agent/Admin name and email
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
 }
