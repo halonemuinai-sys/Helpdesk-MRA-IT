@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, AlertCircle, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader2, ArrowLeft, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -7,6 +7,7 @@ export default function Login({ onLogin }) {
   const [view, setView] = useState('login'); // 'login' | 'forgot' | 'forgot-success'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -187,14 +188,21 @@ export default function Login({ onLogin }) {
                   </div>
                   <div className="relative">
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-slate-900/40 border border-slate-800 focus:border-brand-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all text-xs"
+                      className="w-full pl-11 pr-10 py-3 bg-slate-900/40 border border-slate-800 focus:border-brand-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all text-xs"
                     />
                     <Lock className="w-4 h-4 text-slate-500 absolute left-4 top-4" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300 focus:outline-none"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
