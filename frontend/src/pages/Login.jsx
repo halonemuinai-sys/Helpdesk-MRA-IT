@@ -156,7 +156,7 @@ export default function Login({ onLogin }) {
                       placeholder="e.g. john@mragroup.co.id"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-slate-900/40 border border-slate-800 focus:border-brand-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all text-xs"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-900/40 border border-slate-800 focus:border-emerald-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
                     />
                     <Mail className="w-4 h-4 text-slate-500 absolute left-4 top-4" />
                   </div>
@@ -173,7 +173,7 @@ export default function Login({ onLogin }) {
                         setView('forgot');
                         setError(null);
                       }}
-                      className="text-xs text-brand-400 hover:text-brand-350 transition-colors font-bold focus:outline-none"
+                      className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-bold focus:outline-none"
                     >
                       Forgot Password?
                     </button>
@@ -185,7 +185,7 @@ export default function Login({ onLogin }) {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-10 py-3 bg-slate-900/40 border border-slate-800 focus:border-brand-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all text-xs"
+                      className="w-full pl-11 pr-10 py-3 bg-slate-900/40 border border-slate-800 focus:border-emerald-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
                     />
                     <Lock className="w-4 h-4 text-slate-500 absolute left-4 top-4" />
                     <button
@@ -201,7 +201,7 @@ export default function Login({ onLogin }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg shadow-brand-500/10 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-2 text-xs"
                 >
                   {loading ? (
                     <>
@@ -256,7 +256,7 @@ export default function Login({ onLogin }) {
                       placeholder="e.g. john@mragroup.co.id"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-slate-900/40 border border-slate-800 focus:border-brand-500 rounded-xl text-white placeholder-slate-655 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all text-xs"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-900/40 border border-slate-800 focus:border-emerald-500 rounded-xl text-white placeholder-slate-655 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
                     />
                     <Mail className="w-4 h-4 text-slate-500 absolute left-4 top-4" />
                   </div>
@@ -265,7 +265,7 @@ export default function Login({ onLogin }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg shadow-brand-500/10 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-2 text-xs"
                 >
                   {loading ? (
                     <>
@@ -283,7 +283,7 @@ export default function Login({ onLogin }) {
           {/* VIEW: FORGOT SUCCESS */}
           {view === 'forgot-success' && (
             <div className="text-center space-y-6 py-6">
-              <div className="w-16 h-16 bg-brand-500/10 text-brand-400 rounded-full flex items-center justify-center mx-auto border border-brand-500/20">
+              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
                 <CheckCircle2 className="w-10 h-10 animate-bounce" />
               </div>
               
