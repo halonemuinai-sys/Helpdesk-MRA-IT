@@ -72,12 +72,12 @@ export default function Login({ onLogin }) {
 
         {/* Top Branding */}
         <div className="flex items-center relative z-10">
-          <img src="/mra-logo.png" alt="MRA Group Logo" className="h-11 w-auto object-contain" />
+          <img src="/mra-logo.png" alt="MRA Group Logo" className="h-11 w-auto object-contain animate-neon-logo" />
         </div>
 
         {/* Center Slogan */}
         <div className="space-y-6 relative z-10 max-w-md my-auto">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-400 bg-brand-500/10 px-3 py-1 rounded-full w-fit block">
+          <span className="text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 rounded-full w-fit block">
             IT Operations & SLA
           </span>
           <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-none">

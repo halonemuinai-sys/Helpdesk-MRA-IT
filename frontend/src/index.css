@@ -422,5 +422,20 @@
   animation-delay: 2s;
 }
 
+/* Neon Glow Animation for Logo */
+@keyframes neon-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.3)) drop-shadow(0 0 8px rgba(6, 182, 212, 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.7)) drop-shadow(0 0 22px rgba(6, 182, 212, 0.5));
+  }
+}
+
+.animate-neon-logo {
+  animation: neon-glow 3s ease-in-out infinite;
+}
+
+
 
 
