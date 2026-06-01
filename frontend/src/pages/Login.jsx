@@ -113,7 +113,7 @@ export default function Login({ onLogin }) {
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-6 py-16 md:px-12 bg-slate-50 text-slate-900 relative overflow-hidden">
         {/* Subtle Cyber Grid (Light Mode) */}
         <div className="absolute inset-0 cyber-grid-light pointer-events-none opacity-30"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.02),transparent)] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.02),transparent)] pointer-events-none"></div>
 
         {/* Card Container */}
         <div className="bg-white rounded-[2rem] shadow-xl p-8 md:p-10 border border-slate-100/80 max-w-md w-full relative z-10 mt-12">
@@ -121,14 +121,14 @@ export default function Login({ onLogin }) {
           {/* Floating Lock Icon with Radar Rings */}
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-20">
             {/* Animated Radar Rings */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-indigo-500/10 bg-indigo-500/[0.02] animate-radar-1"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border border-indigo-500/5 bg-indigo-500/[0.01] animate-radar-2"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full border border-indigo-500/[0.02] bg-indigo-500/[0.005] animate-radar-3"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-blue-500/10 bg-blue-500/[0.02] animate-radar-1"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border border-blue-500/5 bg-blue-500/[0.01] animate-radar-2"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full border border-blue-500/[0.02] bg-blue-500/[0.005] animate-radar-3"></div>
             
             {/* White Circle Container */}
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg border border-slate-100">
-              <div className="w-14 h-14 bg-indigo-50 rounded-full flex items-center justify-center">
-                <Lock className="w-6 h-6 text-indigo-500" />
+              <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center">
+                <Lock className="w-6 h-6 text-blue-500" />
               </div>
             </div>
           </div>
@@ -162,7 +162,7 @@ export default function Login({ onLogin }) {
                       placeholder="e.g. john@mragroup.co.id"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-xs shadow-sm"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-blue-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all text-xs shadow-sm"
                     />
                     <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-[14px]" />
                   </div>
@@ -179,7 +179,7 @@ export default function Login({ onLogin }) {
                         setView('forgot');
                         setError(null);
                       }}
-                      className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors font-bold focus:outline-none"
+                      className="text-xs text-blue-650 hover:text-blue-700 transition-colors font-bold focus:outline-none"
                     >
                       Forgot Password?
                     </button>
@@ -191,7 +191,7 @@ export default function Login({ onLogin }) {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-xs shadow-sm"
+                      className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 focus:border-blue-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all text-xs shadow-sm"
                     />
                     <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-[14px]" />
                     <button
@@ -208,7 +208,7 @@ export default function Login({ onLogin }) {
                   <input
                     type="checkbox"
                     id="rememberMe"
-                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
                   />
                   <label htmlFor="rememberMe" className="text-xs font-semibold text-slate-500 cursor-pointer select-none">
                     Remember me
@@ -218,7 +218,7 @@ export default function Login({ onLogin }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/10 flex items-center justify-center gap-2 text-xs"
                 >
                   {loading ? (
                     <>
@@ -276,7 +276,7 @@ export default function Login({ onLogin }) {
                       placeholder="e.g. john@mragroup.co.id"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-xs shadow-sm"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-blue-500 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all text-xs shadow-sm"
                     />
                     <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-[14px]" />
                   </div>
@@ -285,7 +285,7 @@ export default function Login({ onLogin }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/10 flex items-center justify-center gap-2 text-xs"
                 >
                   {loading ? (
                     <>
