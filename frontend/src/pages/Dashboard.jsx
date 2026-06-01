@@ -14,7 +14,8 @@ import {
   Laptop,
   Code2,
   Wifi,
-  Lock
+  Lock,
+  Database
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReactLoader from '../components/ReactLoader';
@@ -617,7 +618,8 @@ export default function Dashboard({ user, token, darkMode }) {
                         Hardware: { icon: Laptop, color: 'text-blue-600 dark:text-blue-400' },
                         Software: { icon: Code2, color: 'text-indigo-650 dark:text-indigo-400' },
                         Network: { icon: Wifi, color: 'text-emerald-600 dark:text-emerald-450' },
-                        Access: { icon: Lock, color: 'text-amber-600 dark:text-amber-400' }
+                        Access: { icon: Lock, color: 'text-amber-600 dark:text-amber-400' },
+                        ERP: { icon: Database, color: 'text-purple-650 dark:text-purple-400' }
                       };
 
                       const config = categoryConfig[catKey] || { icon: Activity, color: 'text-slate-500 dark:text-slate-400' };

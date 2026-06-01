@@ -246,6 +246,11 @@ async function main() {
     { category: 'Software', subCategory: 'Google Workspace' },
     { category: 'Software', subCategory: 'Custom Internal Apps' },
     
+    // ERP
+    { category: 'ERP', subCategory: 'Retailsoft' },
+    { category: 'ERP', subCategory: 'NetSuite' },
+    { category: 'ERP', subCategory: 'Genie' },
+    
     // Network
     { category: 'Network', subCategory: 'Wi-Fi Connection' },
     { category: 'Network', subCategory: 'LAN Cable Connection' },

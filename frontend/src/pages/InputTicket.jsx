@@ -490,6 +490,7 @@ export default function InputTicket({ user, token }) {
                       <option value="Software">Software</option>
                       <option value="Network">Network</option>
                       <option value="Access">Access</option>
+                      <option value="ERP">ERP</option>
                     </select>
                     <Cpu className="w-4 h-4 text-slate-400 group-focus-within:text-rose-550 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-200" />
                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200" />
