@@ -162,14 +162,13 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
 
       <div className="flex flex-col">
         {/* Brand Logo Header */}
-        <div className={`h-16 flex items-center border-b border-gray-200/50 dark:border-slate-800/50 gap-2 relative ${
+        <div className={`h-16 flex items-center border-b border-gray-200/50 dark:border-slate-800/50 relative ${
           isCollapsed ? 'justify-center px-2' : 'px-6'
         }`}>
-          <Building2 className="w-6 h-6 text-brand-500 shrink-0" />
-          {!isCollapsed && (
-            <span className="font-extrabold text-lg bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent truncate animate-fade-in">
-              MRA Helpdesk
-            </span>
+          {isCollapsed ? (
+            <img src="/mra-logo.png" alt="MRA" className="h-5 w-auto object-contain" />
+          ) : (
+            <img src="/mra-logo.png" alt="MRA Helpdesk" className="h-7 w-auto object-contain" />
           )}
         </div>
 

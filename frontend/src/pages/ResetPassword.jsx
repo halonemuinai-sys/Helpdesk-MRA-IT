@@ -70,13 +70,8 @@ export default function ResetPassword() {
         <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
 
         {/* Top Branding */}
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-            <span className="font-black text-xl text-white">M</span>
-          </div>
-          <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-            MRA Group
-          </span>
+        <div className="flex items-center relative z-10">
+          <img src="/mra-logo.png" alt="MRA Group Logo" className="h-11 w-auto object-contain" />
         </div>
 
         {/* Center Slogan */}
@@ -112,11 +107,8 @@ export default function ResetPassword() {
         <div className="w-full max-w-md mx-auto space-y-8 animate-fade-in relative z-10">
           
           {/* Logo on Mobile Only */}
-          <div className="flex lg:hidden items-center gap-2.5 justify-center mb-6">
-            <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
-              <span className="font-black text-sm text-white">M</span>
-            </div>
-            <span className="font-extrabold text-lg tracking-tight">MRA Group Helpdesk</span>
+          <div className="flex lg:hidden items-center justify-center mb-6">
+            <img src="/mra-logo.png" alt="MRA Group Logo" className="h-11 w-auto object-contain" />
           </div>
 
           {success ? (
