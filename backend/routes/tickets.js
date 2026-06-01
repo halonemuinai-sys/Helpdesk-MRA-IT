@@ -540,19 +540,51 @@ router.patch('/:id/assign', verifyToken, async (req, res, next) => {
 // Create a ticket from public sources (e.g. Google Form)
 router.post('/public', async (req, res, next) => {
   try {
-    const { email, title, description, category, subCategory, priority, source } = req.body;
+    const { email, name, title, description, category, subCategory, priority, source } = req.body;
 
     if (!email || !title || !description || !category) {
       return res.status(400).json({ error: 'Email, title, description, and category are required.' });
     }
 
-    // Find employee by email
-    const requester = await prisma.user.findUnique({
+    // Find employee by email, or create a new user dynamically if not found
+    let requester = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }
     });
 
     if (!requester) {
-      return res.status(404).json({ error: `Karyawan dengan email ${email} tidak terdaftar di database helpdesk MRA.` });
+      try {
+        // Find default company ID
+        const defaultCompany = await prisma.company.findFirst({
+          where: { name: { contains: 'Mugi Rekso Abadi', mode: 'insensitive' } }
+        }) || await prisma.company.findFirst();
+
+        const defaultCompanyId = defaultCompany ? defaultCompany.id : 1;
+
+        // Hash default password for new users
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        const defaultPasswordHash = await bcrypt.hash('Password123!', salt);
+
+        // Generate a unique ID (e.g. PUB-12345678)
+        const randomId = 'PUB-' + Math.floor(10000000 + Math.random() * 90000000);
+
+        // Auto-create user record
+        requester = await prisma.user.create({
+          data: {
+            id: randomId,
+            email: email.toLowerCase(),
+            password: defaultPasswordHash,
+            name: name || email.split('@')[0],
+            department: 'Public / Guest',
+            jobPosition: 'External Requester',
+            role: 'USER',
+            companyId: defaultCompanyId
+          }
+        });
+      } catch (err) {
+        console.error('Failed to auto-create user in public ticket creation:', err.message);
+        return res.status(500).json({ error: 'Internal Server Error during user registration', message: err.message });
+      }
     }
 
     const targetPriority = (priority || 'LOW').toUpperCase();
