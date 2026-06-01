@@ -29,11 +29,11 @@ export default function Guideline({ user }) {
       subtitle: "Selamat Datang di Portal Panduan Penggunaan",
       icon: BookOpen,
       color: "from-brand-500 to-indigo-500",
-      description: "Portal ini dirancang untuk mempermudah pemantauan, pelaporan, dan penyelesaian insiden teknologi informasi di lingkungan MRA Group. Panduan interaktif ini akan membantu Anda memahami alur kerja utama aplikasi dalam hitungan menit.",
+      description: "Portal helpdesk ini memfasilitasi pelaporan insiden IT, manajemen aset perangkat (laptop/smartphone), serta pemantauan real-time Service Level Agreement (SLA) untuk seluruh entitas MRA Group.",
       bullets: [
-        { icon: Sparkles, text: "Sistem pelaporan insiden terpusat untuk seluruh divisi." },
-        { icon: Clock, text: "Pemantauan SLA (Service Level Agreement) waktu nyata (real-time)." },
-        { icon: UserCheck, text: "Otomatisasi penugasan agen dan alur kerja approval tiket." }
+        { icon: Sparkles, text: "Pencatatan insiden IT terpusat di seluruh divisi MRA Group." },
+        { icon: Clock, text: "Perhitungan durasi Response & Resolution SLA yang presisi secara real-time." },
+        { icon: UserCheck, text: "Integrasi otomatis riwayat perangkat dan data penyerahan BAST." }
       ],
       visual: (
         <div className="relative w-full h-64 bg-slate-900/30 dark:bg-slate-950/40 rounded-2xl flex flex-col justify-center items-center overflow-hidden border border-gray-200/20">
@@ -74,65 +74,15 @@ export default function Guideline({ user }) {
       )
     },
     {
-      title: "Dashboard & SLA Analytics",
-      subtitle: "Monitoring Kinerja & Statistik Waktu Nyata",
-      icon: LayoutDashboard,
-      color: "from-blue-500 to-teal-500",
-      description: "Halaman Dashboard menyajikan ringkasan KPI (Key Performance Indicator) secara langsung. Anda dapat menyaring data berdasarkan Bulan dan Tahun secara spesifik untuk melihat tren performa SLA tim IT.",
-      bullets: [
-        { icon: CheckCircle, text: "KPI Utama: Persentase pemenuhan SLA, waktu respon, dan waktu resolusi." },
-        { icon: Sparkles, text: "Spotlight Agent: Menampilkan Agen IT terbaik dengan performa tertinggi." },
-        { icon: LayoutDashboard, text: "Bagan Distribusi: Visualisasi jenis insiden dan kategori paling kritis." }
-      ],
-      visual: (
-        <div className="relative w-full h-64 bg-slate-900/30 dark:bg-slate-950/40 rounded-2xl p-4 flex flex-col justify-between overflow-hidden border border-gray-200/20">
-          <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-teal-500/10 dark:from-blue-500/20 dark:to-blue-500/20 blur-xl opacity-80" />
-          
-          {/* Dashboard Mini Mockups */}
-          <div className="grid grid-cols-2 gap-3 z-10">
-            {/* SLA Card */}
-            <div className="bg-white/80 dark:bg-slate-900/80 rounded-xl p-3 border border-white/20 dark:border-slate-800/80 shadow-sm">
-              <p className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold">Team SLA Compliance</p>
-              <h5 className="text-lg font-bold text-teal-600 dark:text-teal-400 mt-0.5">98.4%</h5>
-              <div className="w-full bg-gray-100 dark:bg-slate-850 h-1.5 rounded-full overflow-hidden mt-2">
-                <div className="bg-teal-500 h-full rounded-full animate-progress-fill" style={{ width: '94%' }} />
-              </div>
-            </div>
-            {/* Spotlight Card */}
-            <div className="bg-white/80 dark:bg-slate-900/80 rounded-xl p-3 border border-white/20 dark:border-slate-800/80 shadow-sm flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-400 animate-bounce">
-                🏆
-              </div>
-              <div className="overflow-hidden">
-                <p className="text-[9px] text-gray-500 dark:text-slate-400 truncate">Spotlight Agent</p>
-                <p className="text-xs font-bold text-gray-800 dark:text-slate-200 truncate mt-0.5">Roni Wijaya</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Filter Bar Mockup */}
-          <div className="bg-white/85 dark:bg-slate-900/85 rounded-xl p-2.5 border border-white/20 dark:border-slate-800/80 z-10 flex items-center justify-between text-[10px] text-gray-600 dark:text-slate-300 shadow-sm">
-            <span className="font-bold flex items-center gap-1 text-slate-700 dark:text-slate-300">
-              📅 Filter Terpilih:
-            </span>
-            <div className="flex gap-1.5">
-              <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-semibold">Mei</span>
-              <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-semibold">2026</span>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      title: "Input Tiket & SLA Priority",
-      subtitle: "Registrasi Insiden & Pencatatan Akurat",
+      title: "Pendaftaran Tiket Baru",
+      subtitle: "Incident Logging & Fitur Backdate",
       icon: FilePlus2,
       color: "from-purple-500 to-pink-500",
-      description: "Setiap tiket insiden dimasukkan dengan informasi detil seperti pelapor, divisi, dan kategori kendala. Prioritas (Low, Medium, High) secara otomatis menentukan durasi target SLA.",
+      description: "IT Support atau Karyawan dapat membuat laporan insiden baru dengan menentukan detail pelapor, kategori (Hardware, Software, Network, Access), sub-kategori, serta tingkat urgensi prioritas.",
       bullets: [
-        { icon: Calendar, text: "Incident Backdating: Pencatatan tanggal mundur jika insiden baru dilaporkan telat." },
-        { icon: Clock, text: "SLA Matrix: Target waktu respon & resolusi disesuaikan dengan urgensi masalah." },
-        { icon: Users, text: "Searchable Select: Mempermudah pencarian nama karyawan dari direktori perusahaan." }
+        { icon: Users, text: "Searchable Directory: Pencarian nama karyawan terintegrasi departemen dan cabang." },
+        { icon: Calendar, text: "Incident Backdating: Fitur pencatatan tanggal mundur jika keluhan baru dilaporkan telat." },
+        { icon: UserCheck, text: "Pilihan Source Akurat: Memilih sumber laporan (Walk-in, Email, Phone Call, Instant Messaging)." }
       ],
       visual: (
         <div className="relative w-full h-64 bg-slate-900/30 dark:bg-slate-950/40 rounded-2xl p-4 flex flex-col justify-center items-center overflow-hidden border border-gray-200/20">
@@ -167,15 +117,15 @@ export default function Guideline({ user }) {
       )
     },
     {
-      title: "Alur Proses Tiket & SLA Stepper",
-      subtitle: "Siklus Penyelesaian Berbasis Penugasan",
+      title: "Siklus Hidup Tiket & SLA",
+      subtitle: "Dari Registrasi hingga Penyelesaian",
       icon: Ticket,
       color: "from-amber-500 to-orange-500",
-      description: "Tiket berjalan secara runtut melalui tahapan status (Created -> Assigned -> In Progress -> Resolved -> Closed). Anda dapat memantau status secara langsung di panel detail modal.",
+      description: "Setiap tiket dikelola secara transparan melalui alur status terstruktur yang memicu perhitungan timer Service Level Agreement (SLA): Created -> Assigned -> In Progress -> Resolved -> Closed.",
       bullets: [
-        { icon: Clock, text: "Play/Pause SLA: Stop sementara perhitungan SLA jika menunggu feedback eksternal." },
-        { icon: CheckCircle, text: "Resolusi & Catatan: Pengisian catatan tindakan wajib dilakukan sebelum tiket di-Resolve." },
-        { icon: ShieldAlert, text: "Audit Logs: Riwayat lengkap aktivitas tiket tercatat otomatis demi akuntabilitas." }
+        { icon: Clock, text: "Play/Pause SLA: Hentikan sementara perhitungan SLA jika menunggu konfirmasi user/vendor luar." },
+        { icon: CheckCircle, text: "Resolusi & Catatan: Pengisian catatan tindakan wajib dilakukan sebelum tiket diselesaikan." },
+        { icon: ShieldAlert, text: "Notifikasi Otomatis: Update status dan catatan perubahan terkirim instan ke email pelapor." }
       ],
       visual: (
         <div className="relative w-full h-64 bg-slate-900/30 dark:bg-slate-950/40 rounded-2xl p-4 flex flex-col justify-center items-center overflow-hidden border border-gray-200/20">
@@ -220,38 +170,67 @@ export default function Guideline({ user }) {
       )
     },
     {
-      title: "Manajemen User & Tiket (Admin)",
-      subtitle: "Kontrol Akses Tingkat Lanjut & Pemeliharaan",
-      icon: Users,
+      title: "Verifikasi & Delete Approval",
+      subtitle: "Pengamanan Data & Aset Kritis",
+      icon: ShieldAlert,
       color: "from-red-500 to-rose-500",
-      description: "Khusus untuk Admin, tersedia panel kontrol penuh untuk mengelola daftar karyawan, mereset password, mengubah status otorisasi, serta menghapus tiket tak valid dengan pop-up konfirmasi interaktif.",
+      description: "Demi keamanan data inventaris, operasi penghapusan data penting (Aset Perangkat, WiFi AP, Subscriptions) oleh peran IT Agent dilindungi oleh alur persetujuan tingkat lanjut (Delete Approval Requests).",
       bullets: [
-        { icon: Users, text: "User Management: Penyesuaian hak akses departemen dan jabatan karyawan." },
-        { icon: ShieldAlert, text: "Ticket Deletion: Hapus tiket redundan dengan proteksi SweetAlert2 yang aman." },
-        { icon: UserCheck, text: "Security Actions: Mengubah password atau reset langsung kredensial akun." }
+        { icon: ShieldAlert, text: "Pending Request: Penghapusan oleh Agent tidak langsung menghapus data di database." },
+        { icon: UserCheck, text: "Otoritas Admin & Auditor: Request wajib disetujui Admin atau Auditor sebelum terhapus permanen." },
+        { icon: HelpCircle, text: "Mandatory Rejection Reason: Penolakan penghapusan wajib menyertakan catatan penjelasan." }
       ],
       visual: (
         <div className="relative w-full h-64 bg-slate-900/30 dark:bg-slate-950/40 rounded-2xl p-4 flex flex-col justify-center items-center overflow-hidden border border-gray-200/20">
           <div className="absolute inset-0 bg-gradient-to-tr from-red-500/10 to-rose-500/10 dark:from-red-500/20 dark:to-red-500/20 blur-xl opacity-80" />
           
-          {/* SweetAlert2 style popup mockup */}
+          {/* Approval Alert style popup mockup */}
           <div className="relative w-72 bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-xl p-4 border border-white/20 dark:border-slate-800/80 z-10 flex flex-col items-center text-center">
-            <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/50 flex items-center justify-center text-red-600 dark:text-red-400 mb-2 border border-red-100 dark:border-red-900/30 animate-wiggle-alert">
-              ⚠️
+            <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-450 mb-2 border border-rose-100 dark:border-rose-900/30">
+              ⚡
             </div>
             
-            <h5 className="text-xs font-bold text-gray-800 dark:text-slate-100">Apakah Anda Yakin?</h5>
+            <h5 className="text-xs font-bold text-gray-800 dark:text-slate-100">Delete Request Pending</h5>
             <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 max-w-[200px] leading-normal">
-              Tindakan menghapus tiket MRA-00042 tidak dapat dibatalkan!
+              Penghapusan aset LP10682 membutuhkan persetujuan IT Admin atau Auditor.
             </p>
             
             <div className="flex gap-2 mt-3 w-full">
-              <button className="flex-1 bg-red-600 text-white rounded-lg py-1.5 text-[9px] font-bold shadow-md hover:bg-red-700 transition animate-pulse-glow-red">
-                Ya, Hapus!
-              </button>
-              <button className="flex-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 rounded-lg py-1.5 text-[9px] font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition">
-                Batal
-              </button>
+              <span className="flex-1 bg-amber-500 text-white rounded-lg py-1 px-2 text-[9px] font-bold text-center">
+                Pending Approval
+              </span>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Audit Trail & Kepatuhan Sistem",
+      subtitle: "Transparansi & Akuntabilitas Operasional",
+      icon: Users,
+      color: "from-blue-500 to-teal-500",
+      description: "Seluruh aktivitas operasional krusial dalam sistem (termasuk perubahan data email pengguna, penyerahan BAST, modifikasi status, dan verifikasi penghapusan) dicatat dalam riwayat kronologis tak terhapus.",
+      bullets: [
+        { icon: Clock, text: "System Audit Logs: Pencatatan otomatis waktu, pelaku, dan rincian perubahan." },
+        { icon: UserCheck, text: "Akses Terbatas Auditor: Peran AUDITOR memiliki wewenang khusus memantau log audit." },
+        { icon: Sparkles, text: "BAST Generator: Cetak surat serah terima fisik langsung dengan log IT Agent pengawas." }
+      ],
+      visual: (
+        <div className="relative w-full h-64 bg-slate-900/30 dark:bg-slate-950/40 rounded-2xl p-6 flex flex-col justify-center overflow-hidden border border-gray-200/20">
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-teal-500/10 dark:from-blue-500/20 dark:to-blue-500/20 blur-xl opacity-80" />
+          <h4 className="font-extrabold text-[10px] uppercase text-gray-400 tracking-wider mb-3 flex items-center gap-1">
+             System Audit Logs
+          </h4>
+          <div className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-800 space-y-3 text-[10px]">
+            <div className="relative">
+              <span className="absolute -left-[21px] top-1.5 w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="font-bold text-gray-750 dark:text-slate-250">User Email Updated</div>
+              <div className="text-[8px] text-gray-400">Oleh: Aris Setiyono (Admin)</div>
+            </div>
+            <div className="relative">
+              <span className="absolute -left-[21px] top-1.5 w-2 h-2 rounded-full bg-blue-500" />
+              <div className="font-bold text-gray-750 dark:text-slate-250">Delete Request Approved</div>
+              <div className="text-[8px] text-gray-400">Aset: Laptop ThinkPad LP10682</div>
             </div>
           </div>
         </div>
