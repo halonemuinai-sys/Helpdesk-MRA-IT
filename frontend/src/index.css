@@ -324,3 +324,41 @@
   background-size: 40px 40px;
   background-position: center;
 }
+
+.cyber-grid-light {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center;
+}
+
+@keyframes scanLine {
+  0% {
+    transform: translateY(-20%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(120vh);
+    opacity: 0;
+  }
+}
+
+.cyber-scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.4), rgba(16, 185, 129, 0.15), transparent);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+  animation: scanLine 6s linear infinite;
+  pointer-events: none;
+}
+

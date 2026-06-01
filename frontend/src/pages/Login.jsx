@@ -110,15 +110,18 @@ export default function Login({ onLogin }) {
       </div>
 
       {/* Right side: Forms */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 md:px-16 lg:px-24 bg-slate-950 relative overflow-hidden">
-        {/* Subtle Cyber Grid */}
-        <div className="absolute inset-0 cyber-grid pointer-events-none opacity-60"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(70,98,193,0.03),transparent)] pointer-events-none"></div>
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 md:px-16 lg:px-24 bg-slate-50 text-slate-900 relative overflow-hidden">
+        {/* Subtle Cyber Grid (Light Mode) */}
+        <div className="absolute inset-0 cyber-grid-light pointer-events-none opacity-80"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.03),transparent)] pointer-events-none"></div>
+        
+        {/* IT-themed Scanning Laser Line */}
+        <div className="cyber-scan-line"></div>
 
-        {/* Animated Floating Aurora Orbs */}
-        <div className="absolute top-1/4 -right-1/4 w-[400px] h-[400px] rounded-full bg-brand-500/5 dark:bg-brand-500/10 blur-[100px] animate-float-orb-1 pointer-events-none"></div>
-        <div className="absolute bottom-1/4 -left-1/4 w-[350px] h-[350px] rounded-full bg-rose-500/5 dark:bg-rose-500/5 blur-[90px] animate-float-orb-2 pointer-events-none"></div>
-        <div className="absolute -bottom-10 right-1/4 w-[300px] h-[300px] rounded-full bg-cyan-400/5 dark:bg-cyan-400/5 blur-[80px] animate-float-orb-3 pointer-events-none"></div>
+        {/* Animated Floating Aurora Orbs (Softer colors for light theme) */}
+        <div className="absolute top-1/4 -right-1/4 w-[400px] h-[400px] rounded-full bg-emerald-500/5 blur-[120px] animate-float-orb-1 pointer-events-none"></div>
+        <div className="absolute bottom-1/4 -left-1/4 w-[350px] h-[350px] rounded-full bg-teal-500/5 blur-[100px] animate-float-orb-2 pointer-events-none"></div>
+        <div className="absolute -bottom-10 right-1/4 w-[300px] h-[300px] rounded-full bg-green-400/5 blur-[90px] animate-float-orb-3 pointer-events-none"></div>
 
         <div className="w-full max-w-md mx-auto space-y-8 animate-fade-in relative z-10">
           
@@ -131,14 +134,14 @@ export default function Login({ onLogin }) {
           {view === 'login' && (
             <>
               <div className="text-center lg:text-left space-y-2">
-                <h2 className="text-2xl font-black text-white tracking-tight">Sign In</h2>
-                <p className="text-sm text-slate-400">
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Sign In</h2>
+                <p className="text-sm text-slate-500">
                   Access the IT dashboard console with your email.
                 </p>
               </div>
 
               {error && (
-                <div className="p-4 rounded-2xl bg-red-950/20 border border-red-500/20 text-red-200 text-xs font-semibold flex items-start gap-3 animate-pulse">
+                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-3 animate-pulse">
                   <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
@@ -146,7 +149,7 @@ export default function Login({ onLogin }) {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                     Email Address
                   </label>
                   <div className="relative">
@@ -156,15 +159,15 @@ export default function Login({ onLogin }) {
                       placeholder="e.g. john@mragroup.co.id"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-slate-900/40 border border-slate-800 focus:border-emerald-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs shadow-sm"
                     />
-                    <Mail className="w-4 h-4 text-slate-500 absolute left-4 top-4" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                       Password
                     </label>
                     <button
@@ -173,7 +176,7 @@ export default function Login({ onLogin }) {
                         setView('forgot');
                         setError(null);
                       }}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-bold focus:outline-none"
+                      className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors font-bold focus:outline-none"
                     >
                       Forgot Password?
                     </button>
@@ -185,13 +188,13 @@ export default function Login({ onLogin }) {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-10 py-3 bg-slate-900/40 border border-slate-800 focus:border-emerald-500 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
+                      className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs shadow-sm"
                     />
-                    <Lock className="w-4 h-4 text-slate-500 absolute left-4 top-4" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300 focus:outline-none"
+                      className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600 focus:outline-none"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -226,19 +229,19 @@ export default function Login({ onLogin }) {
                     setView('login');
                     setError(null);
                   }}
-                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors font-bold mb-4 focus:outline-none"
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors font-bold mb-4 focus:outline-none"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Sign In</span>
                 </button>
-                <h2 className="text-2xl font-black text-white tracking-tight">Reset Password</h2>
-                <p className="text-sm text-slate-400">
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Reset Password</h2>
+                <p className="text-sm text-slate-500">
                   Enter your registered email address and we will generate a password reset link.
                 </p>
               </div>
 
               {error && (
-                <div className="p-4 rounded-2xl bg-red-950/20 border border-red-500/20 text-red-200 text-xs font-semibold flex items-start gap-3 animate-pulse">
+                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-3 animate-pulse">
                   <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
@@ -246,7 +249,7 @@ export default function Login({ onLogin }) {
 
               <form onSubmit={handleForgotSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                     Email Address
                   </label>
                   <div className="relative">
@@ -256,9 +259,9 @@ export default function Login({ onLogin }) {
                       placeholder="e.g. john@mragroup.co.id"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-slate-900/40 border border-slate-800 focus:border-emerald-500 rounded-xl text-white placeholder-slate-655 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-xs shadow-sm"
                     />
-                    <Mail className="w-4 h-4 text-slate-500 absolute left-4 top-4" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
                   </div>
                 </div>
 
@@ -283,17 +286,17 @@ export default function Login({ onLogin }) {
           {/* VIEW: FORGOT SUCCESS */}
           {view === 'forgot-success' && (
             <div className="text-center space-y-6 py-6">
-              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
+              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
                 <CheckCircle2 className="w-10 h-10 animate-bounce" />
               </div>
               
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">Reset Link Sent!</h2>
-                <p className="text-sm text-slate-400 leading-relaxed max-w-sm mx-auto">
+                <h2 className="text-xl font-bold text-slate-800 tracking-tight">Reset Link Sent!</h2>
+                <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
                   If that email is registered, we have sent instructions to reset your password. 
                 </p>
                 {window.location.hostname === 'localhost' && (
-                  <p className="text-xs text-amber-500/80 leading-relaxed max-w-sm mx-auto pt-2 bg-amber-500/5 p-3 border border-amber-500/10 rounded-2xl">
+                  <p className="text-xs text-amber-600/90 leading-relaxed max-w-sm mx-auto pt-2 bg-amber-500/5 p-3 border border-amber-500/10 rounded-2xl">
                     💡 <strong>Local Dev tip:</strong> Check the backend server terminal console logs to view the generated link!
                   </p>
                 )}
@@ -302,7 +305,7 @@ export default function Login({ onLogin }) {
               <button
                 type="button"
                 onClick={() => setView('login')}
-                className="px-6 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-xs font-semibold rounded-xl text-slate-200 transition-colors shadow-sm focus:outline-none"
+                className="px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-xs font-semibold rounded-xl text-slate-700 transition-colors shadow-sm focus:outline-none"
               >
                 Back to Sign In
               </button>
