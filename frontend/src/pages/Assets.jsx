@@ -1105,9 +1105,31 @@ const totalAssets = assets.length;
                             value={formBrand}
                             onChange={(e) => setFormBrand(e.target.value)}
                             placeholder="e.g. Lenovo, Dell, Apple"
+                            list="brand-options"
                             className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                             required
                           />
+                          <datalist id="brand-options">
+                            {formDeviceCategory === 'LAPTOP' ? (
+                              <>
+                                <option value="LENOVO" />
+                                <option value="DELL" />
+                                <option value="APPLE" />
+                                <option value="HP" />
+                                <option value="ASUS" />
+                              </>
+                            ) : (
+                              <>
+                                <option value="APPLE" />
+                                <option value="SAMSUNG" />
+                                <option value="OPPO" />
+                                <option value="VIVO" />
+                                <option value="XIAOMI" />
+                                <option value="REALME" />
+                                <option value="INFINIX" />
+                              </>
+                            )}
+                          </datalist>
                         </div>
 
                         <div className="space-y-1">
@@ -1119,9 +1141,33 @@ const totalAssets = assets.length;
                             value={formModel}
                             onChange={(e) => setFormModel(e.target.value)}
                             placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. ThinkPad L14 Gen 2' : 'e.g. iPhone 15 Pro'}
-                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                            list="model-options"
+                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                             required
                           />
+                          <datalist id="model-options">
+                            {formDeviceCategory === 'LAPTOP' ? (
+                              <>
+                                <option value="ThinkPad L14 Gen 2" />
+                                <option value="ThinkPad L14 Gen 3" />
+                                <option value="ThinkPad E14 Gen 4" />
+                                <option value="Vostro 3400" />
+                                <option value="Latitude 3420" />
+                                <option value="MacBook Air M1" />
+                                <option value="MacBook Air M2" />
+                                <option value="MacBook Pro" />
+                              </>
+                            ) : (
+                              <>
+                                <option value="iPhone 15 Pro" />
+                                <option value="iPhone 14 Pro Max" />
+                                <option value="iPhone 13" />
+                                <option value="Galaxy S23 Ultra" />
+                                <option value="Galaxy A54 5G" />
+                                <option value="Reno 10 Pro" />
+                              </>
+                            )}
+                          </datalist>
                         </div>
                       </div>
 
@@ -1136,8 +1182,32 @@ const totalAssets = assets.length;
                             value={formProcessor}
                             onChange={(e) => setFormProcessor(e.target.value)}
                             placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. Intel Core i5 / Apple M3' : 'e.g. A16 Bionic / Snapdragon'}
+                            list="processor-options"
                             className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                           />
+                          <datalist id="processor-options">
+                            {formDeviceCategory === 'LAPTOP' ? (
+                              <>
+                                <option value="Intel Core i5" />
+                                <option value="Intel Core i7" />
+                                <option value="Intel Core i3" />
+                                <option value="Apple M1" />
+                                <option value="Apple M2" />
+                                <option value="Apple M3" />
+                                <option value="AMD Ryzen 5" />
+                                <option value="AMD Ryzen 7" />
+                              </>
+                            ) : (
+                              <>
+                                <option value="A17 Pro" />
+                                <option value="A16 Bionic" />
+                                <option value="A15 Bionic" />
+                                <option value="Snapdragon 8 Gen 2" />
+                                <option value="Snapdragon 7 Gen 1" />
+                                <option value="MediaTek Dimensity 9200" />
+                              </>
+                            )}
+                          </datalist>
                         </div>
 
                         <div className="space-y-1">
@@ -1149,8 +1219,26 @@ const totalAssets = assets.length;
                             value={formOs}
                             onChange={(e) => setFormOs(e.target.value)}
                             placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. Windows 11 Pro / macOS' : 'e.g. iOS 17 / Android 14'}
-                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                            list="os-options"
+                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                           />
+                          <datalist id="os-options">
+                            {formDeviceCategory === 'LAPTOP' ? (
+                              <>
+                                <option value="Windows 11 Pro" />
+                                <option value="Windows 10 Pro" />
+                                <option value="macOS Sonoma" />
+                                <option value="macOS Ventura" />
+                              </>
+                            ) : (
+                              <>
+                                <option value="iOS 17" />
+                                <option value="iOS 16" />
+                                <option value="Android 14" />
+                                <option value="Android 13" />
+                              </>
+                            )}
+                          </datalist>
                         </div>
                       </div>
 
@@ -1165,8 +1253,17 @@ const totalAssets = assets.length;
                             value={formRam}
                             onChange={(e) => setFormRam(e.target.value)}
                             placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. 8GB / 16GB DDR4' : 'e.g. 6GB / 8GB RAM'}
+                            list="ram-options"
                             className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                           />
+                          <datalist id="ram-options">
+                            <option value="8GB" />
+                            <option value="16GB" />
+                            <option value="32GB" />
+                            <option value="4GB" />
+                            <option value="6GB" />
+                            <option value="12GB" />
+                          </datalist>
                         </div>
 
                         <div className="space-y-1">
@@ -1178,8 +1275,27 @@ const totalAssets = assets.length;
                             value={formStorage}
                             onChange={(e) => setFormStorage(e.target.value)}
                             placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. 256GB SSD / 512GB NVMe' : 'e.g. 128GB / 256GB NVMe'}
+                            list="storage-options"
                             className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                           />
+                          <datalist id="storage-options">
+                            {formDeviceCategory === 'LAPTOP' ? (
+                              <>
+                                <option value="256GB SSD" />
+                                <option value="512GB SSD" />
+                                <option value="512GB NVMe" />
+                                <option value="1TB SSD" />
+                                <option value="1TB NVMe" />
+                              </>
+                            ) : (
+                              <>
+                                <option value="128GB" />
+                                <option value="256GB" />
+                                <option value="512GB" />
+                                <option value="64GB" />
+                              </>
+                            )}
+                          </datalist>
                         </div>
                       </div>
 
