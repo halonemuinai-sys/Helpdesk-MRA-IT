@@ -17,6 +17,22 @@ router.get('/master', verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/companies/public
+// Returns list of unique company names for public dropdowns (no auth needed)
+router.get('/public', async (req, res, next) => {
+  try {
+    const companies = await prisma.company.findMany({
+      select: { name: true },
+      orderBy: { name: 'asc' }
+    });
+    // Extract unique company names
+    const uniqueNames = Array.from(new Set(companies.map(c => c.name))).sort();
+    res.json(uniqueNames);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/companies
 // Returns all company branches (name, location, sector)
 router.get('/', verifyToken, async (req, res, next) => {

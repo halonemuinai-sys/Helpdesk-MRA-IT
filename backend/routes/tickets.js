@@ -540,25 +540,45 @@ router.patch('/:id/assign', verifyToken, async (req, res, next) => {
 // Create a ticket from public sources (e.g. Google Form)
 router.post('/public', async (req, res, next) => {
   try {
-    const { email, name, title, description, category, subCategory, priority, source } = req.body;
+    const { email, name, company: companyName, title, description, category, subCategory, priority, source } = req.body;
 
     if (!email || !title || !description || !category) {
       return res.status(400).json({ error: 'Email, title, description, and category are required.' });
     }
 
-    // Find employee by email, or create a new user dynamically if not found
+    // Find employee by email
     let requester = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }
     });
 
+    // Fallback 1: If email has a typo but Name matches an existing user in the database
+    if (!requester && name && name.trim() !== '') {
+      requester = await prisma.user.findFirst({
+        where: { name: { equals: name.trim(), mode: 'insensitive' } }
+      });
+    }
+
+    // Fallback 2: If still not found, create a new user dynamically
     if (!requester) {
       try {
-        // Find default company ID
-        const defaultCompany = await prisma.company.findFirst({
-          where: { name: { contains: 'Mugi Rekso Abadi', mode: 'insensitive' } }
-        }) || await prisma.company.findFirst();
+        // Resolve company branch ID from the companyName sent by Google Form
+        let targetCompanyId = null;
+        if (companyName && companyName.trim() !== '') {
+          const matchedCompany = await prisma.company.findFirst({
+            where: { name: { equals: companyName.trim(), mode: 'insensitive' } }
+          });
+          if (matchedCompany) {
+            targetCompanyId = matchedCompany.id;
+          }
+        }
 
-        const defaultCompanyId = defaultCompany ? defaultCompany.id : 1;
+        // If no matching company, fallback to the default company
+        if (!targetCompanyId) {
+          const defaultCompany = await prisma.company.findFirst({
+            where: { name: { contains: 'Mugi Rekso Abadi', mode: 'insensitive' } }
+          }) || await prisma.company.findFirst();
+          targetCompanyId = defaultCompany ? defaultCompany.id : 1;
+        }
 
         // Hash default password for new users
         const bcrypt = require('bcryptjs');
@@ -578,7 +598,7 @@ router.post('/public', async (req, res, next) => {
             department: 'Public / Guest',
             jobPosition: 'External Requester',
             role: 'USER',
-            companyId: defaultCompanyId
+            companyId: targetCompanyId
           }
         });
       } catch (err) {
