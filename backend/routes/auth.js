@@ -124,16 +124,7 @@ router.post('/forgot-password', authRateLimiter, async (req, res, next) => {
     // Send SMTP email if configured
     if (process.env.SMTP_HOST && process.env.SMTP_USER) {
       try {
-        const nodemailer = require('nodemailer');
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST,
-          port: parseInt(process.env.SMTP_PORT || '587'),
-          secure: process.env.SMTP_SECURE === 'true',
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-          }
-        });
+        const { transporter } = require('../api/email');
 
         await transporter.sendMail({
           from: `"IT Helpdesk MRA" <${process.env.SMTP_USER}>`,
