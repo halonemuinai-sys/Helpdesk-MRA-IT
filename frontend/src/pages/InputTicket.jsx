@@ -530,11 +530,11 @@ export default function InputTicket({ user, token }) {
                     >
                       <option value="Walk-in">Walk-in</option>
                       <option value="Email">Email</option>
-                      <option value="Phone Call">Phone</option>
-                      <option value="Instant Messaging">IM</option>
-                      <option value="Direct Instruction">Direct</option>
-                      <option value="On-site Visit">On-site</option>
-                      <option value="System Alert">Alert</option>
+                      <option value="Phone Call">Phone Call</option>
+                      <option value="Instant Messaging">Instant Messaging (WhatsApp/Telegram)</option>
+                      <option value="Direct Instruction">Direct Instruction</option>
+                      <option value="On-site Visit">On-site Visit</option>
+                      <option value="System Alert">System Alert</option>
                     </select>
                     <UserPlus className="w-4 h-4 text-slate-400 group-focus-within:text-rose-550 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-200" />
                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
