@@ -253,4 +253,49 @@ router.patch('/:id/email', verifyToken, checkRole(['ADMIN', 'AGENT']), async (re
   }
 });
 
+// PATCH /api/users/:id/name
+// Update user name (ADMIN and AGENT only)
+router.patch('/:id/name', verifyToken, checkRole(['ADMIN', 'AGENT']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'Name is required.' });
+    }
+
+    // Check if user exists
+    const userExists = await prisma.user.findUnique({
+      where: { id }
+    });
+    if (!userExists) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Update name
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { name: name.trim() },
+      include: { company: true }
+    });
+
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'USER_NAME_UPDATED',
+        details: `User "${userExists.name}" name updated to "${updatedUser.name}" by ${req.user.name}.`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
+    const { password, ...safeUser } = updatedUser;
+    res.json({
+      message: `Name for user ${safeUser.name} updated successfully.`,
+      user: safeUser
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

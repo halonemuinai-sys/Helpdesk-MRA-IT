@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Clock, 
@@ -7,9 +7,13 @@ import {
   Pause, 
   CheckCircle2, 
   Check, 
-  AlertTriangle 
+  AlertTriangle,
+  Pencil,
+  Loader2
 } from 'lucide-react';
 import ReactLoader from './ReactLoader';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default function TicketDetailsModal({ 
   user, 
@@ -23,6 +27,50 @@ export default function TicketDetailsModal({
   handleAssignAgent 
 }) {
   const [actionComment, setActionComment] = useState('');
+  
+  // States for inline requester name editing
+  const [requesterName, setRequesterName] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [nameError, setNameError] = useState(null);
+
+  // Sync state when ticketDetails changes
+  useEffect(() => {
+    if (ticketDetails?.requester) {
+      setRequesterName(ticketDetails.requester.name);
+      setNewName(ticketDetails.requester.name);
+    }
+  }, [ticketDetails]);
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) return;
+    setIsSavingName(true);
+    setNameError(null);
+
+    try {
+      const res = await fetch(`${API_URL}/users/${ticketDetails.requester.id}/name`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: newName.trim() })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update name');
+
+      setRequesterName(newName.trim());
+      // Also mutate the local prop reference to keep parent sync
+      ticketDetails.requester.name = newName.trim();
+      setIsEditingName(false);
+    } catch (err) {
+      setNameError(err.message);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   // Local helper to submit status changes with local comment
   const onSubmitStatusChange = async (newStatus) => {
@@ -177,7 +225,62 @@ export default function TicketDetailsModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
                       <p className="text-gray-450 dark:text-slate-500 font-medium">Full Name</p>
-                      <p className="font-semibold text-gray-800 dark:text-slate-200 mt-0.5">{ticketDetails.requester.name}</p>
+                      {isEditingName ? (
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            disabled={isSavingName}
+                            className="px-2 py-1 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-white dark:bg-slate-950 focus:border-brand-500 focus:outline-none w-full max-w-[180px]"
+                            placeholder="Enter new name..."
+                          />
+                          {isSavingName ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-500 shrink-0" />
+                          ) : (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={handleSaveName}
+                                className="p-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-600 rounded"
+                                title="Save"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setNewName(requesterName);
+                                  setIsEditingName(false);
+                                  setNameError(null);
+                                }}
+                                className="p-1 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 rounded"
+                                title="Cancel"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 mt-0.5 group">
+                          <p className="font-semibold text-gray-800 dark:text-slate-200">{requesterName}</p>
+                          {user.role !== 'USER' && (
+                            <button
+                              onClick={() => {
+                                setNewName(requesterName);
+                                setIsEditingName(true);
+                                setNameError(null);
+                              }}
+                              className="p-1 hover:bg-gray-105 dark:hover:bg-slate-800 rounded text-gray-400 hover:text-brand-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200"
+                              title="Edit Employee Name"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {nameError && (
+                        <p className="text-[10px] text-red-500 font-semibold mt-1">{nameError}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-gray-450 dark:text-slate-500 font-medium">Phone Number</p>
