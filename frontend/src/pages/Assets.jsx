@@ -1141,33 +1141,9 @@ const totalAssets = assets.length;
                             value={formModel}
                             onChange={(e) => setFormModel(e.target.value)}
                             placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. ThinkPad L14 Gen 2' : 'e.g. iPhone 15 Pro'}
-                            list="model-options"
                             className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                             required
                           />
-                          <datalist id="model-options">
-                            {formDeviceCategory === 'LAPTOP' ? (
-                              <>
-                                <option value="ThinkPad L14 Gen 2" />
-                                <option value="ThinkPad L14 Gen 3" />
-                                <option value="ThinkPad E14 Gen 4" />
-                                <option value="Vostro 3400" />
-                                <option value="Latitude 3420" />
-                                <option value="MacBook Air M1" />
-                                <option value="MacBook Air M2" />
-                                <option value="MacBook Pro" />
-                              </>
-                            ) : (
-                              <>
-                                <option value="iPhone 15 Pro" />
-                                <option value="iPhone 14 Pro Max" />
-                                <option value="iPhone 13" />
-                                <option value="Galaxy S23 Ultra" />
-                                <option value="Galaxy A54 5G" />
-                                <option value="Reno 10 Pro" />
-                              </>
-                            )}
-                          </datalist>
                         </div>
                       </div>
 
