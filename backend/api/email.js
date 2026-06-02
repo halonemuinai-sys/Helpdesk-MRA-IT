@@ -135,100 +135,265 @@ async function sendTicketStatusChangedEmail(ticket, oldStatus, newStatus, commen
   const subject = `[MRA IT Helpdesk] Pembaruan Tiket ${ticket.id}: Status Menjadi ${newStatus}`;
   
   const statusColorMap = {
-    'OPEN': '#3b82f6',
-    'IN_PROGRESS': '#6366f1',
-    'PENDING': '#f59e0b',
-    'RESOLVED': '#10b981',
-    'CLOSED': '#64748b'
+    'OPEN': '#2563eb',
+    'IN_PROGRESS': '#1d4ed8',
+    'PENDING': '#d97706',
+    'RESOLVED': '#16a34a',
+    'CLOSED': '#4b5563'
   };
 
   const statusNameMap = {
     'OPEN': 'Terbuka (Open)',
     'IN_PROGRESS': 'Sedang Dikerjakan (In Progress)',
-    'PENDING': 'Ditangguhkan (Pending/Paused)',
+    'PENDING': 'Ditangguhkan (Pending / Paused)',
     'RESOLVED': 'Selesai (Resolved)',
     'CLOSED': 'Ditutup (Closed)'
   };
 
-  const statusColor = statusColorMap[newStatus] || '#1e293b';
+  const statusColor = statusColorMap[newStatus] || '#2563eb';
   const statusName = statusNameMap[newStatus] || newStatus;
   const updateTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-  // Additional detail depending on RESOLVED
-  let statusInfoMsg = '';
-  if (newStatus === 'RESOLVED') {
-    statusInfoMsg = `
-      <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 13px; color: #065f46; text-align: center;">
-        🎉 <strong>Hore! Masalah Anda Telah Terselesaikan</strong><br/>
-        Tiket Anda sudah diselesaikan oleh tim IT Support kami pada <strong>${updateTime}</strong>. 
-        Apabila kendala masih terjadi, silakan hubungi tim IT Support untuk melakukan peninjauan kembali.
-      </div>
-    `;
+  // Map explanation text
+  let explanationText = '';
+  if (newStatus === 'IN_PROGRESS') {
+    explanationText = 'Tiket Anda saat ini sedang ditangani oleh tim kami. Kami akan terus memberikan update dan menginformasikan jika ada perkembangan lebih lanjut.';
   } else if (newStatus === 'PENDING') {
-    statusInfoMsg = `
-      <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 13px; color: #92400e;">
-        ⚠️ <strong>SLA Tiket Ditangguhkan Sementara (Paused)</strong><br/>
-        Tiket Anda ditangguhkan karena membutuhkan respon balik dari Anda (user), menunggu ketersediaan barang/sparepart, atau kendala eksternal dari pihak ketiga (vendor). SLA pengerjaan akan kembali aktif setelah kendala terselesaikan.
-      </div>
-    `;
+    explanationText = 'Pengerjaan tiket Anda ditangguhkan sementara karena membutuhkan respon balik dari Anda (user), menunggu ketersediaan barang/sparepart, atau kendala eksternal dari pihak ketiga (vendor).';
+  } else if (newStatus === 'RESOLVED') {
+    explanationText = 'Masalah Anda telah diselesaikan oleh tim IT Support kami. Silakan periksa kembali perangkat atau layanan Anda. Jika masih ada kendala, Anda dapat merespon kembali.';
+  } else if (newStatus === 'OPEN') {
+    explanationText = 'Tiket Anda telah terdaftar di sistem kami dan sedang menunggu alokasi ke teknisi IT Support.';
+  } else {
+    explanationText = 'Status tiket Anda telah diperbarui. Tim kami akan terus memantau pengerjaan tiket ini hingga selesai.';
   }
 
+  const HEADER_LAPTOP_SVG = `
+    <svg width="150" height="100" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="25" y="15" width="170" height="105" rx="8" fill="#1e3a8a" stroke="#ffffff" stroke-width="4"/>
+      <rect x="30" y="20" width="160" height="95" rx="4" fill="#0f172a"/>
+      <path d="M10 120 L210 120 L200 132 L20 132 Z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/>
+      <circle cx="110" cy="62" r="22" fill="none" stroke="#3b82f6" stroke-width="6" stroke-dasharray="10 4"/>
+      <circle cx="110" cy="62" r="14" fill="#3b82f6"/>
+      <circle cx="110" cy="62" r="6" fill="#0f172a"/>
+      <rect x="55" y="94" width="110" height="8" rx="4" fill="#1e293b"/>
+      <rect x="55" y="94" width="75" height="8" rx="4" fill="#3b82f6"/>
+      <path d="M182 28 C182 22, 197 22, 197 28 C197 34, 189 34, 185 37 L183 40 L183 35 C179 35, 182 28, 182 28 Z" fill="#3b82f6"/>
+      <circle cx="186" cy="28" r="1" fill="white"/>
+      <circle cx="190" cy="28" r="1" fill="white"/>
+      <circle cx="194" cy="28" r="1" fill="white"/>
+    </svg>
+  `;
+
   const html = `
-    <div style="font-family: 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);">
       
-      <!-- Header -->
-      <div style="text-align: center; border-bottom: 2px solid ${statusColor}; padding-bottom: 15px; margin-bottom: 20px;">
-        <h2 style="color: #1e293b; margin: 0 0 5px 0; font-size: 20px;">PEMBARUAN TIKET: ${ticket.id}</h2>
-        <span style="font-size: 12px; color: ${statusColor}; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Status: ${statusName}</span>
-      </div>
+      <!-- Header Banner -->
+      <table cellpadding="0" cellspacing="0" style="width: 100%; background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); border-collapse: collapse;">
+        <tr>
+          <td style="padding: 30px 24px; vertical-align: middle; text-align: left;">
+            <span style="font-size: 11px; font-weight: bold; color: #93c5fd; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 6px;">PEMBARUAN TIKET</span>
+            <h1 style="font-size: 28px; font-weight: 800; color: #ffffff; margin: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">${ticket.id}</h1>
+            <span style="font-size: 12px; font-weight: 700; color: #fef08a; text-transform: uppercase; letter-spacing: 0.5px;">STATUS: ${statusName.toUpperCase()}</span>
+          </td>
+          <td style="padding: 20px 24px; vertical-align: middle; text-align: right; width: 160px;">
+            ${HEADER_LAPTOP_SVG}
+          </td>
+        </tr>
+      </table>
 
-      <!-- Greeting -->
-      <p style="font-size: 15px; line-height: 1.6; margin-bottom: 15px;">Halo <strong>${ticket.requester.name}</strong>,</p>
-      <p style="font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px;">
-        Kami menginformasikan bahwa status pengaduan IT Anda telah diperbarui oleh tim IT Support kami.
-      </p>
+      <div style="padding: 24px 24px 0 24px;">
+        <!-- Greeting -->
+        <p style="font-size: 15px; line-height: 1.6; color: #1e293b; margin: 0 0 12px 0;">Halo <strong>${ticket.requester.name}</strong>,</p>
+        <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 24px 0;">
+          Kami menginformasikan bahwa status pengaduan IT Anda telah diperbarui oleh tim IT Support kami.
+        </p>
 
-      <!-- Status Info Banner -->
-      ${statusInfoMsg}
+        <!-- Detail Tiket Card -->
+        <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 24px; background-color: #ffffff;">
+          <!-- Card Header -->
+          <table cellpadding="0" cellspacing="0" style="margin-bottom: 16px;">
+            <tr>
+              <td style="vertical-align: middle; padding-right: 8px;">
+                <table cellpadding="0" cellspacing="0" style="background-color: #2563eb; border-radius: 6px; width: 26px; height: 26px; text-align: center;">
+                  <tr>
+                    <td style="vertical-align: middle; text-align: center; padding: 5px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td style="vertical-align: middle;">
+                <span style="font-size: 14px; font-weight: bold; color: #1e3a8a; letter-spacing: 0.5px; text-transform: uppercase; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">DETAIL TIKET</span>
+              </td>
+            </tr>
+          </table>
 
-      <!-- Details Card -->
-      <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+          <!-- Table Content -->
+          <table cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+            <!-- Row 1: ID Tiket -->
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; width: 44px; vertical-align: middle;">
+                <table cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; width: 34px; height: 34px; text-align: center;">
+                  <tr>
+                    <td style="vertical-align: middle; text-align: center; padding: 7px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-3-8.2-7-9a8 8 0 0 0-8 8v1a4 4 0 0 0 4 4c2.2 0 4-1.8 4-4v-3a2 2 0 0 0-4 0v1"></path><path d="M12 2a10 10 0 0 0-10 10c0 1.2.2 2.3.6 3.4"></path><path d="M12 6a6 6 0 0 0-6 6c0 .8.2 1.5.5 2.1"></path><path d="M12 10a2 2 0 0 0-2 2"></path></svg>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td style="padding: 10px 8px; font-weight: 500; color: #4b5563; font-size: 13px; vertical-align: middle; width: 140px;">
+                ID Tiket
+              </td>
+              <td style="padding: 10px 4px; color: #9ca3af; font-size: 13px; vertical-align: middle; width: 10px; text-align: center;">
+                :
+              </td>
+              <td style="padding: 10px 8px; font-weight: bold; color: #1f2937; font-size: 13px; vertical-align: middle;">
+                ${ticket.id}
+              </td>
+            </tr>
+            <!-- Row 2: Subjek / Masalah -->
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; width: 44px; vertical-align: middle;">
+                <table cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; width: 34px; height: 34px; text-align: center;">
+                  <tr>
+                    <td style="vertical-align: middle; text-align: center; padding: 7px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 10h.01"></path><path d="M12 10h.01"></path><path d="M16 10h.01"></path></svg>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td style="padding: 10px 8px; font-weight: 500; color: #4b5563; font-size: 13px; vertical-align: middle;">
+                Subjek / Masalah
+              </td>
+              <td style="padding: 10px 4px; color: #9ca3af; font-size: 13px; vertical-align: middle; text-align: center;">
+                :
+              </td>
+              <td style="padding: 10px 8px; font-weight: 500; color: #374151; font-size: 13px; vertical-align: middle;">
+                ${ticket.title}
+              </td>
+            </tr>
+            <!-- Row 3: Status Sebelumnya -->
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; width: 44px; vertical-align: middle;">
+                <table cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; width: 34px; height: 34px; text-align: center;">
+                  <tr>
+                    <td style="vertical-align: middle; text-align: center; padding: 7px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td style="padding: 10px 8px; font-weight: 500; color: #4b5563; font-size: 13px; vertical-align: middle;">
+                Status Sebelumnya
+              </td>
+              <td style="padding: 10px 4px; color: #9ca3af; font-size: 13px; vertical-align: middle; text-align: center;">
+                :
+              </td>
+              <td style="padding: 10px 8px; color: #6b7280; font-size: 13px; vertical-align: middle; text-decoration: line-through;">
+                ${oldStatus}
+              </td>
+            </tr>
+            <!-- Row 4: Status Baru -->
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; width: 44px; vertical-align: middle;">
+                <table cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; width: 34px; height: 34px; text-align: center;">
+                  <tr>
+                    <td style="vertical-align: middle; text-align: center; padding: 7px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td style="padding: 10px 8px; font-weight: 500; color: #4b5563; font-size: 13px; vertical-align: middle;">
+                Status Baru
+              </td>
+              <td style="padding: 10px 4px; color: #9ca3af; font-size: 13px; vertical-align: middle; text-align: center;">
+                :
+              </td>
+              <td style="padding: 10px 8px; font-weight: bold; color: #1d4ed8; font-size: 13px; vertical-align: middle;">
+                ${statusName}
+              </td>
+            </tr>
+            <!-- Row 5: Waktu Pembaruan -->
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; width: 44px; vertical-align: middle;">
+                <table cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; width: 34px; height: 34px; text-align: center;">
+                  <tr>
+                    <td style="vertical-align: middle; text-align: center; padding: 7px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td style="padding: 10px 8px; font-weight: 500; color: #4b5563; font-size: 13px; vertical-align: middle;">
+                Waktu Pembaruan
+              </td>
+              <td style="padding: 10px 4px; color: #9ca3af; font-size: 13px; vertical-align: middle; text-align: center;">
+                :
+              </td>
+              <td style="padding: 10px 8px; color: #374151; font-size: 13px; vertical-align: middle;">
+                ${updateTime}
+              </td>
+            </tr>
+            <!-- Row 6: Ditangani Oleh -->
+            <tr>
+              <td style="padding: 10px 0; width: 44px; vertical-align: middle;">
+                <table cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; width: 34px; height: 34px; text-align: center;">
+                  <tr>
+                    <td style="vertical-align: middle; text-align: center; padding: 7px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td style="padding: 10px 8px; font-weight: 500; color: #4b5563; font-size: 13px; vertical-align: middle;">
+                Ditangani Oleh
+              </td>
+              <td style="padding: 10px 4px; color: #9ca3af; font-size: 13px; vertical-align: middle; text-align: center;">
+                :
+              </td>
+              <td style="padding: 10px 8px; color: #374151; font-size: 13px; vertical-align: middle;">
+                ${ticket.assignedTo ? `${ticket.assignedTo.name} (IT Support)` : 'IT Agent Support (IT Support)'}
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Explanation Info Box -->
+        <table cellpadding="0" cellspacing="0" style="width: 100%; background-color: #eff6ff; border-radius: 12px; margin-bottom: 24px; border-collapse: collapse;">
           <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b; width: 35%;">ID Tiket:</td>
-            <td style="padding: 6px 0; font-weight: bold; color: #1e293b;">${ticket.id}</td>
+            <td style="padding: 16px; vertical-align: top; width: 32px;">
+              <table cellpadding="0" cellspacing="0" style="background-color: #2563eb; border-radius: 50%; width: 32px; height: 32px; text-align: center;">
+                <tr>
+                  <td style="vertical-align: middle; text-align: center; padding: 5px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                  </td>
+                </tr>
+              </table>
+            </td>
+            <td style="padding: 16px 16px 16px 4px; vertical-align: top; text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <h4 style="margin: 0 0 4px 0; font-size: 13px; font-weight: bold; color: #1e3a8a;">Apa artinya?</h4>
+              <p style="margin: 0; font-size: 12px; color: #1e40af; line-height: 1.5;">
+                ${explanationText}
+              </p>
+            </td>
           </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Subjek / Masalah:</td>
-            <td style="padding: 6px 0; color: #1e293b;">${ticket.title}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Status Sebelumnya:</td>
-            <td style="padding: 6px 0; color: #64748b; text-decoration: line-through;">${oldStatus}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Status Baru:</td>
-            <td style="padding: 6px 0; font-weight: bold; color: ${statusColor};">${statusName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Waktu Pembaruan:</td>
-            <td style="padding: 6px 0; color: #1e293b;">${updateTime}</td>
-          </tr>
-          ${ticket.assignedTo ? `
-          <tr>
-            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Ditangani Oleh:</td>
-            <td style="padding: 6px 0; color: #1e293b;">${ticket.assignedTo.name} (IT Support)</td>
-          </tr>` : ''}
         </table>
+
+        <!-- IT Support Comment / Note -->
+        ${comment ? `
+        <div style="border-left: 4px solid #2563eb; background-color: #f8fafc; padding: 16px; border-radius: 4px; font-size: 13px; color: #374151; margin-bottom: 24px; font-style: italic; border: 1px solid #e2e8f0; border-left-width: 4px;">
+          <strong>Catatan dari IT Support:</strong><br/>
+          "${comment}"
+        </div>` : ''}
+
+        <p style="font-size: 13px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
+          Terima kasih telah mempercayakan kebutuhan IT Anda kepada kami.
+        </p>
       </div>
 
-      <!-- Action Note / Comment -->
-      ${comment ? `
-      <div style="border-left: 4px solid ${statusColor}; background-color: #f1f5f9; padding: 12px; border-radius: 4px; font-size: 13px; color: #334155; margin-bottom: 20px; font-style: italic;">
-        <strong>Catatan dari IT Support:</strong><br/>
-        "${comment}"
-      </div>` : ''}
-
+      <!-- Footer -->
       ${EMAIL_FOOTER_HTML}
 
     </div>
