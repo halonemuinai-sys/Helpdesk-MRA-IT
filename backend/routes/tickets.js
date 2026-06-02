@@ -4,7 +4,8 @@ const { verifyToken } = require('../api/authMiddleware');
 const {
   sendTicketCreatedEmail,
   sendTicketStatusChangedEmail,
-  sendTicketAssignedEmail
+  sendTicketAssignedEmail,
+  sendTicketClosedToAgentEmail
 } = require('../api/email');
 
 const router = express.Router();
@@ -443,14 +444,20 @@ router.patch('/:id/status', verifyToken, async (req, res, next) => {
         company: true,
         requester: true,
         assignedTo: {
-          select: { id: true, name: true }
+          select: { id: true, name: true, email: true }
         }
       }
     });
 
-    // Send email notification to requester if status changed (non-blocking)
+    // Send email notification if status changed (non-blocking)
     if (newStatus !== ticket.status) {
-      sendTicketStatusChangedEmail(updatedTicket, ticket.status, newStatus, comment);
+      if (newStatus === 'CLOSED') {
+        // Send email to assigned agent, not user
+        sendTicketClosedToAgentEmail(updatedTicket);
+      } else {
+        // Send email to user (requester)
+        sendTicketStatusChangedEmail(updatedTicket, ticket.status, newStatus, comment);
+      }
     }
 
     res.json(updatedTicket);

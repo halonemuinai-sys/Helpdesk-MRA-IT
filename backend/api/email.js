@@ -338,9 +338,80 @@ async function sendTicketAssignedEmail(ticket, agent) {
   });
 }
 
+// 4. Send Ticket Closed Notification Email to IT Agent
+async function sendTicketClosedToAgentEmail(ticket) {
+  if (!ticket || !ticket.assignedTo || !ticket.assignedTo.email) {
+    console.log('Skipping Ticket Closed to Agent Email: assigned agent email not found.');
+    return;
+  }
+
+  const subject = `[MRA IT Helpdesk] Tiket Ditutup (Closed): ${ticket.id} - ${ticket.title}`;
+  const formattedDate = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-';
+  const closedTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+
+  const html = `
+    <div style="font-family: 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b;">
+      
+      <!-- Header -->
+      <div style="text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 15px; margin-bottom: 20px;">
+        <h2 style="color: #1e293b; margin: 0 0 5px 0; font-size: 20px;">TIKET TELAH DITUTUP (CLOSED)</h2>
+        <span style="font-size: 12px; color: #ef4444; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Status: CLOSED</span>
+      </div>
+
+      <!-- Greeting -->
+      <p style="font-size: 15px; line-height: 1.6; margin-bottom: 15px;">Halo <strong>${ticket.assignedTo.name}</strong>,</p>
+      <p style="font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px;">
+        Tiket penugasan di bawah ini telah resmi ditutup dalam sistem.
+      </p>
+
+      <!-- Details Card -->
+      <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 6px 0; font-weight: bold; color: #64748b; width: 35%;">ID Tiket:</td>
+            <td style="padding: 6px 0; font-weight: bold; color: #1e293b; font-size: 14px;">${ticket.id}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Subjek / Masalah:</td>
+            <td style="padding: 6px 0; color: #1e293b; font-weight: bold;">${ticket.title}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Kategori:</td>
+            <td style="padding: 6px 0; color: #1e293b;">${ticket.category} - ${ticket.subCategory || '-'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Pelapor (User):</td>
+            <td style="padding: 6px 0; color: #1e293b;">${ticket.requester.name} (${ticket.requester.department})</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Perusahaan:</td>
+            <td style="padding: 6px 0; color: #1e293b;">${ticket.company.name} (${ticket.company.location})</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Waktu Masuk:</td>
+            <td style="padding: 6px 0; color: #1e293b;">${formattedDate}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-weight: bold; color: #64748b;">Waktu Ditutup:</td>
+            <td style="padding: 6px 0; color: #1e293b; font-weight: bold;">${closedTime}</td>
+          </tr>
+        </table>
+      </div>
+
+      ${EMAIL_FOOTER_HTML}
+
+    </div>
+  `;
+
+  return sendMail({ to: ticket.assignedTo.email, subject, html }).catch(err => {
+    console.error('Suppressed sendTicketClosedToAgentEmail error:', err.message);
+  });
+}
+
 module.exports = {
   transporter,
   sendTicketCreatedEmail,
   sendTicketStatusChangedEmail,
-  sendTicketAssignedEmail
+  sendTicketAssignedEmail,
+  sendTicketClosedToAgentEmail
 };
