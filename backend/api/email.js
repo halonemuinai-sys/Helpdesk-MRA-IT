@@ -15,6 +15,18 @@ const transporter = nodemailer.createTransport({
   socketTimeout: 15000
 });
 
+// Shared email footer template
+const EMAIL_FOOTER_HTML = `
+        <!-- Footer -->
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 24px; text-align: center; font-size: 11px; color: #64748b; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <p style="margin: 0 0 4px 0; font-weight: bold; color: #0f172a; font-size: 12px;">IT MRA - Service Helpdesk</p>
+          <p style="margin: 0 0 2px 0;">Wisma MRA Lt.6</p>
+          <p style="margin: 0 0 2px 0;">Telp: +62 (21) 2765 1957 ext 6637;&nbsp; | &nbsp;Email: <a href="mailto:helpdesk@mra.co.id" style="color: #0ea5e9; text-decoration: none;">helpdesk@mra.co.id</a></p>
+          <p style="margin: 0 0 16px 0;">Working hours: Monday - Friday (excluding Public Holidays) 9 a.m to 5 p.m.</p>
+          <p style="margin: 0; font-size: 10px; color: #94a3b8; border-top: 1px dashed #f1f5f9; padding-top: 12px;">This is an automated system notification. Please do not reply directly to this email.</p>
+        </div>
+`;
+
 // Helper to send general emails
 async function sendMail({ to, subject, html }) {
   const mailOptions = {
@@ -101,11 +113,7 @@ async function sendTicketCreatedEmail(ticket) {
           Our IT Support Engineers will review and analyze your request. You will receive email notifications as the ticket status is updated.
         </p>
 
-        <!-- Footer -->
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center; font-size: 11px; color: #94a3b8; line-height: 1.5;">
-          <p style="margin: 0 0 4px 0; font-weight: bold; color: #64748b;">MRA Group IT Infrastructure & Support Team</p>
-          <p style="margin: 0; color: #cbd5e1;">This is an automated system notification. Please do not reply directly to this email.</p>
-        </div>
+        ${EMAIL_FOOTER_HTML}
       </div>
 
     </div>
@@ -221,11 +229,7 @@ async function sendTicketStatusChangedEmail(ticket, oldStatus, newStatus, commen
         "${comment}"
       </div>` : ''}
 
-      <!-- Footer -->
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 11px; color: #94a3b8; margin-top: 25px;">
-        <p style="margin: 0; font-weight: bold;">MRA Group IT Infrastructure & Support Team</p>
-        <p style="margin: 5px 0 0 0; color: #cbd5e1;">Pesan ini dibuat secara otomatis oleh sistem, mohon tidak membalas email ini.</p>
-      </div>
+      ${EMAIL_FOOTER_HTML}
 
     </div>
   `;
@@ -324,11 +328,7 @@ async function sendTicketAssignedEmail(ticket, agent) {
         </a>
       </div>
 
-      <!-- Footer -->
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 11px; color: #94a3b8; margin-top: 25px;">
-        <p style="margin: 0; font-weight: bold;">MRA Group IT Infrastructure & Support Team</p>
-        <p style="margin: 5px 0 0 0; color: #cbd5e1;">Pesan ini dibuat secara otomatis oleh sistem helpdesk.</p>
-      </div>
+      ${EMAIL_FOOTER_HTML}
 
     </div>
   `;

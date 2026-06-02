@@ -181,7 +181,9 @@ export default function TicketDetailsModal({
                     </div>
                     <div>
                       <p className="text-gray-450 dark:text-slate-500 font-medium">Phone Number</p>
-                      <p className="font-semibold text-gray-800 dark:text-slate-200 mt-0.5">{ticketDetails.requester.phone || '-'}</p>
+                      <p className="font-semibold text-gray-800 dark:text-slate-200 mt-0.5">
+                        {ticketDetails.requester.phone ? ticketDetails.requester.phone.replace(/\.0$/, '') : '-'}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-450 dark:text-slate-500 font-medium">Company / Branch</p>

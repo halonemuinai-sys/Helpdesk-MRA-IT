@@ -60,6 +60,8 @@ def main():
         job_pos = clean_text(row['Job Position'])
         email = clean_text(row['Email']).lower()
         phone = clean_text(row['Mobile Phone'])
+        if phone.endswith('.0'):
+            phone = phone[:-2]
         branch_name = clean_text(row['Branch Name'])
         
         # Split branch name into Company & Location
@@ -73,6 +75,12 @@ def main():
             
         # Clean double spaces in company name (e.g. 'PT.  Rupa' -> 'PT. Rupa')
         company_name = " ".join(company_name.split())
+        
+        # Map MPI and AAA abbreviations to full company names
+        if company_name == "MPI":
+            company_name = "PT Mogems Putri International"
+        elif company_name == "AAA":
+            company_name = "PT Amanda Arundhani Aishwarya"
         
         # Determine business sector
         sector = determine_sector(company_name, branch_name)
