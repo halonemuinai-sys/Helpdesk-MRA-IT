@@ -216,6 +216,11 @@ router.patch('/:id/email', verifyToken, checkRole(['ADMIN', 'AGENT']), async (re
       return res.status(404).json({ error: 'User not found.' });
     }
 
+    // Restriction: IT Agents are not allowed to update the email address of Administrators
+    if (userExists.role === 'ADMIN' && req.user.role === 'AGENT') {
+      return res.status(403).json({ error: 'Access denied. IT Agents are not allowed to update the email address of an Administrator.' });
+    }
+
     // Check if email already exists for another user
     const emailConflict = await prisma.user.findFirst({
       where: {

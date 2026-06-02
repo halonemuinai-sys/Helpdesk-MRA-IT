@@ -485,19 +485,21 @@ export default function Users({ user: currentUser, token }) {
                       </td>
                       <td className="py-4 px-6 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditEmailUser(u);
-                              setNewEditEmail(u.email);
-                              setEditEmailError(null);
-                            }}
-                            className="p-1.5 bg-gray-50 hover:bg-gray-150 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-gray-600 dark:text-slate-350 rounded-lg text-xs font-bold transition-all border border-gray-200/50 dark:border-slate-700/50 inline-flex items-center gap-1.5 shadow-sm"
-                            title="Edit user email address"
-                          >
-                            <Mail className="w-3.5 h-3.5 text-brand-500" />
-                            <span>Edit Email</span>
-                          </button>
+                          {!(currentUser?.role === 'AGENT' && u.role === 'ADMIN') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditEmailUser(u);
+                                setNewEditEmail(u.email);
+                                setEditEmailError(null);
+                              }}
+                              className="p-1.5 bg-gray-50 hover:bg-gray-150 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-gray-600 dark:text-slate-350 rounded-lg text-xs font-bold transition-all border border-gray-200/50 dark:border-slate-700/50 inline-flex items-center gap-1.5 shadow-sm"
+                              title="Edit user email address"
+                            >
+                              <Mail className="w-3.5 h-3.5 text-brand-500" />
+                              <span>Edit Email</span>
+                            </button>
+                          )}
                           
                           {currentUser.role === 'ADMIN' && (
                             <button
