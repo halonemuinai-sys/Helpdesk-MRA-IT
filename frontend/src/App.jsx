@@ -201,7 +201,7 @@ export default function App() {
             <Route
               path="/approvals"
               element={
-                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN', 'AUDITOR']}>
+                <ProtectedRoute user={user} allowedRoles={['ADMIN', 'AUDITOR']}>
                   <Approvals user={user} token={token} />
                 </ProtectedRoute>
               }
@@ -209,7 +209,7 @@ export default function App() {
             <Route
               path="/audit-trail"
               element={
-                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN', 'AUDITOR']}>
+                <ProtectedRoute user={user} allowedRoles={['ADMIN', 'AUDITOR']}>
                   <AuditTrail user={user} token={token} />
                 </ProtectedRoute>
               }

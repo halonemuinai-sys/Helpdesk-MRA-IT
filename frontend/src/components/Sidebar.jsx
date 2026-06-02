@@ -109,13 +109,13 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           label: 'Delete Approvals',
           path: '/approvals',
           icon: ShieldCheck,
-          roles: ['AGENT', 'ADMIN', 'AUDITOR']
+          roles: ['ADMIN', 'AUDITOR']
         },
         {
           label: 'System Audit Logs',
           path: '/audit-trail',
           icon: History,
-          roles: ['AGENT', 'ADMIN', 'AUDITOR']
+          roles: ['ADMIN', 'AUDITOR']
         },
         {
           label: 'User Management',

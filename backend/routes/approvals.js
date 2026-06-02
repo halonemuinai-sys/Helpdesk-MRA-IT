@@ -5,16 +5,12 @@ const { verifyToken, checkRole } = require('../api/authMiddleware');
 const router = express.Router();
 
 // GET /api/approvals
-// Get all approvals (Admin gets all, Agent gets their own)
-router.get('/', verifyToken, async (req, res, next) => {
+// Get all approvals (ADMIN and AUDITOR only)
+router.get('/', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async (req, res, next) => {
   try {
-    const { role, id: userId } = req.user;
     const { status } = req.query;
 
     const where = {};
-    if (role === 'AGENT') {
-      where.requestedById = userId;
-    }
     if (status) {
       where.status = status.toUpperCase();
     }

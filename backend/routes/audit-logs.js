@@ -1,12 +1,12 @@
 const express = require('express');
 const prisma = require('../api/db');
-const { verifyToken } = require('../api/authMiddleware');
+const { verifyToken, checkRole } = require('../api/authMiddleware');
 
 const router = express.Router();
 
 // GET /api/audit-logs
-// Retrieve system audit logs with filtering & pagination (Agent & Admin)
-router.get('/', verifyToken, async (req, res, next) => {
+// Retrieve system audit logs with filtering & pagination (Admin & Auditor)
+router.get('/', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async (req, res, next) => {
   try {
     const { action, search, limit, skip } = req.query;
 
