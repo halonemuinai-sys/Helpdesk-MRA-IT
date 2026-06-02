@@ -258,4 +258,68 @@ router.patch('/:id/email', verifyToken, checkRole(['ADMIN', 'AGENT']), async (re
   }
 });
 
+// PATCH /api/users/:id/location
+// Update user company/location (ADMIN and AGENT only)
+router.patch('/:id/location', verifyToken, checkRole(['ADMIN', 'AGENT']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { companyId } = req.body;
+
+    if (!companyId) {
+      return res.status(400).json({ error: 'Company/Location ID is required.' });
+    }
+
+    const parsedCompanyId = parseInt(companyId);
+    if (isNaN(parsedCompanyId)) {
+      return res.status(400).json({ error: 'Invalid Company/Location ID.' });
+    }
+
+    // Check if user exists
+    const userExists = await prisma.user.findUnique({
+      where: { id },
+      include: { company: true }
+    });
+    if (!userExists) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Restriction: IT Agents are not allowed to update the location of Administrators
+    if (userExists.role === 'ADMIN' && req.user.role === 'AGENT') {
+      return res.status(403).json({ error: 'Access denied. IT Agents are not allowed to update the location of an Administrator.' });
+    }
+
+    // Verify company exists
+    const companyExists = await prisma.company.findUnique({
+      where: { id: parsedCompanyId }
+    });
+    if (!companyExists) {
+      return res.status(404).json({ error: 'Company/Location branch not found.' });
+    }
+
+    // Update companyId
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { companyId: parsedCompanyId },
+      include: { company: true }
+    });
+
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'USER_LOCATION_UPDATED',
+        details: `User "${userExists.name}" location updated from "${userExists.company.name} (${userExists.company.location})" to "${companyExists.name} (${companyExists.location})" by ${req.user.name}.`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
+    const { password, ...safeUser } = updatedUser;
+    res.json({
+      message: `Location for user ${safeUser.name} updated successfully.`,
+      user: safeUser
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

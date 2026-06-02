@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users as UsersIcon, ShieldAlert, Building2, Search, Filter, ShieldCheck, Loader2, Plus, X, Key, Mail } from 'lucide-react';
+import { Users as UsersIcon, ShieldAlert, Building2, Search, Filter, ShieldCheck, Loader2, Plus, X, Key, Mail, MapPin } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -42,6 +42,12 @@ export default function Users({ user: currentUser, token }) {
   const [newEditEmail, setNewEditEmail] = useState('');
   const [editEmailError, setEditEmailError] = useState(null);
   const [editEmailSubmitting, setEditEmailSubmitting] = useState(false);
+
+  // Edit Location states
+  const [editLocationUser, setEditLocationUser] = useState(null);
+  const [newEditLocation, setNewEditLocation] = useState('');
+  const [editLocationError, setEditLocationError] = useState(null);
+  const [editLocationSubmitting, setEditLocationSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCompanies();
@@ -250,6 +256,39 @@ export default function Users({ user: currentUser, token }) {
       setEditEmailError(err.message);
     } finally {
       setEditEmailSubmitting(false);
+    }
+  };
+
+  const handleEditLocation = async (e) => {
+    e.preventDefault();
+    if (!editLocationUser) return;
+    try {
+      setEditLocationError(null);
+      setEditLocationSubmitting(true);
+
+      const res = await fetch(`${API_URL}/users/${editLocationUser.id}/location`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ companyId: parseInt(newEditLocation) })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update location.');
+      }
+
+      // Success
+      alert(`Location for ${editLocationUser.name} updated successfully!`);
+      setEditLocationUser(null);
+      setNewEditLocation('');
+      fetchUsers(); // Refresh list
+    } catch (err) {
+      setEditLocationError(err.message);
+    } finally {
+      setEditLocationSubmitting(false);
     }
   };
 
@@ -498,6 +537,22 @@ export default function Users({ user: currentUser, token }) {
                             >
                               <Mail className="w-3.5 h-3.5 text-brand-500" />
                               <span>Edit Email</span>
+                            </button>
+                          )}
+
+                          {!(currentUser?.role === 'AGENT' && u.role === 'ADMIN') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditLocationUser(u);
+                                setNewEditLocation(u.companyId);
+                                setEditLocationError(null);
+                              }}
+                              className="p-1.5 bg-gray-50 hover:bg-gray-150 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-gray-600 dark:text-slate-350 rounded-lg text-xs font-bold transition-all border border-gray-200/50 dark:border-slate-700/50 inline-flex items-center gap-1.5 shadow-sm"
+                              title="Edit user location branch"
+                            >
+                              <MapPin className="w-3.5 h-3.5 text-indigo-500" />
+                              <span>Edit Location</span>
                             </button>
                           )}
                           
@@ -811,6 +866,73 @@ export default function Users({ user: currentUser, token }) {
                 >
                   {editEmailSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Save Email</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Location Modal */}
+      {editLocationUser && (
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="absolute inset-0" onClick={() => setEditLocationUser(null)}></div>
+          
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl relative z-10 p-6 border border-gray-200 dark:border-slate-800">
+            <div className="flex justify-between items-start gap-4 mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100">Edit User Location</h3>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  Update location branch for <strong>{editLocationUser.name}</strong> (ID: {editLocationUser.id}).
+                </p>
+              </div>
+              <button 
+                onClick={() => setEditLocationUser(null)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 dark:text-slate-400 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editLocationError && (
+              <div className="p-3 mb-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-semibold animate-pulse">
+                {editLocationError}
+              </div>
+            )}
+
+            <form onSubmit={handleEditLocation} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Select New Branch / Location</label>
+                <select
+                  required
+                  value={newEditLocation}
+                  onChange={(e) => setNewEditLocation(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs cursor-pointer"
+                >
+                  <option value="">-- Select Location --</option>
+                  {allCompanies.map(comp => (
+                    <option key={comp.id} value={comp.id}>
+                      {comp.name} ({comp.location})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditLocationUser(null)}
+                  className="px-4 py-2 border border-gray-200 dark:border-slate-800 text-gray-600 dark:text-slate-400 text-xs font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLocationSubmitting}
+                  className="px-5 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-lg shadow-brand-500/10 flex items-center gap-1.5 transition-colors"
+                >
+                  {editLocationSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Location</span>
                 </button>
               </div>
             </form>
