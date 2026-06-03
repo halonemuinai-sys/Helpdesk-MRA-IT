@@ -37,8 +37,11 @@ export default function Peripherals({ user, token }) {
   const [peripherals, setPeripherals] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [companyMasters, setCompanyMasters] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const activeCategories = dbCategories.length > 0 ? dbCategories : DEFAULT_CATEGORIES;
 
   // Stats state
   const [stats, setStats] = useState({
@@ -142,7 +145,21 @@ export default function Peripherals({ user, token }) {
       const branchData = await branchRes.json();
       setCompanies(branchData);
 
-      // 3. Load data concurrently
+      // 3. Fetch Category Metadata
+      try {
+        const catRes = await fetch(`${API_URL}/tickets/categories`, { headers });
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          const peripheralCats = catData
+            .filter(item => item.category === 'IT Peripheral')
+            .map(item => item.subCategory);
+          setDbCategories(peripheralCats);
+        }
+      } catch (catErr) {
+        console.error("Gagal memuat kategori dari database:", catErr);
+      }
+
+      // 4. Load data
       await fetchStats();
     } catch (err) {
       setError(err.message);
@@ -243,7 +260,7 @@ export default function Peripherals({ user, token }) {
     setFormName(p.name);
     
     // Check if category is standard or custom
-    if (DEFAULT_CATEGORIES.includes(p.category)) {
+    if (activeCategories.includes(p.category)) {
       setFormCategory(p.category);
       setFormCustomCategory('');
     } else {
@@ -472,7 +489,7 @@ export default function Peripherals({ user, token }) {
   };
 
   // Combine standard and custom categories for the dropdown selector
-  const allFormCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...stats.categories]));
+  const allFormCategories = Array.from(new Set([...activeCategories, ...stats.categories]));
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">

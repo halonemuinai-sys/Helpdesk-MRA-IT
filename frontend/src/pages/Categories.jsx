@@ -3,7 +3,7 @@ import { Tags, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Search, FolderT
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-const MAIN_CATEGORIES = ['Hardware', 'Software', 'Network', 'Access', 'ERP'];
+const MAIN_CATEGORIES = ['Hardware', 'Software', 'Network', 'Access', 'ERP', 'IT Peripheral'];
 
 export default function Categories({ user, token }) {
   const [categories, setCategories] = useState([]);
