@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Laptop, 
@@ -50,10 +50,24 @@ export default function Assets({ user, token }) {
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [hasProcessed, setHasProcessed] = useState(false);
+  const isMounted = useRef(false);
+
+  // KPI Stats state
+  const [kpiStats, setKpiStats] = useState({
+    totalAssets: 0,
+    assignedCount: 0,
+    availableCount: 0,
+    maintenanceCount: 0,
+    totalMonthlyRental: 0,
+    expiredLeasesCount: 0,
+    nearExpiryLeasesCount: 0,
+    rentalCount: 0,
+    ownedCount: 0
+  });
 
   // UI state
   const [expandedRows, setExpandedRows] = useState({});
@@ -97,6 +111,36 @@ export default function Assets({ user, token }) {
     fetchInitialData();
   }, []);
 
+  // Debounce search query by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Trigger asset loading automatically on filter changes
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    fetchAssets(debouncedSearchQuery);
+  }, [debouncedSearchQuery, selectedStatus, selectedCompanyMasterId, selectedCategory]);
+
+  const fetchStats = async () => {
+    try {
+      const headers = { 'Authorization': `Bearer ${token}` };
+      const res = await fetch(`${API_URL}/assets/stats`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setKpiStats(data);
+      }
+    } catch (err) {
+      console.error("Gagal memuat statistik KPI:", err);
+    }
+  };
+
   const fetchInitialData = async () => {
     try {
       setLoading(true);
@@ -121,8 +165,11 @@ export default function Assets({ user, token }) {
       const usersData = await usersRes.json();
       setUsers(usersData);
 
-      // 4. Do not load assets automatically anymore (just set loading to false)
-      // fetchAssets will be called on demand
+      // 4. Load assets and stats automatically on mount
+      await Promise.all([
+        fetchStats(),
+        fetchAssets()
+      ]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -130,7 +177,7 @@ export default function Assets({ user, token }) {
     }
   };
 
-  const fetchAssets = async () => {
+  const fetchAssets = async (currentSearch = searchQuery) => {
     try {
       setLoading(true);
       setError(null);
@@ -139,7 +186,7 @@ export default function Assets({ user, token }) {
       const params = new URLSearchParams();
       if (selectedStatus) params.append('status', selectedStatus);
       if (selectedCompanyMasterId) params.append('companyMasterId', selectedCompanyMasterId);
-      if (searchQuery) params.append('search', searchQuery);
+      if (currentSearch) params.append('search', currentSearch);
       if (selectedCategory) params.append('category', selectedCategory);
 
       const queryString = params.toString() ? `?${params.toString()}` : '';
@@ -148,7 +195,6 @@ export default function Assets({ user, token }) {
       if (!res.ok) throw new Error('Gagal memuat data inventaris aset.');
       const data = await res.json();
       setAssets(data);
-      setHasProcessed(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -157,7 +203,10 @@ export default function Assets({ user, token }) {
   };
 
   const handleRefreshData = async () => {
-    await fetchAssets();
+    await Promise.all([
+      fetchStats(),
+      fetchAssets(debouncedSearchQuery)
+    ]);
   };
 
   const handleResetFilters = () => {
@@ -165,8 +214,6 @@ export default function Assets({ user, token }) {
     setSelectedStatus('');
     setSelectedCompanyMasterId('');
     setSelectedCategory('');
-    setAssets([]);
-    setHasProcessed(false);
   };
 
   const toggleRow = (id) => {
@@ -418,16 +465,7 @@ export default function Assets({ user, token }) {
     });
   };
 
-  // Calculate HUD Stats
-const totalAssets = assets.length;
-  const assignedCount = assets.filter(a => a.status === 'ASSIGNED').length;
-  const availableCount = assets.filter(a => a.status === 'AVAILABLE').length;
-  const maintenanceCount = assets.filter(a => a.status === 'MAINTENANCE').length;
-  
-  // Total Monthly Rental Cost Estimate (Only for RENTAL ownership type)
-  const totalMonthlyRental = assets
-    .filter(a => a.ownershipType === 'RENTAL')
-    .reduce((acc, curr) => acc + (curr.rentalCost || 0), 0);
+  // Local HUD stats are loaded from stats API endpoint
 
   const formatRupiah = (value) => {
     if (value === undefined || value === null) return 'Rp 0';
@@ -520,15 +558,15 @@ const totalAssets = assets.length;
       )}
 
       {/* KPI Stats HUD */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         
         {/* Stat 1: Total Assets */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
           <div>
             <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Total Aset IT</p>
-            <h3 className="text-xl font-black text-gray-800 dark:text-slate-100 mt-1">{totalAssets} Unit</h3>
+            <h3 className="text-xl font-black text-gray-800 dark:text-slate-100 mt-1">{kpiStats.totalAssets} Unit</h3>
             <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">
-              ({assets.filter(a => a.ownershipType === 'RENTAL').length} Sewa, {assets.filter(a => a.ownershipType === 'OWNED').length} Milik)
+              ({kpiStats.rentalCount} Sewa, {kpiStats.ownedCount} Milik)
             </p>
           </div>
           <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 rounded-xl flex items-center justify-center">
@@ -540,7 +578,7 @@ const totalAssets = assets.length;
         <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
           <div>
             <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Dipakai Karyawan</p>
-            <h3 className="text-xl font-black text-blue-600 dark:text-blue-400 mt-1">{assignedCount} Unit</h3>
+            <h3 className="text-xl font-black text-blue-600 dark:text-blue-400 mt-1">{kpiStats.assignedCount} Unit</h3>
           </div>
           <div className="w-9 h-9 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
             <User className="w-4 h-4" />
@@ -551,7 +589,7 @@ const totalAssets = assets.length;
         <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
           <div>
             <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tersedia (Ready)</p>
-            <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{availableCount} Unit</h3>
+            <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{kpiStats.availableCount} Unit</h3>
           </div>
           <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center">
             <CheckCircle2 className="w-4 h-4" />
@@ -562,7 +600,7 @@ const totalAssets = assets.length;
         <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
           <div>
             <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Dalam Servis</p>
-            <h3 className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">{maintenanceCount} Unit</h3>
+            <h3 className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">{kpiStats.maintenanceCount} Unit</h3>
           </div>
           <div className="w-9 h-9 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center">
             <Clock className="w-4 h-4" />
@@ -573,11 +611,25 @@ const totalAssets = assets.length;
         <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
           <div>
             <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Anggaran Sewa Bulanan</p>
-            <h3 className="text-md font-black text-rose-500 dark:text-rose-400 mt-1.5 truncate max-w-[140px]">{formatRupiah(totalMonthlyRental)}</h3>
+            <h3 className="text-md font-black text-rose-500 dark:text-rose-455 mt-1.5 truncate max-w-[140px]">{formatRupiah(kpiStats.totalMonthlyRental)}</h3>
             <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">Khusus perangkat Sewa</p>
           </div>
-          <div className="w-9 h-9 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-450 rounded-xl flex items-center justify-center">
+          <div className="w-9 h-9 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-455 rounded-xl flex items-center justify-center">
             <DollarSign className="w-4 h-4" />
+          </div>
+        </div>
+
+        {/* Stat 6: Lease Expiry / Masa Sewa */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Masa Sewa Habis</p>
+            <h3 className="text-xl font-black text-rose-600 dark:text-rose-450 mt-1">{kpiStats.expiredLeasesCount} Unit</h3>
+            <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">
+              ({kpiStats.nearExpiryLeasesCount} Akan Habis &lt; 30 hari)
+            </p>
+          </div>
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${kpiStats.expiredLeasesCount > 0 ? 'bg-red-50 dark:bg-red-950/40 text-red-650' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-600'}`}>
+            <ShieldAlert className="w-4 h-4" />
           </div>
         </div>
 
@@ -648,62 +700,31 @@ const totalAssets = assets.length;
         </div>
 
         {/* Action Button Row */}
-        <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-850/60">
-          {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
+        {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
+          <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
             <button
               onClick={handleResetFilters}
               className="px-4 py-2 border border-gray-250 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-600 dark:text-slate-350 text-xs font-bold rounded-xl transition"
             >
               Clear Filters
             </button>
-          )}
-
-          <button
-            type="button"
-            onClick={fetchAssets}
-            disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-rose-500/10 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            <span>Process & Load Assets</span>
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Main Asset List */}
       <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden">
-        {loading ? (
+        {loading && assets.length === 0 ? (
           <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
             <span className="text-xs text-gray-500 font-semibold">Memuat Inventaris Aset...</span>
           </div>
-        ) : !hasProcessed ? (
-          <div className="p-12 text-center max-w-2xl mx-auto space-y-6 animate-scale-up">
-            <div className="w-16 h-16 rounded-full bg-rose-50/50 dark:bg-rose-950/30 text-rose-500 flex items-center justify-center mx-auto shadow-inner">
-              <Laptop className="w-8 h-8" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-extrabold text-gray-800 dark:text-slate-100">Ready to Process Assets</h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
-                Sistem IT MRA Group melacak inventaris perangkat laptop, PC, dan smartphone sewa maupun milik sendiri. Silakan sesuaikan kriteria filter di atas dan klik <strong>"Process & Load Assets"</strong> untuk menampilkan data.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={fetchAssets}
-              disabled={loading}
-              className="mx-auto flex items-center gap-2 px-6 py-3 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-rose-500/15 disabled:opacity-50 hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 duration-200"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-              <span>Process & Load Assets</span>
-            </button>
-          </div>
         ) : filteredAssets.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-sm font-semibold text-gray-500 dark:text-slate-400">Tidak ada aset IT ditemukan.</p>
+          <div className="text-center py-12 animate-fade-in">
+            <p className="text-sm font-semibold text-gray-550 dark:text-slate-400">Tidak ada aset IT ditemukan.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className={`overflow-x-auto transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
             <table className="w-full text-left text-xs font-semibold border-collapse">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-800 text-gray-400 uppercase tracking-wider text-[10px]">

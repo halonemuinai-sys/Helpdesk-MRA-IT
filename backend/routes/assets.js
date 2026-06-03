@@ -4,6 +4,72 @@ const { verifyToken } = require('../api/authMiddleware');
 
 const router = express.Router();
 
+// GET /api/assets/stats
+// Returns global statistics for KPI cards
+router.get('/stats', verifyToken, async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const now = new Date();
+    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Run parallel counts and aggregations using prisma
+    const [
+      totalCount,
+      assignedCount,
+      availableCount,
+      maintenanceCount,
+      rentalAgg,
+      expiredCount,
+      nearExpiryCount,
+      rentalCount,
+      ownedCount
+    ] = await Promise.all([
+      prisma.asset.count(),
+      prisma.asset.count({ where: { status: 'ASSIGNED' } }),
+      prisma.asset.count({ where: { status: 'AVAILABLE' } }),
+      prisma.asset.count({ where: { status: 'MAINTENANCE' } }),
+      prisma.asset.aggregate({
+        where: { ownershipType: 'RENTAL' },
+        _sum: { rentalCost: true }
+      }),
+      prisma.asset.count({
+        where: {
+          ownershipType: 'RENTAL',
+          rentalEnd: { lt: now }
+        }
+      }),
+      prisma.asset.count({
+        where: {
+          ownershipType: 'RENTAL',
+          rentalEnd: {
+            gte: now,
+            lte: thirtyDaysLater
+          }
+        }
+      }),
+      prisma.asset.count({ where: { ownershipType: 'RENTAL' } }),
+      prisma.asset.count({ where: { ownershipType: 'OWNED' } })
+    ]);
+
+    res.json({
+      totalAssets: totalCount,
+      assignedCount,
+      availableCount,
+      maintenanceCount,
+      totalMonthlyRental: rentalAgg._sum.rentalCost || 0,
+      expiredLeasesCount: expiredCount,
+      nearExpiryLeasesCount: nearExpiryCount,
+      rentalCount,
+      ownedCount
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/assets
 // Lists all assets with search query and filters
 router.get('/', verifyToken, async (req, res, next) => {
