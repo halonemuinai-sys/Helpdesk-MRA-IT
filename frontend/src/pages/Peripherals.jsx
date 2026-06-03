@@ -31,7 +31,7 @@ const STATUS_OPTIONS = [
   { value: 'RETIRED', label: 'Pensiun / Dibuang', color: 'bg-slate-50 text-slate-600 dark:bg-slate-950/40 dark:text-slate-400', dot: 'bg-slate-500' }
 ];
 
-const DEFAULT_CATEGORIES = ['CCTV', 'NVR', 'Storage / HDD', 'UPS / Power', 'Network Switch', 'Printer', 'Access Control'];
+const DEFAULT_CATEGORIES = ['CCTV', 'NVR', 'HDD', 'Storage / HDD', 'UPS / Power', 'Network Switch', 'Printer', 'Access Control'];
 
 export default function Peripherals({ user, token }) {
   const [peripherals, setPeripherals] = useState([]);
@@ -100,7 +100,11 @@ export default function Peripherals({ user, token }) {
       isMounted.current = true;
       return;
     }
-    fetchPeripherals(debouncedSearchQuery);
+    if (debouncedSearchQuery.trim() === '') {
+      setPeripherals([]);
+    } else {
+      fetchPeripherals(debouncedSearchQuery);
+    }
   }, [debouncedSearchQuery, selectedStatus, selectedCompanyMasterId, selectedCategory]);
 
   useEffect(() => {
@@ -139,10 +143,7 @@ export default function Peripherals({ user, token }) {
       setCompanies(branchData);
 
       // 3. Load data concurrently
-      await Promise.all([
-        fetchStats(),
-        fetchPeripherals()
-      ]);
+      await fetchStats();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -151,6 +152,10 @@ export default function Peripherals({ user, token }) {
   };
 
   const fetchPeripherals = async (currentSearch = searchQuery) => {
+    if (!currentSearch || currentSearch.trim() === '') {
+      setPeripherals([]);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -650,6 +655,13 @@ export default function Peripherals({ user, token }) {
             <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
             <span className="text-xs text-gray-500 font-semibold">Memuat Data Periferal...</span>
           </div>
+        ) : searchQuery.trim() === '' ? (
+          <div className="text-center py-16 px-6 animate-fade-in flex flex-col items-center justify-center gap-3">
+            <Search className="w-8 h-8 text-rose-500/80" />
+            <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold max-w-md">
+              Silakan masukkan kata kunci pencarian (Nama, Brand, Invoice, Supplier, dsb.) di atas untuk memuat data periferal.
+            </p>
+          </div>
         ) : peripherals.length === 0 ? (
           <div className="text-center py-12 animate-fade-in">
             <p className="text-sm font-semibold text-gray-555 dark:text-slate-400">Tidak ada data periferal ditemukan.</p>
@@ -904,6 +916,11 @@ export default function Peripherals({ user, token }) {
                         <option value="Dahua" />
                         <option value="Seagate" />
                         <option value="Western Digital" />
+                        <option value="Toshiba" />
+                        <option value="Transcend" />
+                        <option value="Kingston" />
+                        <option value="SanDisk" />
+                        <option value="Samsung" />
                         <option value="TP-Link" />
                         <option value="Cisco" />
                         <option value="APC" />
