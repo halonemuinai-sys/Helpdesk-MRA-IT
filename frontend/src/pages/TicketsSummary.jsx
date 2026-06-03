@@ -218,6 +218,31 @@ export default function TicketsSummary({ user, token }) {
     }
   };
 
+  const handleSlaOverride = async (ticketId, reason) => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/sla-override`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to override SLA.');
+      }
+
+      fetchTickets();
+      if (selectedTicketId === ticketId) {
+        fetchTicketDetails(ticketId);
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const handleDeleteTicket = async (ticketId) => {
     const isDark = document.documentElement.classList.contains('dark');
     
@@ -846,6 +871,7 @@ export default function TicketsSummary({ user, token }) {
           onClose={() => setSelectedTicketId(null)}
           handleStatusChange={handleStatusChange}
           handleAssignAgent={handleAssignAgent}
+          handleSlaOverride={handleSlaOverride}
         />
       )}
 

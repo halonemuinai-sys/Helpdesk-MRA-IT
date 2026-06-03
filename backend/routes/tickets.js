@@ -1,6 +1,6 @@
 const express = require('express');
 const prisma = require('../api/db');
-const { verifyToken } = require('../api/authMiddleware');
+const { verifyToken, checkRole } = require('../api/authMiddleware');
 const {
   sendTicketCreatedEmail,
   sendTicketStatusChangedEmail,
@@ -715,6 +715,57 @@ router.delete('/:id', verifyToken, async (req, res, next) => {
     ]);
 
     res.json({ message: `Ticket ${id} has been deleted successfully.` });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/tickets/:id/sla-override
+// Manually override SLA breach status (ADMIN only)
+router.patch('/:id/sla-override', verifyToken, checkRole(['ADMIN']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const { name: currentUserName } = req.user;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Reason for SLA override is required.' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id }
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found.' });
+    }
+
+    // Perform database updates
+    const updatedTicket = await prisma.ticket.update({
+      where: { id },
+      data: {
+        isSlaBreached: false,
+        auditLogs: {
+          create: {
+            action: 'SLA_OVERRIDDEN',
+            details: `SLA status manual di-override menjadi MET (Terpenuhi) oleh Admin ${currentUserName}. Alasan: "${reason.trim()}"`,
+            performedBy: currentUserName
+          }
+        }
+      },
+      include: {
+        company: true,
+        requester: true,
+        assignedTo: {
+          select: { id: true, name: true, email: true }
+        },
+        auditLogs: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    res.json(updatedTicket);
   } catch (err) {
     next(err);
   }

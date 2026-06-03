@@ -20,14 +20,40 @@ export default function TicketDetailsModal({
   currentTime, 
   onClose, 
   handleStatusChange, 
-  handleAssignAgent 
+  handleAssignAgent,
+  handleSlaOverride
 }) {
   const [actionComment, setActionComment] = useState('');
+  const [showOverrideDialog, setShowOverrideDialog] = useState(false);
+  const [overrideReason, setOverrideReason] = useState('');
+  const [overrideError, setOverrideError] = useState(null);
+  const [overrideSubmitting, setOverrideSubmitting] = useState(false);
 
   // Local helper to submit status changes with local comment
   const onSubmitStatusChange = async (newStatus) => {
     await handleStatusChange(ticketDetails.id, newStatus, actionComment);
     setActionComment(''); // Clear comment box after action
+  };
+
+  const handleSlaOverrideSubmit = async (e) => {
+    e.preventDefault();
+    if (!overrideReason || !overrideReason.trim()) {
+      setOverrideError('Reason for SLA override is required.');
+      return;
+    }
+
+    setOverrideError(null);
+    setOverrideSubmitting(true);
+
+    try {
+      await handleSlaOverride(ticketDetails.id, overrideReason.trim());
+      setShowOverrideDialog(false);
+      setOverrideReason('');
+    } catch (err) {
+      setOverrideError(err.message);
+    } finally {
+      setOverrideSubmitting(false);
+    }
   };
 
   const getPriorityBadge = (prio) => {
@@ -220,7 +246,38 @@ export default function TicketDetailsModal({
                     </div>
                     <div>
                       <p className="text-gray-450 dark:text-slate-500 font-medium">SLA Status / Remaining</p>
-                      <div className="mt-1 font-semibold">{renderSlaStatus(ticketDetails)}</div>
+                      <div className="mt-1 font-semibold flex items-center gap-2 flex-wrap">
+                        {renderSlaStatus(ticketDetails)}
+                        {(() => {
+                          const limitTime = new Date(ticketDetails.slaResolutionLimit).getTime();
+                          const pausedMs = ticketDetails.totalPausedMs || 0;
+                          let activeLimitTime = limitTime + pausedMs;
+                          if (ticketDetails.status === 'PENDING' && ticketDetails.lastPausedAt) {
+                            const currentPause = currentTime.getTime() - new Date(ticketDetails.lastPausedAt).getTime();
+                            activeLimitTime += currentPause;
+                          }
+                          const isOverdue = !['RESOLVED', 'CLOSED'].includes(ticketDetails.status) && (activeLimitTime - currentTime.getTime() < 0);
+                          const isSlaBreachedNow = ticketDetails.isSlaBreached || isOverdue;
+                          
+                          if (user.role === 'ADMIN' && isSlaBreachedNow) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOverrideReason('');
+                                  setOverrideError(null);
+                                  setOverrideSubmitting(false);
+                                  setShowOverrideDialog(true);
+                                }}
+                                className="text-[10px] font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-900/30 transition cursor-pointer"
+                              >
+                                Bypass SLA
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </div>
                     {ticketDetails.respondedAt && (
                       <div>
@@ -509,6 +566,66 @@ export default function TicketDetailsModal({
         </div>
 
       </div>
+
+      {/* SLA Override Form Dialog */}
+      {showOverrideDialog && (
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-fade-in">
+          <div className="absolute inset-0" onClick={() => setShowOverrideDialog(false)}></div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl relative z-10 w-full max-w-md animate-scale-up">
+            <div className="flex justify-between items-start gap-4 mb-2">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800 dark:text-slate-100">Bypass SLA Status</h3>
+                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+                  Manually override this ticket's SLA status to Met (On-Time).
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowOverrideDialog(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded text-gray-400 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {overrideError && (
+              <div className="p-3 mb-4 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border border-red-200/50 dark:border-red-900/30 rounded-xl text-xs font-semibold">
+                {overrideError}
+              </div>
+            )}
+
+            <form onSubmit={handleSlaOverrideSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Reason for SLA Override</label>
+                <textarea
+                  required
+                  placeholder="e.g. Menunggu vendor eksternal / pengadaan unit baru..."
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-855 rounded-xl text-xs focus:outline-none focus:border-rose-500 font-semibold"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/40">
+                <button
+                  type="button"
+                  onClick={() => setShowOverrideDialog(false)}
+                  className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-gray-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={overrideSubmitting}
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer"
+                >
+                  {overrideSubmitting ? 'Bypassing...' : 'Bypass SLA'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
