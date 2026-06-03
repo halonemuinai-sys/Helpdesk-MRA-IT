@@ -1205,6 +1205,9 @@ const totalAssets = assets.length;
                                 <option value="Windows 10 Pro" />
                                 <option value="macOS Sonoma" />
                                 <option value="macOS Ventura" />
+                                <option value="macOS" />
+                                <option value="Linux" />
+                                <option value="Linux Ubuntu" />
                               </>
                             ) : (
                               <>
