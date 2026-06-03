@@ -67,6 +67,17 @@ export default function InputTicket({ user, token }) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
+  // Quick Add User States
+  const [showQuickUserModal, setShowQuickUserModal] = useState(false);
+  const [quickUserId, setQuickUserId] = useState('');
+  const [quickUserName, setQuickUserName] = useState('');
+  const [quickUserEmail, setQuickUserEmail] = useState('');
+  const [quickUserDept, setQuickUserDept] = useState('');
+  const [quickUserJob, setQuickUserJob] = useState('');
+  const [quickUserPhone, setQuickUserPhone] = useState('');
+  const [quickUserError, setQuickUserError] = useState(null);
+  const [quickUserSubmitting, setQuickUserSubmitting] = useState(false);
+
   // Fetch all companies & categories on mount
   useEffect(() => {
     fetchCompanies();
@@ -202,6 +213,63 @@ export default function InputTicket({ user, token }) {
       if (emp) {
         setSelectedDepartment(emp.department);
       }
+    }
+  };
+
+  const handleQuickCreateUser = async (e) => {
+    e.preventDefault();
+    if (!quickUserId || !quickUserName || !quickUserEmail || !quickUserDept || !quickUserJob) {
+      setQuickUserError('All fields except Phone are required.');
+      return;
+    }
+
+    setQuickUserError(null);
+    setQuickUserSubmitting(true);
+
+    try {
+      const res = await fetch(`${API_URL}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          id: quickUserId,
+          name: quickUserName,
+          email: quickUserEmail,
+          password: '',
+          phone: quickUserPhone || null,
+          companyId: parseInt(selectedCompanyId),
+          department: quickUserDept,
+          jobPosition: quickUserJob,
+          role: 'USER'
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create user.');
+      }
+
+      // Refetch employees for this company branch
+      await fetchEmployees(selectedCompanyId);
+
+      // Auto-select the newly created requester
+      setSelectedEmployeeId(quickUserId);
+      setSelectedDepartment(quickUserDept);
+
+      // Reset and close modal
+      setShowQuickUserModal(false);
+      setQuickUserId('');
+      setQuickUserName('');
+      setQuickUserEmail('');
+      setQuickUserDept('');
+      setQuickUserJob('');
+      setQuickUserPhone('');
+    } catch (err) {
+      setQuickUserError(err.message);
+    } finally {
+      setQuickUserSubmitting(false);
     }
   };
 
@@ -363,9 +431,31 @@ export default function InputTicket({ user, token }) {
 
               {/* Employee Requester Selection */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                  Employee Name (Requester)
-                </label>
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Employee Name (Requester)
+                  </label>
+                  {['ADMIN', 'AGENT'].includes(user.role) && selectedLocation && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuickUserId('');
+                        setQuickUserName('');
+                        setQuickUserEmail('');
+                        setQuickUserDept('');
+                        setQuickUserJob('');
+                        setQuickUserPhone('');
+                        setQuickUserError(null);
+                        setQuickUserSubmitting(false);
+                        setShowQuickUserModal(true);
+                      }}
+                      className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 focus:outline-none"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>+ Quick Add User</span>
+                    </button>
+                  )}
+                </div>
                 <SearchableSelect
                   disabled={user.role === 'USER' || !selectedLocation}
                   value={selectedEmployeeId}
@@ -710,6 +800,139 @@ export default function InputTicket({ user, token }) {
           </div>
 
         </form>
+      )}
+
+      {/* Quick Add User Modal */}
+      {showQuickUserModal && (
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="absolute inset-0" onClick={() => setShowQuickUserModal(false)}></div>
+          
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl relative z-10 p-6 border border-gray-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start gap-4 mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Quick Add User</h3>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  Add a user on-the-fly for {selectedCompName} ({selectedLocation}).
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowQuickUserModal(false)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 dark:text-slate-400 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {quickUserError && (
+              <div className="p-3 mb-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-semibold animate-pulse">
+                {quickUserError}
+              </div>
+            )}
+
+            <form onSubmit={handleQuickCreateUser} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Employee ID</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 40822045"
+                    value={quickUserId}
+                    onChange={(e) => setQuickUserId(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs font-semibold"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. John Doe"
+                    value={quickUserName}
+                    onChange={(e) => setQuickUserName(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. john@mragroup.co.id"
+                    value={quickUserEmail}
+                    onChange={(e) => setQuickUserEmail(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Department</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Finance"
+                    value={quickUserDept}
+                    onChange={(e) => setQuickUserDept(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs font-semibold"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Job Position</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Staff"
+                    value={quickUserJob}
+                    onChange={(e) => setQuickUserJob(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Phone Number (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 08123456789"
+                    value={quickUserPhone}
+                    onChange={(e) => setQuickUserPhone(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-850 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800/40">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickUserModal(false)}
+                  className="px-4 py-2.5 bg-gray-100 hover:bg-gray-250 dark:bg-slate-800 dark:hover:bg-slate-750 text-gray-700 dark:text-slate-200 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={quickUserSubmitting}
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  {quickUserSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <span>Create User</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

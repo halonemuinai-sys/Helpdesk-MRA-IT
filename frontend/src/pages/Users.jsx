@@ -143,8 +143,11 @@ export default function Users({ user: currentUser, token }) {
       setFormError(null);
       setFormSubmitting(true);
 
-      if (!newId || !newName || !newEmail || !newPassword || !newDepartment || !newJobPosition || !newCompanyId || !newRole) {
+      if (!newId || !newName || !newEmail || !newDepartment || !newJobPosition || !newCompanyId) {
         throw new Error('All fields except Phone are required.');
+      }
+      if (currentUser.role === 'ADMIN' && (!newPassword || !newRole)) {
+        throw new Error('Password and Access Role are required.');
       }
 
       const res = await fetch(`${API_URL}/users`, {
@@ -157,12 +160,12 @@ export default function Users({ user: currentUser, token }) {
           id: newId,
           name: newName,
           email: newEmail,
-          password: newPassword,
+          password: currentUser.role === 'ADMIN' ? newPassword : '',
           phone: newPhone,
           companyId: parseInt(newCompanyId),
           department: newDepartment,
           jobPosition: newJobPosition,
-          role: newRole
+          role: currentUser.role === 'ADMIN' ? newRole : 'USER'
         })
       });
 
@@ -322,7 +325,7 @@ export default function Users({ user: currentUser, token }) {
           </p>
         </div>
 
-        {currentUser.role === 'ADMIN' && (
+        {['ADMIN', 'AGENT'].includes(currentUser.role) && (
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
@@ -634,7 +637,7 @@ export default function Users({ user: currentUser, token }) {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className={currentUser.role === 'ADMIN' ? "space-y-1.5" : "space-y-1.5 col-span-2"}>
                   <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Email Address</label>
                   <input
                     type="email"
@@ -645,16 +648,18 @@ export default function Users({ user: currentUser, token }) {
                     className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Password</label>
-                  <input
-                    type="text"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs"
-                  />
-                </div>
+                {currentUser.role === 'ADMIN' && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Password</label>
+                    <input
+                      type="text"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 gap-4">
@@ -702,7 +707,7 @@ export default function Users({ user: currentUser, token }) {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className={currentUser.role === 'ADMIN' ? "space-y-1.5" : "space-y-1.5 col-span-2"}>
                   <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Phone Number (Optional)</label>
                   <input
                     type="text"
@@ -712,19 +717,21 @@ export default function Users({ user: currentUser, token }) {
                     className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Access Role</label>
-                  <select
-                    required
-                    value={newRole}
-                    onChange={(e) => setNewRole(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs cursor-pointer font-bold animate-pulse"
-                  >
-                    <option value="USER">USER (Employee)</option>
-                    <option value="AGENT">AGENT (IT Staff)</option>
-                    <option value="ADMIN">ADMIN (Super User)</option>
-                  </select>
-                </div>
+                {currentUser.role === 'ADMIN' && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Access Role</label>
+                    <select
+                      required
+                      value={newRole}
+                      onChange={(e) => setNewRole(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs cursor-pointer font-bold animate-pulse"
+                    >
+                      <option value="USER">USER (Employee)</option>
+                      <option value="AGENT">AGENT (IT Staff)</option>
+                      <option value="ADMIN">ADMIN (Super User)</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex justify-end gap-3">

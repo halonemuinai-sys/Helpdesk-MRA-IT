@@ -93,13 +93,13 @@ router.patch('/:id/role', verifyToken, checkRole(['ADMIN']), async (req, res, ne
 });
 
 // POST /api/users
-// Create a new user (ADMIN only)
-router.post('/', verifyToken, checkRole(['ADMIN']), async (req, res, next) => {
+// Create a new user (ADMIN and AGENT only)
+router.post('/', verifyToken, checkRole(['ADMIN', 'AGENT']), async (req, res, next) => {
   try {
     const { id, name, email, password, department, jobPosition, phone, companyId, role } = req.body;
 
-    if (!id || !name || !email || !password || !department || !jobPosition || !companyId || !role) {
-      return res.status(400).json({ error: 'All fields (Employee ID, Name, Email, Password, Department, Job Position, Company, and Role) are required.' });
+    if (!id || !name || !email || !department || !jobPosition || !companyId) {
+      return res.status(400).json({ error: 'All fields (Employee ID, Name, Email, Department, Job Position, and Company) are required.' });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -123,9 +123,13 @@ router.post('/', verifyToken, checkRole(['ADMIN']), async (req, res, next) => {
       return res.status(400).json({ error: 'Email already exists.' });
     }
 
+    // Determine default role & password
+    const userRole = req.user.role === 'ADMIN' ? (role || 'USER').toUpperCase() : 'USER';
+    const rawPassword = password || 'Password123!';
+
     // Hash password
     const bcrypt = require('bcryptjs');
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     // Create user
     const newUser = await prisma.user.create({
@@ -138,12 +142,21 @@ router.post('/', verifyToken, checkRole(['ADMIN']), async (req, res, next) => {
         jobPosition,
         phone: phone || null,
         companyId: parseInt(companyId),
-        role: role.toUpperCase()
+        role: userRole
       },
       include: {
         company: true
       }
     });
+
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'USER_CREATED',
+        details: `User "${newUser.name}" (ID: ${newUser.id}, Role: ${newUser.role}) created at location "${newUser.company.name} (${newUser.company.location})" by ${req.user.name}.`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
 
     const { password: _, ...safeUser } = newUser;
     res.status(201).json({
