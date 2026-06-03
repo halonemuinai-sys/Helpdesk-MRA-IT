@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Users as UsersIcon, ShieldAlert, Building2, Search, Filter, ShieldCheck, Loader2, Plus, X, Key, Mail, MapPin } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
+import SearchableSelect from '../components/SearchableSelect';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -48,6 +49,13 @@ export default function Users({ user: currentUser, token }) {
   const [newEditLocation, setNewEditLocation] = useState('');
   const [editLocationError, setEditLocationError] = useState(null);
   const [editLocationSubmitting, setEditLocationSubmitting] = useState(false);
+
+  const formattedCompanies = useMemo(() => {
+    return allCompanies.map(c => ({
+      id: c.id,
+      name: `${c.name} (${c.location})`
+    }));
+  }, [allCompanies]);
 
   useEffect(() => {
     fetchCompanies();
@@ -665,19 +673,15 @@ export default function Users({ user: currentUser, token }) {
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Company & Location</label>
-                  <select
-                    required
+                  <SearchableSelect
                     value={newCompanyId}
-                    onChange={(e) => setNewCompanyId(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs cursor-pointer"
-                  >
-                    <option value="">-- Select Company Branch --</option>
-                    {allCompanies.map(comp => (
-                      <option key={comp.id} value={comp.id}>
-                        {comp.name} ({comp.location})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setNewCompanyId(val)}
+                    options={formattedCompanies}
+                    labelKey="name"
+                    valueKey="id"
+                    placeholder="-- Select Company Branch --"
+                    icon={Building2}
+                  />
                 </div>
               </div>
 
@@ -909,20 +913,16 @@ export default function Users({ user: currentUser, token }) {
 
             <form onSubmit={handleEditLocation} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Select New Branch / Location</label>
-                <select
-                  required
-                  value={newEditLocation}
-                  onChange={(e) => setNewEditLocation(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-gray-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 text-xs cursor-pointer"
-                >
-                  <option value="">-- Select Location --</option>
-                  {allCompanies.map(comp => (
-                    <option key={comp.id} value={comp.id}>
-                      {comp.name} ({comp.location})
-                    </option>
-                  ))}
-                </select>
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Select New Branch / Location</label>
+                  <SearchableSelect
+                    value={newEditLocation}
+                    onChange={(val) => setNewEditLocation(val)}
+                    options={formattedCompanies}
+                    labelKey="name"
+                    valueKey="id"
+                    placeholder="-- Select Location --"
+                    icon={Building2}
+                  />
               </div>
 
               <div className="pt-2 flex justify-end gap-3">
