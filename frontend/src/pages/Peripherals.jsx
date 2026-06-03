@@ -32,6 +32,11 @@ const STATUS_OPTIONS = [
 ];
 
 const DEFAULT_CATEGORIES = ['CCTV', 'NVR', 'HDD', 'Storage / HDD', 'UPS / Power', 'Network Switch', 'Printer', 'Access Control'];
+const DEFAULT_BRANDS = [
+  'Hikvision', 'Dahua', 'Seagate', 'Western Digital', 'Toshiba',
+  'Transcend', 'Kingston', 'SanDisk', 'Samsung', 'TP-Link',
+  'Cisco', 'APC', 'Epson', 'Canon', 'HP'
+];
 
 export default function Peripherals({ user, token }) {
   const [peripherals, setPeripherals] = useState([]);
@@ -41,7 +46,12 @@ export default function Peripherals({ user, token }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const activeCategories = dbCategories.length > 0 ? dbCategories : DEFAULT_CATEGORIES;
+  const activeCategories = dbCategories.length > 0 ? dbCategories.map(c => c.subCategory) : DEFAULT_CATEGORIES;
+
+  const selectedCatObj = dbCategories.find(c => c.subCategory === formCategory);
+  const suggestedBrands = selectedCatObj && selectedCatObj.brands && selectedCatObj.brands.length > 0
+    ? selectedCatObj.brands
+    : DEFAULT_BRANDS;
 
   // Stats state
   const [stats, setStats] = useState({
@@ -150,9 +160,7 @@ export default function Peripherals({ user, token }) {
         const catRes = await fetch(`${API_URL}/tickets/categories`, { headers });
         if (catRes.ok) {
           const catData = await catRes.json();
-          const peripheralCats = catData
-            .filter(item => item.category === 'IT Peripheral')
-            .map(item => item.subCategory);
+          const peripheralCats = catData.filter(item => item.category === 'IT Peripheral');
           setDbCategories(peripheralCats);
         }
       } catch (catErr) {
@@ -929,21 +937,9 @@ export default function Peripherals({ user, token }) {
                         list="brand-suggestions"
                       />
                       <datalist id="brand-suggestions">
-                        <option value="Hikvision" />
-                        <option value="Dahua" />
-                        <option value="Seagate" />
-                        <option value="Western Digital" />
-                        <option value="Toshiba" />
-                        <option value="Transcend" />
-                        <option value="Kingston" />
-                        <option value="SanDisk" />
-                        <option value="Samsung" />
-                        <option value="TP-Link" />
-                        <option value="Cisco" />
-                        <option value="APC" />
-                        <option value="Epson" />
-                        <option value="Canon" />
-                        <option value="HP" />
+                        {suggestedBrands.map(brand => (
+                          <option key={brand} value={brand} />
+                        ))}
                       </datalist>
                     </div>
 

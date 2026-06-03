@@ -146,6 +146,7 @@ model CategoryMetadata {
   id          Int      @id @default(autoincrement())
   category    String   // e.g., Hardware, Software, Network, Access
   subCategory String   // e.g., Printer, Outlook Webmail
+  brands      String[] @default([])
   createdAt   DateTime @default(now())
 
   @@unique([category, subCategory])

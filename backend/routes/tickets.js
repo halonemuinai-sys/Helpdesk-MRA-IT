@@ -164,6 +164,43 @@ router.post('/categories', verifyToken, async (req, res, next) => {
   }
 });
 
+// PATCH /api/tickets/categories/:id
+// Update category metadata (e.g. associated brands)
+router.patch('/categories/:id', verifyToken, async (req, res, next) => {
+  try {
+    const { role } = req.user;
+    if (role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const { id } = req.params;
+    const { brands } = req.body;
+
+    if (!Array.isArray(brands)) {
+      return res.status(400).json({ error: 'Brands must be an array of strings.' });
+    }
+
+    const updatedMeta = await prisma.categoryMetadata.update({
+      where: { id: parseInt(id) },
+      data: {
+        brands: brands.map(b => b.trim())
+      }
+    });
+
+    // Write system audit log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'CATEGORY_BRANDS_UPDATED',
+        details: `Brands for category ${updatedMeta.category} - ${updatedMeta.subCategory} updated to: ${brands.join(', ')}`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
+    res.json(updatedMeta);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // DELETE /api/tickets/categories/:id
 // Delete category metadata by ID (ADMIN deletes immediately, AGENT creates an ApprovalRequest)
 router.delete('/categories/:id', verifyToken, async (req, res, next) => {

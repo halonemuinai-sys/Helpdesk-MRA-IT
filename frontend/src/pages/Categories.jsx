@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tags, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Search, FolderTree } from 'lucide-react';
+import { Tags, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Search, FolderTree, Wrench, X } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -20,6 +20,66 @@ export default function Categories({ user, token }) {
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+
+  // Brands modal states
+  const [isBrandsModalOpen, setIsBrandsModalOpen] = useState(false);
+  const [selectedCategoryObj, setSelectedCategoryObj] = useState(null);
+  const [tempBrands, setTempBrands] = useState([]);
+  const [newBrandInput, setNewBrandInput] = useState('');
+  const [savingBrands, setSavingBrands] = useState(false);
+
+  const handleOpenBrandsModal = (item) => {
+    setSelectedCategoryObj(item);
+    setTempBrands(item.brands || []);
+    setNewBrandInput('');
+    setIsBrandsModalOpen(true);
+  };
+
+  const handleAddTempBrand = (e) => {
+    e.preventDefault();
+    const cleanBrand = newBrandInput.trim();
+    if (!cleanBrand) return;
+    if (tempBrands.includes(cleanBrand)) {
+      setNewBrandInput('');
+      return;
+    }
+    setTempBrands([...tempBrands, cleanBrand]);
+    setNewBrandInput('');
+  };
+
+  const handleRemoveTempBrand = (brandToRemove) => {
+    setTempBrands(tempBrands.filter(b => b !== brandToRemove));
+  };
+
+  const handleSaveBrands = async () => {
+    if (!selectedCategoryObj) return;
+    setSavingBrands(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const res = await fetch(`${API_URL}/tickets/categories/${selectedCategoryObj.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ brands: tempBrands })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update associated brands.');
+
+      setSuccessMsg(`Brands for "${selectedCategoryObj.subCategory}" successfully updated.`);
+      
+      // Update local categories state
+      setCategories(prev => prev.map(c => c.id === selectedCategoryObj.id ? { ...c, brands: tempBrands } : c));
+      setIsBrandsModalOpen(false);
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingBrands(false);
+    }
+  };
 
   useEffect(() => {
     fetchCategories();
@@ -259,32 +319,61 @@ export default function Categories({ user, token }) {
                   }
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {filteredSubCategories.map((item) => (
                     <div 
                       key={item.id}
-                      className="flex items-center justify-between px-4 py-3 bg-white/70 dark:bg-slate-900/60 border border-gray-150 dark:border-slate-800/40 rounded-2xl hover:border-brand-500/30 dark:hover:border-brand-500/20 hover:bg-brand-50/10 dark:hover:bg-brand-950/10 group transition-all animate-fade-in"
+                      className="flex flex-col justify-between p-4 bg-white/70 dark:bg-slate-900/60 border border-gray-150 dark:border-slate-800/40 rounded-2xl hover:border-brand-500/30 dark:hover:border-brand-500/20 hover:bg-brand-50/10 dark:hover:bg-brand-950/10 group transition-all animate-fade-in relative min-h-[90px]"
                     >
-                      <div className="flex items-center gap-2 overflow-hidden mr-2">
-                        <Tags className="w-3.5 h-3.5 text-brand-500/60 shrink-0" />
-                        <span className="text-xs font-bold text-gray-850 dark:text-slate-250 truncate">
-                          {item.subCategory}
-                        </span>
+                      <div className="flex items-start justify-between w-full">
+                        <div className="flex items-center gap-2 overflow-hidden mr-2">
+                          <Tags className="w-3.5 h-3.5 text-brand-500/60 shrink-0" />
+                          <span className="text-xs font-bold text-gray-850 dark:text-slate-250 truncate">
+                            {item.subCategory}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                          {/* Manage Brands Button */}
+                          <button
+                            onClick={() => handleOpenBrandsModal(item)}
+                            className="p-1.5 hover:bg-brand-50 dark:hover:bg-brand-950/40 hover:text-brand-500 text-gray-400 dark:text-slate-500 rounded-lg transition-colors"
+                            title="Manage Brands"
+                          >
+                            <Wrench className="w-3.5 h-3.5" />
+                          </button>
+                          
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDeleteCategory(item.id, item.category, item.subCategory)}
+                            disabled={deletingId === item.id}
+                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 text-gray-400 dark:text-slate-500 rounded-lg transition-colors disabled:opacity-50"
+                            title="Delete subcategory"
+                          >
+                            {deletingId === item.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </div>
-                      
-                      {/* Delete Button */}
-                      <button
-                        onClick={() => handleDeleteCategory(item.id, item.category, item.subCategory)}
-                        disabled={deletingId === item.id}
-                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 text-gray-400 dark:text-slate-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50 shrink-0"
-                        title="Delete subcategory"
-                      >
-                        {deletingId === item.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+
+                      {/* Associated Brands List */}
+                      <div className="mt-2.5 flex flex-wrap gap-1">
+                        {item.brands && item.brands.length > 0 ? (
+                          item.brands.map(brand => (
+                            <span 
+                              key={brand} 
+                              className="px-2 py-0.5 bg-gray-150 dark:bg-slate-800 text-gray-700 dark:text-slate-350 text-[9px] font-bold rounded-md"
+                            >
+                              {brand}
+                            </span>
+                          ))
                         ) : (
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="text-[9px] text-gray-400 italic">No brands set</span>
                         )}
-                      </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -295,6 +384,107 @@ export default function Categories({ user, token }) {
         </div>
 
       </div>
+      {/* Brands Manager Modal */}
+      {isBrandsModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center p-5 border-b border-gray-150 dark:border-slate-850">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-brand-500/10 text-brand-500 rounded-xl">
+                  <Wrench className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                    Manage Brands
+                  </h3>
+                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                    Category: {selectedCategoryObj?.category} &rarr; {selectedCategoryObj?.subCategory}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBrandsModalOpen(false)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Add Brand Form */}
+              <form onSubmit={handleAddTempBrand} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Type brand name (e.g. Hikvision)"
+                  value={newBrandInput}
+                  onChange={(e) => setNewBrandInput(e.target.value)}
+                  className="flex-1 px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition"
+                />
+                <button
+                  type="submit"
+                  disabled={!newBrandInput.trim()}
+                  className="px-4 py-2 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-bold rounded-xl text-xs transition disabled:opacity-50"
+                >
+                  Add
+                </button>
+              </form>
+
+              {/* Brands Tags Area */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider">
+                  Associated Brands
+                </label>
+                <div className="min-h-[100px] max-h-[180px] overflow-y-auto p-3 bg-gray-50/50 dark:bg-slate-955/20 border border-gray-200 dark:border-slate-850 rounded-2xl flex flex-wrap gap-1.5 content-start">
+                  {tempBrands.length === 0 ? (
+                    <span className="text-xs text-gray-400 italic font-medium m-auto">No brands added yet. Type above to add.</span>
+                  ) : (
+                    tempBrands.map(b => (
+                      <span
+                        key={b}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-55 dark:bg-slate-800 text-brand-600 dark:text-slate-300 text-xs font-extrabold rounded-lg"
+                      >
+                        {b}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTempBrand(b)}
+                          className="hover:text-red-500 text-gray-400 dark:text-slate-500 shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end items-center gap-3 p-5 border-t border-gray-150 dark:border-slate-850">
+              <button
+                type="button"
+                onClick={() => setIsBrandsModalOpen(false)}
+                className="px-4 py-2 border border-gray-250 dark:border-slate-855 hover:bg-gray-50 dark:hover:bg-slate-800/50 text-gray-655 dark:text-slate-300 text-xs font-bold rounded-xl transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBrands}
+                disabled={savingBrands}
+                className="flex items-center gap-1.5 px-5 py-2 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-brand-500/10 disabled:opacity-50"
+              >
+                {savingBrands ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                <span>Simpan</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
