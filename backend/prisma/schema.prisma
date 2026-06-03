@@ -39,6 +39,7 @@ model CompanyMaster {
   companies     Company[]        // Branches belonging to this master company
   subscriptions ITSubscription[] // Subscriptions belonging to this master company
   assets        Asset[]          // Assets leased by this master company
+  peripheralAssets PeripheralAsset[]
 }
 
 model Company {
@@ -51,6 +52,7 @@ model Company {
   tickets         Ticket[]
   wifiAPs         WifiAccessPoint[]
   assets          Asset[]          // Assets allocated at this physical branch
+  peripheralAssets PeripheralAsset[]
   
   // Link to master company
   companyMasterId Int?
@@ -293,4 +295,39 @@ model SystemAuditLog {
   createdAt   DateTime @default(now())
 
   @@index([createdAt])
+}
+
+model PeripheralAsset {
+  id              String         @id @default(uuid())
+  name            String         // e.g. "Hikvision Dome Camera 4MP"
+  category        String         // e.g. "CCTV", "NVR", "STORAGE", "NETWORK", "POWER", "PERIPHERAL"
+  brand           String         // e.g. "Hikvision", "Seagate", "TP-Link", "APC"
+  model           String?        // e.g. "DS-2CD2143G0-I"
+  serialNumber    String?        // Serial number or serial ranges (Optional)
+  purchaseCost    Float          // Price per unit in IDR
+  quantity        Int            @default(1) // Number of items bought
+  totalCost       Float          // Total cost: purchaseCost * quantity
+  purchaseDate    DateTime       // Date bought
+  warrantyExpiry  DateTime?      // Warranty end date (Optional)
+  supplier        String?        // Vendor / Shop where bought (Optional)
+  invoiceRef      String?        // Invoice number (Optional)
+  poRef           String?        // Purchase Order number (Optional)
+  status          String         @default("STOCK") // STATUS: STOCK, IN_USE, DAMAGED, RETIRED
+  notes           String?        // Additional description or serials checklist
+  
+  // Placement branch (e.g. Wisma MRA Floor 3, Butik Plaza Indonesia)
+  companyId       Int?
+  company         Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  // Finance entity paying for it (e.g. PT Mugi Rekso Abadi)
+  companyMasterId Int?
+  companyMaster   CompanyMaster? @relation(fields: [companyMasterId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@index([companyId])
+  @@index([companyMasterId])
 }

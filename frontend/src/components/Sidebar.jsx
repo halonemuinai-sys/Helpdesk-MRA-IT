@@ -20,7 +20,8 @@ import {
   Wifi,
   CreditCard,
   Laptop,
-  TrendingUp
+  TrendingUp,
+  Package
 } from 'lucide-react';
 
 export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
@@ -80,6 +81,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           label: 'Asset Management',
           path: '/assets',
           icon: Laptop,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'IT Peripherals',
+          path: '/peripherals',
+          icon: Package,
           roles: ['AGENT', 'ADMIN']
         },
         {

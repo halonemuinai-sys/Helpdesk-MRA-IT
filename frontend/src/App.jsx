@@ -19,6 +19,7 @@ import Categories from './pages/Categories';
 import WifiAps from './pages/WifiAps';
 import Subscriptions from './pages/Subscriptions';
 import Assets from './pages/Assets';
+import Peripherals from './pages/Peripherals';
 import RentalAnalysis from './pages/RentalAnalysis';
 import Approvals from './pages/Approvals';
 import AuditTrail from './pages/AuditTrail';
@@ -187,6 +188,14 @@ export default function App() {
               element={
                 <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
                   <Assets user={user} token={token} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/peripherals"
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <Peripherals user={user} token={token} />
                 </ProtectedRoute>
               }
             />

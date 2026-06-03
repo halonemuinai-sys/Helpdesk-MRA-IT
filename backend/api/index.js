@@ -29,6 +29,7 @@ app.use('/api/subscriptions', require('../routes/subscriptions'));
 app.use('/api/assets', require('../routes/assets'));
 app.use('/api/approvals', require('../routes/approvals'));
 app.use('/api/audit-logs', require('../routes/audit-logs'));
+app.use('/api/peripherals', require('../routes/peripherals'));
 
 // Global Error Handler
 app.use((err, req, res, next) => {
