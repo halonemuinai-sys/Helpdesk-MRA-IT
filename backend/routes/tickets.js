@@ -105,6 +105,9 @@ router.get('/', verifyToken, async (req, res, next) => {
         },
         assignedTo: {
           select: { id: true, name: true, email: true }
+        },
+        auditLogs: {
+          select: { action: true }
         }
       },
       orderBy: { createdAt: 'desc' }

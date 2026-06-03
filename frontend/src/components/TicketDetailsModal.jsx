@@ -86,6 +86,15 @@ export default function TicketDetailsModal({
   };
 
   const renderSlaStatus = (ticket) => {
+    const isBypassed = ticket.auditLogs?.some(log => log.action === 'SLA_OVERRIDDEN');
+    if (isBypassed) {
+      return (
+        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-500/10 inline-block">
+          SLA Bypassed
+        </span>
+      );
+    }
+
     if (['RESOLVED', 'CLOSED'].includes(ticket.status)) {
       return (
         <span className={`text-xs font-bold px-2.5 py-1 rounded-full inline-block ${
