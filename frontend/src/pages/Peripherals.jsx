@@ -935,6 +935,7 @@ export default function Peripherals({ user, token }) {
                         onChange={(e) => setFormBrand(e.target.value)}
                         placeholder="e.g. Hikvision"
                         required
+                        autoComplete="off"
                         className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                         list="brand-suggestions"
                       />
