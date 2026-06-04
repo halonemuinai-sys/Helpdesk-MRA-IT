@@ -269,6 +269,24 @@ router.delete('/categories/:id', verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/tickets/open-count
+// Returns count of OPEN status tickets for the authenticated user/agent
+router.get('/open-count', verifyToken, async (req, res, next) => {
+  try {
+    const { role, id: userId } = req.user;
+    const where = { status: 'OPEN' };
+    
+    if (role === 'USER') {
+      where.requesterId = userId;
+    }
+    
+    const count = await prisma.ticket.count({ where });
+    res.json({ count });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/tickets/:id
 // Get detailed ticket by ID
 router.get('/:id', verifyToken, async (req, res, next) => {

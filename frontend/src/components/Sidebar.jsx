@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -24,10 +24,38 @@ import {
   Package
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [openTicketsCount, setOpenTicketsCount] = useState(0);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const fetchOpenTicketsCount = async () => {
+      try {
+        const res = await fetch(`${API_URL}/tickets/open-count`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setOpenTicketsCount(data.count || 0);
+        }
+      } catch (err) {
+        console.error('Failed to fetch open tickets count:', err);
+      }
+    };
+
+    fetchOpenTicketsCount();
+
+    // Poll every 30 seconds for real-time ticket notification badge
+    const interval = setInterval(fetchOpenTicketsCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (!user) return null;
 
@@ -246,7 +274,20 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
                       }`}
                     >
                       <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'scale-105' : ''}`} />
-                      {!isCollapsed && <span className="truncate">{item.label}</span>}
+                      {!isCollapsed ? (
+                        <div className="flex-1 flex justify-between items-center min-w-0">
+                          <span className="truncate">{item.label}</span>
+                          {item.label === 'Tickets List' && openTicketsCount > 0 && (
+                            <span className="ml-2 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-sm shadow-rose-500/25">
+                              {openTicketsCount > 99 ? '99+' : openTicketsCount}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        item.label === 'Tickets List' && openTicketsCount > 0 && (
+                          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white dark:border-slate-900 animate-pulse" />
+                        )
+                      )}
                       
                       {/* Tooltip on Collapsed Hover */}
                       {isCollapsed && (
