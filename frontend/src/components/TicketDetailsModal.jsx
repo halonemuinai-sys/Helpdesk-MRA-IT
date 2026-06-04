@@ -7,7 +7,8 @@ import {
   Pause, 
   CheckCircle2, 
   Check, 
-  AlertTriangle 
+  AlertTriangle,
+  Wrench
 } from 'lucide-react';
 import ReactLoader from './ReactLoader';
 
@@ -20,14 +21,71 @@ export default function TicketDetailsModal({
   currentTime, 
   onClose, 
   handleStatusChange, 
-  handleAssignAgent,
-  handleSlaOverride
+  handleAssignAgent, 
+  handleSlaOverride,
+  handleUpdateRespondedAt
 }) {
   const [actionComment, setActionComment] = useState('');
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
   const [overrideError, setOverrideError] = useState(null);
   const [overrideSubmitting, setOverrideSubmitting] = useState(false);
+
+  const [showRespondedAtDialog, setShowRespondedAtDialog] = useState(false);
+  const [respondedAtInput, setRespondedAtInput] = useState('');
+  const [respondedAtReason, setRespondedAtReason] = useState('');
+  const [respondedAtError, setRespondedAtError] = useState(null);
+  const [respondedAtSubmitting, setRespondedAtSubmitting] = useState(false);
+
+  // Helper to format date-time string to ISO YYYY-MM-DDTHH:MM local format for input
+  const formatDateTimeLocal = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const offset = date.getTimezoneOffset();
+    const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return adjustedDate.toISOString().slice(0, 16);
+  };
+
+  const handleOpenRespondedAtDialog = () => {
+    setRespondedAtInput(formatDateTimeLocal(ticketDetails.respondedAt));
+    setRespondedAtReason('');
+    setRespondedAtError(null);
+    setShowRespondedAtDialog(true);
+  };
+
+  const handleRespondedAtSubmit = async (e) => {
+    e.preventDefault();
+    if (!respondedAtReason || !respondedAtReason.trim()) {
+      setRespondedAtError('Reason for updating response time is required.');
+      return;
+    }
+
+    setRespondedAtError(null);
+    setRespondedAtSubmitting(true);
+
+    try {
+      // Validate date input if not empty
+      let payloadValue = null;
+      if (respondedAtInput) {
+        const parsedDate = new Date(respondedAtInput);
+        if (isNaN(parsedDate.getTime())) {
+          throw new Error('Invalid date-time selected.');
+        }
+        if (parsedDate < new Date(ticketDetails.createdAt)) {
+          throw new Error('First Responded At cannot be before ticket creation date.');
+        }
+        payloadValue = parsedDate.toISOString();
+      }
+
+      await handleUpdateRespondedAt(ticketDetails.id, payloadValue, respondedAtReason.trim());
+      setShowRespondedAtDialog(false);
+      setRespondedAtReason('');
+    } catch (err) {
+      setRespondedAtError(err.message);
+    } finally {
+      setRespondedAtSubmitting(false);
+    }
+  };
 
   // Local helper to submit status changes with local comment
   const onSubmitStatusChange = async (newStatus) => {
@@ -288,13 +346,32 @@ export default function TicketDetailsModal({
                         })()}
                       </div>
                     </div>
-                    {ticketDetails.respondedAt && (
-                      <div>
-                        <p className="text-gray-450 dark:text-slate-500 font-medium">First Responded At</p>
+                    {(ticketDetails.respondedAt || user.role === 'ADMIN') && (
+                      <div className="relative group">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-gray-450 dark:text-slate-500 font-medium">First Responded At</p>
+                          {user.role === 'ADMIN' && (
+                            <button
+                              type="button"
+                              onClick={handleOpenRespondedAtDialog}
+                              className="text-[10px] font-bold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 transition cursor-pointer flex items-center gap-1 opacity-0 group-hover:opacity-100"
+                              title="Edit First Response Time"
+                            >
+                              <Wrench className="w-3 h-3" />
+                              <span>Edit</span>
+                            </button>
+                          )}
+                        </div>
                         <p className="font-semibold text-gray-800 dark:text-slate-200 mt-1">
-                          {new Date(ticketDetails.respondedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                          {', '}
-                          {new Date(ticketDetails.respondedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                          {ticketDetails.respondedAt ? (
+                            <>
+                              {new Date(ticketDetails.respondedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                              {', '}
+                              {new Date(ticketDetails.respondedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 italic">Not Responded Yet</span>
+                          )}
                         </p>
                       </div>
                     )}
@@ -629,6 +706,79 @@ export default function TicketDetailsModal({
                   className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer"
                 >
                   {overrideSubmitting ? 'Bypassing...' : 'Bypass SLA'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit First Responded At Dialog */}
+      {showRespondedAtDialog && (
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-fade-in">
+          <div className="absolute inset-0" onClick={() => setShowRespondedAtDialog(false)}></div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl relative z-10 w-full max-w-md animate-scale-up">
+            <div className="flex justify-between items-start gap-4 mb-2">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800 dark:text-slate-100">Edit First Responded At</h3>
+                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 font-medium">
+                  Ubah waktu respon pertama tiket secara manual. Kosongkan tanggal untuk menghapus status respon.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowRespondedAtDialog(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded text-gray-400 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {respondedAtError && (
+              <div className="p-3 mb-4 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border border-red-200/50 dark:border-red-900/30 rounded-xl text-xs font-semibold">
+                {respondedAtError}
+              </div>
+            )}
+
+            <form onSubmit={handleRespondedAtSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Waktu Respon (First Responded At)</label>
+                <input
+                  type="datetime-local"
+                  value={respondedAtInput}
+                  onChange={(e) => setRespondedAtInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-855 rounded-xl text-xs focus:outline-none focus:border-rose-500 font-semibold text-gray-800 dark:text-slate-200 cursor-pointer"
+                />
+                <span className="text-[10px] text-gray-400 font-medium block">
+                  Format: Hari/Bulan/Tahun, Jam:Menit. Harus sesudah tanggal pembuatan tiket ({new Date(ticketDetails.createdAt).toLocaleString()}).
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Alasan Perubahan *</label>
+                <textarea
+                  required
+                  placeholder="e.g. Koreksi manual waktu respon karena salah input status..."
+                  value={respondedAtReason}
+                  onChange={(e) => setRespondedAtReason(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-855 rounded-xl text-xs focus:outline-none focus:border-rose-500 font-semibold"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/40">
+                <button
+                  type="button"
+                  onClick={() => setShowRespondedAtDialog(false)}
+                  className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-gray-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={respondedAtSubmitting}
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer"
+                >
+                  {respondedAtSubmitting ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
             </form>

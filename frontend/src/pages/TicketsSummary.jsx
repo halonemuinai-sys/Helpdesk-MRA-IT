@@ -243,6 +243,31 @@ export default function TicketsSummary({ user, token }) {
     }
   };
 
+  const handleUpdateRespondedAt = async (ticketId, respondedAt, reason) => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/responded-at`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ respondedAt, reason })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update response time.');
+      }
+
+      fetchTickets();
+      if (selectedTicketId === ticketId) {
+        fetchTicketDetails(ticketId);
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const handleDeleteTicket = async (ticketId) => {
     const isDark = document.documentElement.classList.contains('dark');
     
@@ -881,6 +906,7 @@ export default function TicketsSummary({ user, token }) {
           handleStatusChange={handleStatusChange}
           handleAssignAgent={handleAssignAgent}
           handleSlaOverride={handleSlaOverride}
+          handleUpdateRespondedAt={handleUpdateRespondedAt}
         />
       )}
 

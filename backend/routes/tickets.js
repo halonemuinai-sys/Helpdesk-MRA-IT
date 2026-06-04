@@ -811,4 +811,78 @@ router.patch('/:id/sla-override', verifyToken, checkRole(['ADMIN']), async (req,
   }
 });
 
+// PATCH /api/tickets/:id/responded-at
+// Manually update the first response timestamp (ADMIN only)
+router.patch('/:id/responded-at', verifyToken, checkRole(['ADMIN']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { respondedAt, reason } = req.body;
+    const { name: currentUserName } = req.user;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Reason for changing response time is required.' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id }
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found.' });
+    }
+
+    let parsedRespondedAt = null;
+    if (respondedAt !== undefined && respondedAt !== null && respondedAt !== '') {
+      parsedRespondedAt = new Date(respondedAt);
+      if (isNaN(parsedRespondedAt.getTime())) {
+        return res.status(400).json({ error: 'Invalid respondedAt date value.' });
+      }
+
+      // Ensure it is not before ticket creation date
+      if (parsedRespondedAt < new Date(ticket.createdAt)) {
+        return res.status(400).json({ error: 'First Responded At cannot be before ticket creation date.' });
+      }
+    }
+
+    const formatTimestamp = (d) => {
+      if (!d) return 'Not Set';
+      // Format as DD/MM/YYYY, HH:MM
+      const dateObj = new Date(d);
+      return `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()} ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+    };
+
+    const oldValStr = formatTimestamp(ticket.respondedAt);
+    const newValStr = formatTimestamp(parsedRespondedAt);
+
+    // Update ticket and create audit log
+    const updatedTicket = await prisma.ticket.update({
+      where: { id },
+      data: {
+        respondedAt: parsedRespondedAt,
+        auditLogs: {
+          create: {
+            action: 'FIRST_RESPONSE_TIME_UPDATED',
+            details: `Waktu respon pertama (First Responded At) diubah secara manual dari ${oldValStr} ke ${newValStr} oleh Admin ${currentUserName}. Alasan: "${reason.trim()}"`,
+            performedBy: currentUserName
+          }
+        }
+      },
+      include: {
+        company: true,
+        requester: true,
+        assignedTo: {
+          select: { id: true, name: true, email: true }
+        },
+        auditLogs: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    res.json(updatedTicket);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
