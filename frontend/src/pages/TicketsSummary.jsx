@@ -370,13 +370,20 @@ export default function TicketsSummary({ user, token }) {
 
     if (['RESOLVED', 'CLOSED'].includes(ticket.status)) {
       return (
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-          ticket.isSlaBreached 
-            ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400' 
-            : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
-        }`}>
-          {ticket.isSlaBreached ? 'Breached (Late)' : 'SLA Met (On Time)'}
-        </span>
+        <div className="flex flex-col gap-1">
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full w-fit ${
+            ticket.isSlaBreached 
+              ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400' 
+              : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
+          }`}>
+            {ticket.isSlaBreached ? 'Breached (Late)' : 'SLA Met (On Time)'}
+          </span>
+          {ticket.resolvedAt && (
+            <span className="text-[10px] text-gray-400 dark:text-slate-500 font-semibold pl-1">
+              Done: {new Date(ticket.resolvedAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
+            </span>
+          )}
+        </div>
       );
     }
 
@@ -832,6 +839,15 @@ export default function TicketsSummary({ user, token }) {
                         <span>•</span>
                         <span>{ticket.requester.name} ({ticket.category}{ticket.subCategory && ticket.subCategory !== '-' ? ` - ${ticket.subCategory}` : ''} • {ticket.source || 'Walk-in'})</span>
                       </div>
+                      {['RESOLVED', 'CLOSED'].includes(ticket.status) && ticket.resolvedAt && (
+                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1.5 flex items-center gap-1 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>
+                            {ticket.status === 'RESOLVED' ? 'Resolved: ' : 'Closed: '}
+                            {new Date(ticket.resolvedAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="py-4 px-6">
                       <div className="font-medium text-gray-700 dark:text-slate-300 truncate max-w-[150px]">
