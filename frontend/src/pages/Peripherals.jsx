@@ -46,13 +46,6 @@ export default function Peripherals({ user, token }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const activeCategories = dbCategories.length > 0 ? dbCategories.map(c => c.subCategory) : DEFAULT_CATEGORIES;
-
-  const selectedCatObj = dbCategories.find(c => c.subCategory === formCategory);
-  const suggestedBrands = selectedCatObj && selectedCatObj.brands && selectedCatObj.brands.length > 0
-    ? selectedCatObj.brands
-    : DEFAULT_BRANDS;
-
   // Stats state
   const [stats, setStats] = useState({
     totalCount: 0,
@@ -98,6 +91,13 @@ export default function Peripherals({ user, token }) {
   const [formNotes, setFormNotes] = useState('');
   const [formCompanyId, setFormCompanyId] = useState('');
   const [formCompanyMasterId, setFormCompanyMasterId] = useState('');
+
+  const activeCategories = dbCategories.length > 0 ? dbCategories.map(c => c.subCategory) : DEFAULT_CATEGORIES;
+
+  const selectedCatObj = dbCategories.find(c => c.subCategory === formCategory);
+  const suggestedBrands = selectedCatObj && selectedCatObj.brands && selectedCatObj.brands.length > 0
+    ? selectedCatObj.brands
+    : DEFAULT_BRANDS;
 
   // Debounce search query by 300ms
   useEffect(() => {
