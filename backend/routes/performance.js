@@ -116,12 +116,12 @@ router.get('/', verifyToken, async (req, res, next) => {
       };
     });
 
-    // Sort leaderboard by SLA compliance rate desc, then by resolved tickets desc
+    // Sort leaderboard by total tickets assigned (handled) desc, then by SLA compliance rate desc
     leaderboard.sort((a, b) => {
-      if (b.metrics.complianceRate !== a.metrics.complianceRate) {
-        return b.metrics.complianceRate - a.metrics.complianceRate;
+      if (b.metrics.totalAssigned !== a.metrics.totalAssigned) {
+        return b.metrics.totalAssigned - a.metrics.totalAssigned;
       }
-      return b.metrics.resolvedTickets - a.metrics.resolvedTickets;
+      return b.metrics.complianceRate - a.metrics.complianceRate;
     });
 
     res.json(leaderboard);
