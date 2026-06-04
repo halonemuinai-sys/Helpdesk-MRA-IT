@@ -182,7 +182,8 @@ router.get('/', verifyToken, async (req, res, next) => {
         avgResponseHours,
         avgResolutionHours
       },
-      companies: companyDistribution
+      companies: companyDistribution,
+      tickets: tickets
     });
   } catch (err) {
     next(err);
