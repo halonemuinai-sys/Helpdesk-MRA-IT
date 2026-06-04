@@ -340,4 +340,149 @@ router.delete('/:id', verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/peripherals/categories
+// Returns all peripheral categories and their associated brands
+router.get('/categories', verifyToken, async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const categories = await prisma.peripheralCategory.findMany({
+      orderBy: { name: 'asc' }
+    });
+    res.json(categories);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/peripherals/categories
+// Create a new peripheral category
+router.post('/categories', verifyToken, async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Category name is required.' });
+    }
+
+    const newCat = await prisma.peripheralCategory.upsert({
+      where: { name: name.trim() },
+      update: {},
+      create: {
+        name: name.trim()
+      }
+    });
+
+    res.status(201).json(newCat);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/peripherals/categories/:id
+// Update brands list of a peripheral category
+router.patch('/categories/:id', verifyToken, async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const { id } = req.params;
+    const { brands } = req.body;
+
+    if (!Array.isArray(brands)) {
+      return res.status(400).json({ error: 'Brands must be an array of strings.' });
+    }
+
+    const updatedCat = await prisma.peripheralCategory.update({
+      where: { id: parseInt(id) },
+      data: {
+        brands: brands.map(b => b.trim())
+      }
+    });
+
+    // Write system audit log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'PERIPHERAL_CATEGORY_BRANDS_UPDATED',
+        details: `Brands for Peripheral Category ${updatedCat.name} updated to: ${brands.join(', ')}`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
+    res.json(updatedCat);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/peripherals/categories/:id
+// Delete a peripheral category (ADMIN deletes directly, AGENT creates an ApprovalRequest)
+router.delete('/categories/:id', verifyToken, async (req, res, next) => {
+  try {
+    const { role, id: userId, name: userName, email: userEmail } = req.user;
+    if (role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const category = await prisma.peripheralCategory.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found.' });
+    }
+
+    if (role === 'ADMIN') {
+      await prisma.peripheralCategory.delete({
+        where: { id: parseInt(id) }
+      });
+
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'PERIPHERAL_CATEGORY_DELETED',
+          details: `Peripheral Category ${category.name} deleted directly by Admin.`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({ success: true, message: 'Category deleted successfully.' });
+    } else {
+      // AGENT: create approval request
+      const request = await prisma.approvalRequest.create({
+        data: {
+          entityType: 'PERIPHERAL_CATEGORY',
+          entityId: id,
+          entityName: category.name,
+          reason: reason || 'No reason provided',
+          requestedById: userId
+        }
+      });
+
+      // Write system log
+      await prisma.systemAuditLog.create({
+        data: {
+          action: 'PERIPHERAL_CATEGORY_DELETE_REQUESTED',
+          details: `Delete approval requested for Peripheral Category ${category.name}. Reason: ${reason || '-'}`,
+          performedBy: `${userName} (${userEmail})`
+        }
+      });
+
+      return res.json({
+        success: true,
+        approvalPending: true,
+        message: 'Permintaan penghapusan kategori periferal telah diajukan ke Admin untuk persetujuan.',
+        request
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

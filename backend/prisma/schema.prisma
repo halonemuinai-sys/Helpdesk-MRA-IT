@@ -332,3 +332,11 @@ model PeripheralAsset {
   @@index([companyId])
   @@index([companyMasterId])
 }
+
+model PeripheralCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  brands    String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

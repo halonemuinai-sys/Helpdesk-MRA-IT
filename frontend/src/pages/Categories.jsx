@@ -7,6 +7,7 @@ const MAIN_CATEGORIES = ['Hardware', 'Software', 'Network', 'Access', 'ERP', 'IT
 
 export default function Categories({ user, token }) {
   const [categories, setCategories] = useState([]);
+  const [peripheralCategories, setPeripheralCategories] = useState([]);
   const [activeTab, setActiveTab] = useState('Hardware');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -56,8 +57,14 @@ export default function Categories({ user, token }) {
     setSavingBrands(true);
     setError(null);
     setSuccessMsg(null);
+
+    const isPeripheral = selectedCategoryObj.category === 'IT Peripheral';
+    const endpoint = isPeripheral
+      ? `${API_URL}/peripherals/categories/${selectedCategoryObj.id}`
+      : `${API_URL}/tickets/categories/${selectedCategoryObj.id}`;
+
     try {
-      const res = await fetch(`${API_URL}/tickets/categories/${selectedCategoryObj.id}`, {
+      const res = await fetch(endpoint, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -68,10 +75,15 @@ export default function Categories({ user, token }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update associated brands.');
 
-      setSuccessMsg(`Brands for "${selectedCategoryObj.subCategory}" successfully updated.`);
+      const subName = isPeripheral ? selectedCategoryObj.name : selectedCategoryObj.subCategory;
+      setSuccessMsg(`Brands for "${subName}" successfully updated.`);
       
       // Update local categories state
-      setCategories(prev => prev.map(c => c.id === selectedCategoryObj.id ? { ...c, brands: tempBrands } : c));
+      if (isPeripheral) {
+        setPeripheralCategories(prev => prev.map(c => c.id === selectedCategoryObj.id ? { ...c, brands: tempBrands } : c));
+      } else {
+        setCategories(prev => prev.map(c => c.id === selectedCategoryObj.id ? { ...c, brands: tempBrands } : c));
+      }
       setIsBrandsModalOpen(false);
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err) {
@@ -89,12 +101,23 @@ export default function Categories({ user, token }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/tickets/categories`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Failed to fetch category metadata.');
-      const data = await res.json();
-      setCategories(data);
+      const [ticketRes, peripheralRes] = await Promise.all([
+        fetch(`${API_URL}/tickets/categories`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/peripherals/categories`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+
+      if (!ticketRes.ok) throw new Error('Failed to fetch ticket category metadata.');
+      if (!peripheralRes.ok) throw new Error('Failed to fetch peripheral category metadata.');
+
+      const ticketData = await ticketRes.json();
+      const peripheralData = await peripheralRes.json();
+
+      setCategories(ticketData);
+      setPeripheralCategories(peripheralData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -110,17 +133,23 @@ export default function Categories({ user, token }) {
     setError(null);
     setSuccessMsg(null);
 
+    const isPeripheral = newCategory === 'IT Peripheral';
+    const endpoint = isPeripheral
+      ? `${API_URL}/peripherals/categories`
+      : `${API_URL}/tickets/categories`;
+
+    const body = isPeripheral
+      ? { name: newSubCategory.trim() }
+      : { category: newCategory, subCategory: newSubCategory.trim() };
+
     try {
-      const res = await fetch(`${API_URL}/tickets/categories`, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          category: newCategory,
-          subCategory: newSubCategory.trim()
-        })
+        body: JSON.stringify(body)
       });
 
       const data = await res.json();
@@ -150,8 +179,13 @@ export default function Categories({ user, token }) {
     setError(null);
     setSuccessMsg(null);
 
+    const isPeripheral = categoryName === 'IT Peripheral';
+    const endpoint = isPeripheral
+      ? `${API_URL}/peripherals/categories/${id}`
+      : `${API_URL}/tickets/categories/${id}`;
+
     try {
-      const res = await fetch(`${API_URL}/tickets/categories/${id}`, {
+      const res = await fetch(endpoint, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -160,7 +194,11 @@ export default function Categories({ user, token }) {
       if (!res.ok) throw new Error(data.error || 'Failed to delete category mapping.');
 
       setSuccessMsg(`"${subName}" deleted successfully.`);
-      setCategories(prev => prev.filter(c => c.id !== id));
+      if (isPeripheral) {
+        setPeripheralCategories(prev => prev.filter(c => c.id !== id));
+      } else {
+        setCategories(prev => prev.filter(c => c.id !== id));
+      }
 
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err) {
@@ -171,11 +209,17 @@ export default function Categories({ user, token }) {
   };
 
   // Filter categories by tab and search query
-  const filteredSubCategories = categories.filter(item => {
-    const matchesTab = item.category === activeTab;
-    const matchesSearch = item.subCategory.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
+  const isPeripheralTab = activeTab === 'IT Peripheral';
+
+  const filteredSubCategories = isPeripheralTab
+    ? peripheralCategories.filter(item => {
+        return item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : categories.filter(item => {
+        const matchesTab = item.category === activeTab;
+        const matchesSearch = item.subCategory.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesTab && matchesSearch;
+      });
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 py-4 animate-fade-in">
@@ -329,14 +373,14 @@ export default function Categories({ user, token }) {
                         <div className="flex items-center gap-2 overflow-hidden mr-2">
                           <Tags className="w-3.5 h-3.5 text-brand-500/60 shrink-0" />
                           <span className="text-xs font-bold text-gray-850 dark:text-slate-250 truncate">
-                            {item.subCategory}
+                            {isPeripheralTab ? item.name : item.subCategory}
                           </span>
                         </div>
                         
                         <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                           {/* Manage Brands Button */}
                           <button
-                            onClick={() => handleOpenBrandsModal(item)}
+                            onClick={() => handleOpenBrandsModal(isPeripheralTab ? { ...item, category: 'IT Peripheral' } : item)}
                             className="p-1.5 hover:bg-brand-50 dark:hover:bg-brand-950/40 hover:text-brand-500 text-gray-400 dark:text-slate-500 rounded-lg transition-colors"
                             title="Manage Brands"
                           >
@@ -345,7 +389,7 @@ export default function Categories({ user, token }) {
                           
                           {/* Delete Button */}
                           <button
-                            onClick={() => handleDeleteCategory(item.id, item.category, item.subCategory)}
+                            onClick={() => handleDeleteCategory(item.id, isPeripheralTab ? 'IT Peripheral' : item.category, isPeripheralTab ? item.name : item.subCategory)}
                             disabled={deletingId === item.id}
                             className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 text-gray-400 dark:text-slate-500 rounded-lg transition-colors disabled:opacity-50"
                             title="Delete subcategory"
@@ -400,7 +444,7 @@ export default function Categories({ user, token }) {
                     Manage Brands
                   </h3>
                   <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                    Category: {selectedCategoryObj?.category} &rarr; {selectedCategoryObj?.subCategory}
+                    Category: {selectedCategoryObj?.category} &rarr; {selectedCategoryObj?.subCategory || selectedCategoryObj?.name}
                   </p>
                 </div>
               </div>

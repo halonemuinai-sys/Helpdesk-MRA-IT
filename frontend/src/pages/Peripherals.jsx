@@ -92,9 +92,9 @@ export default function Peripherals({ user, token }) {
   const [formCompanyId, setFormCompanyId] = useState('');
   const [formCompanyMasterId, setFormCompanyMasterId] = useState('');
 
-  const activeCategories = dbCategories.length > 0 ? dbCategories.map(c => c.subCategory) : DEFAULT_CATEGORIES;
+  const activeCategories = dbCategories.length > 0 ? dbCategories.map(c => c.name) : DEFAULT_CATEGORIES;
 
-  const selectedCatObj = dbCategories.find(c => c.subCategory === formCategory);
+  const selectedCatObj = dbCategories.find(c => c.name === formCategory);
   const suggestedBrands = selectedCatObj
     ? (selectedCatObj.brands || [])
     : DEFAULT_BRANDS;
@@ -157,13 +157,12 @@ export default function Peripherals({ user, token }) {
       const branchData = await branchRes.json();
       setCompanies(branchData);
 
-      // 3. Fetch Category Metadata
+      // 3. Fetch Peripheral Category Metadata
       try {
-        const catRes = await fetch(`${API_URL}/tickets/categories`, { headers });
+        const catRes = await fetch(`${API_URL}/peripherals/categories`, { headers });
         if (catRes.ok) {
           const catData = await catRes.json();
-          const peripheralCats = catData.filter(item => item.category === 'IT Peripheral');
-          setDbCategories(peripheralCats);
+          setDbCategories(catData);
         }
       } catch (catErr) {
         console.error("Gagal memuat kategori dari database:", catErr);

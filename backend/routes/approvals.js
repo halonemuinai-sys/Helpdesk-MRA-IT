@@ -97,6 +97,15 @@ router.post('/:id/approve', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async 
         } else {
           deleteMessage = `Peripheral with ID ${entityId} was already deleted or not found.`;
         }
+      } else if (entityType === 'PERIPHERAL_CATEGORY') {
+        const catId = parseInt(entityId);
+        const cat = await prisma.peripheralCategory.findUnique({ where: { id: catId } });
+        if (cat) {
+          await prisma.peripheralCategory.delete({ where: { id: catId } });
+          deleteMessage = `Peripheral Category ${cat.name} deleted.`;
+        } else {
+          deleteMessage = `Peripheral Category with ID ${entityId} was already deleted or not found.`;
+        }
       } else {
         return res.status(400).json({ error: `Unknown entity type: ${entityType}` });
       }
