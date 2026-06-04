@@ -99,6 +99,8 @@ export default function Peripherals({ user, token }) {
     ? (selectedCatObj.brands || [])
     : DEFAULT_BRANDS;
 
+  console.log("IT Peripherals Debug - formCategory:", formCategory, "selectedCatObj:", selectedCatObj, "suggestedBrands:", suggestedBrands);
+
   // Debounce search query by 300ms
   useEffect(() => {
     const timer = setTimeout(() => {
