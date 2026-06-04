@@ -95,8 +95,8 @@ export default function Peripherals({ user, token }) {
   const activeCategories = dbCategories.length > 0 ? dbCategories.map(c => c.subCategory) : DEFAULT_CATEGORIES;
 
   const selectedCatObj = dbCategories.find(c => c.subCategory === formCategory);
-  const suggestedBrands = selectedCatObj && selectedCatObj.brands && selectedCatObj.brands.length > 0
-    ? selectedCatObj.brands
+  const suggestedBrands = selectedCatObj
+    ? (selectedCatObj.brands || [])
     : DEFAULT_BRANDS;
 
   // Debounce search query by 300ms
