@@ -115,11 +115,7 @@ export default function Peripherals({ user, token }) {
       isMounted.current = true;
       return;
     }
-    if (debouncedSearchQuery.trim() === '') {
-      setPeripherals([]);
-    } else {
-      fetchPeripherals(debouncedSearchQuery);
-    }
+    fetchPeripherals(debouncedSearchQuery);
   }, [debouncedSearchQuery, selectedStatus, selectedCompanyMasterId, selectedCategory]);
 
   useEffect(() => {
@@ -169,7 +165,10 @@ export default function Peripherals({ user, token }) {
       }
 
       // 4. Load data
-      await fetchStats();
+      await Promise.all([
+        fetchStats(),
+        fetchPeripherals()
+      ]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -178,10 +177,6 @@ export default function Peripherals({ user, token }) {
   };
 
   const fetchPeripherals = async (currentSearch = searchQuery) => {
-    if (!currentSearch || currentSearch.trim() === '') {
-      setPeripherals([]);
-      return;
-    }
     try {
       setLoading(true);
       setError(null);
@@ -190,7 +185,7 @@ export default function Peripherals({ user, token }) {
       const params = new URLSearchParams();
       if (selectedStatus) params.append('status', selectedStatus);
       if (selectedCompanyMasterId) params.append('companyMasterId', selectedCompanyMasterId);
-      if (currentSearch) params.append('search', currentSearch);
+      if (currentSearch && currentSearch.trim() !== '') params.append('search', currentSearch.trim());
       if (selectedCategory) params.append('category', selectedCategory);
 
       const queryString = params.toString() ? `?${params.toString()}` : '';
@@ -662,16 +657,24 @@ export default function Peripherals({ user, token }) {
         </div>
 
         {/* Action Button Row */}
-        {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
-          <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
+        <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
+          {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
             <button
               onClick={handleResetFilters}
               className="px-4 py-2 border border-gray-250 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-600 dark:text-slate-350 text-xs font-bold rounded-xl transition"
             >
-              Clear Filters
+              Reset Filter
             </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={handleRefreshData}
+            disabled={loading}
+            className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+            Proses / Muat Data
+          </button>
+        </div>
       </div>
 
       {/* Main Peripherals List */}
@@ -681,16 +684,22 @@ export default function Peripherals({ user, token }) {
             <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
             <span className="text-xs text-gray-500 font-semibold">Memuat Data Periferal...</span>
           </div>
-        ) : searchQuery.trim() === '' ? (
+        ) : peripherals.length === 0 ? (
           <div className="text-center py-16 px-6 animate-fade-in flex flex-col items-center justify-center gap-3">
             <Search className="w-8 h-8 text-rose-500/80" />
             <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold max-w-md">
-              Silakan masukkan kata kunci pencarian (Nama, Brand, Invoice, Supplier, dsb.) di atas untuk memuat data periferal.
+              {searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory
+                ? 'Tidak ada data periferal yang cocok dengan kriteria pencarian atau filter Anda.'
+                : 'Belum ada data periferal terdaftar di sistem MRA Group.'}
             </p>
-          </div>
-        ) : peripherals.length === 0 ? (
-          <div className="text-center py-12 animate-fade-in">
-            <p className="text-sm font-semibold text-gray-555 dark:text-slate-400">Tidak ada data periferal ditemukan.</p>
+            {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
+              <button
+                onClick={handleResetFilters}
+                className="mt-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-lg transition duration-200"
+              >
+                Reset Filter
+              </button>
+            )}
           </div>
         ) : (
           <div className={`overflow-x-auto transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
