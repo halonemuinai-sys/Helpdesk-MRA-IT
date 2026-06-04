@@ -354,7 +354,7 @@ export default function TicketDetailsModal({
                             <button
                               type="button"
                               onClick={handleOpenRespondedAtDialog}
-                              className="text-[10px] font-bold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 transition cursor-pointer flex items-center gap-1 opacity-0 group-hover:opacity-100"
+                              className="text-[10px] font-bold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 transition cursor-pointer flex items-center gap-1"
                               title="Edit First Response Time"
                             >
                               <Wrench className="w-3 h-3" />
