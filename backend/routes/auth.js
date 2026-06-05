@@ -26,9 +26,16 @@ router.post('/login', authRateLimiter, async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Only allow AGENT and ADMIN roles to login to the dashboard
-    if (user.role === 'USER') {
-      return res.status(403).json({ error: 'Akses ditolak. Karyawan biasa tidak diperbolehkan masuk ke dashboard IT.' });
+    // Support ADMIN_ONLY_MODE during development/maintenance
+    const isAdminOnlyMode = process.env.ADMIN_ONLY_MODE === 'true';
+    if (isAdminOnlyMode) {
+      if (user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Akses ditolak. Aplikasi sedang dalam mode pengembangan/pemeliharaan. Hanya Administrator yang diperbolehkan masuk.' });
+      }
+    } else {
+      if (user.role === 'USER') {
+        return res.status(403).json({ error: 'Akses ditolak. Karyawan biasa tidak diperbolehkan masuk ke dashboard IT.' });
+      }
     }
 
     // Compare passwords
