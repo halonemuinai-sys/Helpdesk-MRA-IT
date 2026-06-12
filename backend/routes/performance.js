@@ -42,12 +42,16 @@ router.get('/', verifyToken, async (req, res, next) => {
         createdAt: true,
         respondedAt: true,
         resolvedAt: true,
-        totalPausedMs: true
+        totalPausedMs: true,
+        slaResponseLimit: true,
+        slaResolutionLimit: true,
+        priority: true,
+        category: true
       }
     });
 
-    // 3. Process metrics for each agent
-    const leaderboard = agents.map(agent => {
+    // 3. Process metrics for each agent (First Pass)
+    const leaderboardRaw = agents.map(agent => {
       const agentTickets = tickets.filter(t => t.assignedToId === agent.id);
       
       const totalAssigned = agentTickets.length;
@@ -61,6 +65,10 @@ router.get('/', verifyToken, async (req, res, next) => {
       
       let totalResponseMs = 0;
       let respondedCount = 0;
+      
+      let responseSlaMet = 0;
+      let responseSlaTotal = 0;
+      let rawComplexityPoints = 0;
 
       agentTickets.forEach(t => {
         // Response speed calculation (for all tickets responded to)
@@ -68,6 +76,14 @@ router.get('/', verifyToken, async (req, res, next) => {
           const responseDuration = new Date(t.respondedAt).getTime() - new Date(t.createdAt).getTime();
           totalResponseMs += responseDuration;
           respondedCount++;
+        }
+
+        // Response SLA calculation
+        if (t.respondedAt && t.slaResponseLimit) {
+          responseSlaTotal++;
+          if (new Date(t.respondedAt) <= new Date(t.slaResponseLimit)) {
+            responseSlaMet++;
+          }
         }
 
         // Resolution and SLA calculations (only for resolved/closed tickets)
@@ -83,11 +99,23 @@ router.get('/', verifyToken, async (req, res, next) => {
             totalResolutionMs += resolutionDuration;
             resolvedCountWithTime++;
           }
+
+          // Complexity calculations
+          let basePoints = 1;
+          if (t.priority === 'CRITICAL') basePoints = 10;
+          else if (t.priority === 'HIGH') basePoints = 5;
+          else if (t.priority === 'MEDIUM') basePoints = 3;
+
+          const isHard = ['Hardware', 'Network'].includes(t.category);
+          const multiplier = isHard ? 1.3 : 1.0;
+          
+          rawComplexityPoints += basePoints * multiplier;
         }
       });
 
       const totalClosed = slaMet + slaBreached;
       const complianceRate = totalClosed > 0 ? Math.round((slaMet / totalClosed) * 100) : 100;
+      const responseSlaRate = responseSlaTotal > 0 ? Math.round((responseSlaMet / responseSlaTotal) * 100) : 100;
       
       const avgResponseMin = respondedCount > 0 
         ? Math.round((totalResponseMs / respondedCount) / 1000 / 60) 
@@ -103,6 +131,8 @@ router.get('/', verifyToken, async (req, res, next) => {
         email: agent.email,
         jobPosition: agent.jobPosition,
         companyName: agent.company.name,
+        rawComplexityPoints,
+        responseSlaRate,
         metrics: {
           totalAssigned,
           openTickets,
@@ -116,12 +146,38 @@ router.get('/', verifyToken, async (req, res, next) => {
       };
     });
 
-    // Sort leaderboard by total tickets assigned (handled) desc, then by SLA compliance rate desc
+    // Find maximum complexity points for relative scaling
+    const maxComplexityPoints = Math.max(...leaderboardRaw.map(a => a.rawComplexityPoints), 0);
+
+    // Second Pass: Compute complexityScore and final kpiScore
+    const leaderboard = leaderboardRaw.map(agent => {
+      const complexityScore = maxComplexityPoints > 0 
+        ? Math.round((agent.rawComplexityPoints / maxComplexityPoints) * 100)
+        : 0;
+
+      // Final KPI score logic: 25% Response SLA, 35% Resolution SLA, 40% Complexity
+      const kpiScore = agent.metrics.totalAssigned > 0
+        ? Math.round((0.25 * agent.responseSlaRate) + (0.35 * agent.metrics.complianceRate) + (0.40 * complexityScore))
+        : 0;
+
+      const { rawComplexityPoints, responseSlaRate, ...rest } = agent;
+      return {
+        ...rest,
+        metrics: {
+          ...rest.metrics,
+          complexityPoints: Math.round(rawComplexityPoints * 10) / 10,
+          complexityScore,
+          kpiScore
+        }
+      };
+    });
+
+    // Sort leaderboard by kpiScore desc, then by totalAssigned desc
     leaderboard.sort((a, b) => {
-      if (b.metrics.totalAssigned !== a.metrics.totalAssigned) {
-        return b.metrics.totalAssigned - a.metrics.totalAssigned;
+      if (b.metrics.kpiScore !== a.metrics.kpiScore) {
+        return b.metrics.kpiScore - a.metrics.kpiScore;
       }
-      return b.metrics.complianceRate - a.metrics.complianceRate;
+      return b.metrics.totalAssigned - a.metrics.totalAssigned;
     });
 
     res.json(leaderboard);
