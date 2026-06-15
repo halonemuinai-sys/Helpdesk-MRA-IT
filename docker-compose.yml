@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # 1. Database PostgreSQL Container (Persistent with Volume)
+  db-mra:
+    image: postgres:15-alpine
+    container_name: db-mra
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - mra-network
+    restart: always
+
+  # 2. Backend API Express Container
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: helpdesk-api-prod
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-mra:5432/${POSTGRES_DB}?schema=helpdesk
+      - DIRECT_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-mra:5432/${POSTGRES_DB}?schema=helpdesk
+      - PORT=5000
+      - JWT_SECRET=${JWT_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - ADMIN_ONLY_MODE=false
+    depends_on:
+      - db-mra
+    networks:
+      - mra-network
+    restart: always
+
+  # 3. Frontend Web Nginx Container (React App)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: helpdesk-ui-prod
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - mra-network
+    restart: always
+
+volumes:
+  pgdata:
+
+networks:
+  mra-network:
+    name: mra-network
+    external: true
+

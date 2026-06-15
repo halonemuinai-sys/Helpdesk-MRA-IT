@@ -30,3 +30,9 @@ Thumbs.db
 .idea/
 .gemini/
 .system_generated/
+
+# Local database backups and helper scripts
+helpdesk_backup.sql
+backup_supabase.ps1
+backups/
+
