@@ -80,7 +80,7 @@ def main():
         if company_name == "MPI":
             company_name = "PT Mogems Putri International"
         elif company_name == "AAA":
-            company_name = "PT Amanda Arundhani Aishwarya"
+            company_name = "PT Amanda Arumdhani Aishwarya"
         
         # Determine business sector
         sector = determine_sector(company_name, branch_name)

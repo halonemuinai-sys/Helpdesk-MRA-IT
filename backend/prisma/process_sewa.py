@@ -38,7 +38,7 @@ excel_company_map = {
     "pt rahayu arumdhani distribusindo": {"companyMasterId": 8, "companyId": 9},
     "pt emera boga makmur": {"companyMasterId": 2, "companyId": 2},
     "pt permata landmarq abadi": {"companyMasterId": 15, "companyId": 23},
-    "pt amanda arundhani aishwarya": {"companyMasterId": 19, "companyId": 32},
+    "pt amanda arumdhani aishwarya": {"companyMasterId": 19, "companyId": 32},
     "pt mogems putri international": {"companyMasterId": 14, "companyId": 19},
     "pt jemma putri international": {"companyMasterId": 13, "companyId": 18},
     "pt mugi rekso abadi": {"companyMasterId": 1, "companyId": 6},
