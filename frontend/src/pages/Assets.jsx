@@ -318,12 +318,60 @@ export default function Assets({ user, token }) {
     setBastAsset(asset);
     setBastDocNum(`BAST/MRA/${year}/${month}/${rand}`);
     setBastAgentName(user ? user.name : 'IT Support Specialist');
-    setBastNotes('');
+    setBastNotes(asset.notes || '');
     setIsBastModalOpen(true);
   };
 
-  const handlePrintBast = () => {
-    window.print();
+  const handlePrintBast = async () => {
+    try {
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+      
+      const res = await fetch(`${API_URL}/assets/${bastAsset.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          notes: bastNotes,
+          updateJourney: `Dicetak BAST (${bastDocNum}) oleh IT Agent: ${bastAgentName}. Kelengkapan: ${bastNotes || '-'}`
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Gagal menyimpan catatan BAST ke database.');
+      }
+
+      const updatedAsset = await res.json();
+      
+      // Update local bastAsset state, merging updated journey/notes with existing user/company relations
+      setBastAsset(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          notes: updatedAsset.notes,
+          journey: updatedAsset.journey
+        };
+      });
+
+      // Refresh overall assets list table to display the new logs/notes in frontend
+      await handleRefreshData();
+      
+      // Perform print
+      window.print();
+    } catch (error) {
+      console.error("Failed to save BAST details to database:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal Menyimpan Catatan',
+        text: error.message || 'Terjadi kesalahan saat menyimpan catatan BAST ke database. BAST tetap dapat dicetak.',
+        confirmButtonColor: '#f43f5e',
+      }).then(() => {
+        // Proceed with printing anyway even if save fails, so we don't block the user
+        window.print();
+      });
+    }
   };
 
   // Submit Asset Form (POST / PUT)
