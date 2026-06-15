@@ -1815,12 +1815,12 @@ export default function Assets({ user, token }) {
                             <tr>
                               <td className="font-semibold text-gray-500">Jabatan</td>
                               <td>:</td>
-                              <td className="font-medium text-black">IT Infrastructure Support</td>
+                              <td className="font-medium text-black">{user?.jobPosition || 'IT Infrastructure Support'}</td>
                             </tr>
                             <tr>
                               <td className="font-semibold text-gray-500">Departemen</td>
                               <td>:</td>
-                              <td className="font-medium text-black">IT Department</td>
+                              <td className="font-medium text-black">{user?.department || 'IT Department'}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -1933,7 +1933,7 @@ export default function Assets({ user, token }) {
                         <div style={{ height: '80px', minHeight: '80px', flexShrink: 0 }} className="w-full flex items-center justify-center">&nbsp;</div>
                         <div className="space-y-1">
                           <p className="font-bold underline text-black">{bastAgentName}</p>
-                          <p className="text-[9px] text-gray-500">IT Infrastructure Support</p>
+                          <p className="text-[9px] text-gray-500">{user?.jobPosition || 'IT Infrastructure Support'}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-center">
