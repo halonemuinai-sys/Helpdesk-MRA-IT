@@ -76,7 +76,45 @@ export default function App() {
     setUser(null);
   };
 
+  // Global Fetch Interceptor to handle "Failed to fetch" and 401/403 Session Expired
+  useEffect(() => {
+    const originalFetch = window.fetch;
+
+    window.fetch = async (...args) => {
+      try {
+        const response = await originalFetch(...args);
+        
+        // Extract target URL to skip redirection on auth endpoints
+        const requestUrl = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) ? args[0].url : '';
+        const isAuthRoute = requestUrl.includes('/auth/login') || 
+                            requestUrl.includes('/auth/forgot-password') || 
+                            requestUrl.includes('/auth/reset-password');
+
+        // Redirect to login if token is expired/invalid (401) or forbidden (403) and not an auth route
+        if ((response.status === 401 || response.status === 403) && !isAuthRoute) {
+          console.warn("Session expired or unauthorized. Redirecting to login...");
+          handleLogout();
+        }
+        
+        return response;
+      } catch (error) {
+        // Redirect to login on connection failure / network errors (Failed to fetch)
+        const errMsg = error.message ? error.message.toLowerCase() : '';
+        if (error instanceof TypeError && (errMsg.includes('fetch') || errMsg.includes('network') || errMsg.includes('cors'))) {
+          console.error("Network error: Failed to fetch. Redirecting to login...", error);
+          handleLogout();
+        }
+        throw error;
+      }
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [token, user]); // Re-bind when user/token changes to use correct references if needed
+
   const toggleDarkMode = () => {
+
     const nextMode = !darkMode;
     setDarkMode(nextMode);
     if (nextMode) {
