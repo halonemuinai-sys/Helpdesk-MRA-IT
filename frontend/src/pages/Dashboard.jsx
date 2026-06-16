@@ -43,6 +43,11 @@ export default function Dashboard({ user, token, darkMode }) {
   const [timeframedLeaderboard, setTimeframedLeaderboard] = useState([]);
   const [perfLoading, setPerfLoading] = useState(false);
 
+  // Interactive Chart states
+  const [trendMode, setTrendMode] = useState('daily'); // 'daily' or 'monthly'
+  const [hoveredStatus, setHoveredStatus] = useState(null);
+
+
   const MONTHS = [
     { value: 'ALL', label: 'All Months' },
     { value: '1', label: 'January' },
@@ -265,6 +270,309 @@ export default function Dashboard({ user, token, darkMode }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getTrendData = () => {
+    if (!analytics || !analytics.tickets) return [];
+    const now = new Date();
+    
+    if (trendMode === 'daily') {
+      const days = [];
+      for (let i = 14; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        const dateStr = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+        const keyStr = d.toISOString().split('T')[0];
+        days.push({ label: dateStr, key: keyStr, count: 0 });
+      }
+      
+      analytics.tickets.forEach(ticket => {
+        const ticketDate = new Date(ticket.createdAt).toISOString().split('T')[0];
+        const found = days.find(d => d.key === ticketDate);
+        if (found) {
+          found.count++;
+        }
+      });
+      return days;
+    } else {
+      const currentYear = now.getFullYear();
+      const months = [
+        { label: 'Jan', key: 0, count: 0 },
+        { label: 'Feb', key: 1, count: 0 },
+        { label: 'Mar', key: 2, count: 0 },
+        { label: 'Apr', key: 3, count: 0 },
+        { label: 'May', key: 4, count: 0 },
+        { label: 'Jun', key: 5, count: 0 },
+        { label: 'Jul', key: 6, count: 0 },
+        { label: 'Aug', key: 7, count: 0 },
+        { label: 'Sep', key: 8, count: 0 },
+        { label: 'Oct', key: 9, count: 0 },
+        { label: 'Nov', key: 10, count: 0 },
+        { label: 'Dec', key: 11, count: 0 }
+      ];
+      
+      analytics.tickets.forEach(ticket => {
+        const d = new Date(ticket.createdAt);
+        if (d.getFullYear() === currentYear) {
+          const monthIdx = d.getMonth();
+          const found = months.find(m => m.key === monthIdx);
+          if (found) {
+            found.count++;
+          }
+        }
+      });
+      return months;
+    }
+  };
+
+  const renderAreaChart = () => {
+    const data = getTrendData();
+    if (data.length === 0) return null;
+
+    const width = 600;
+    const height = 180;
+    const paddingLeft = 35;
+    const paddingRight = 15;
+    const paddingTop = 20;
+    const paddingBottom = 25;
+
+    const maxVal = Math.max(...data.map(d => d.count), 5);
+
+    const points = data.map((d, index) => {
+      const x = paddingLeft + (index / (data.length - 1)) * (width - paddingLeft - paddingRight);
+      const y = height - paddingBottom - (d.count / maxVal) * (height - paddingTop - paddingBottom);
+      return { x, y, label: d.label, count: d.count };
+    });
+
+    const pathD = points.reduce((acc, p, index) => {
+      return acc + `${index === 0 ? 'M' : 'L'} ${p.x} ${p.y} `;
+    }, '');
+
+    const areaD = pathD + `L ${points[points.length - 1].x} ${height - paddingBottom} L ${points[0].x} ${height - paddingBottom} Z`;
+
+    const gridLines = [];
+    const gridCount = 3;
+    for (let i = 0; i <= gridCount; i++) {
+      const y = paddingTop + (i / gridCount) * (height - paddingTop - paddingBottom);
+      const value = Math.round(maxVal - (i / gridCount) * maxVal);
+      gridLines.push({ y, value });
+    }
+
+    return (
+      <div className="relative w-full">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+          <defs>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          
+          {/* Horizontal Grid Lines */}
+          {gridLines.map((line, idx) => (
+            <g key={idx} className="opacity-30">
+              <line 
+                x1={paddingLeft} 
+                y1={line.y} 
+                x2={width - paddingRight} 
+                y2={line.y} 
+                stroke={darkMode ? '#334155' : '#e2e8f0'} 
+                strokeWidth="1"
+                strokeDasharray="4 4"
+              />
+              <text 
+                x={paddingLeft - 8} 
+                y={line.y + 3} 
+                textAnchor="end" 
+                className="text-[8px] font-bold fill-gray-400 dark:fill-slate-500"
+              >
+                {line.value}
+              </text>
+            </g>
+          ))}
+
+          {/* Shaded Area */}
+          <path d={areaD} fill="url(#areaGradient)" />
+
+          {/* Main Line */}
+          <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+          {/* Interactive Dots and Labels */}
+          {points.map((p, index) => (
+            <g key={index} className="group/dot cursor-pointer">
+              <circle 
+                cx={p.x} 
+                cy={p.y} 
+                r="3.5" 
+                fill={darkMode ? '#0f172a' : '#ffffff'} 
+                stroke="#06b6d4" 
+                strokeWidth="2"
+                className="transition-all duration-150 hover:r-5"
+              />
+              {/* Hover Tooltip */}
+              <g className="opacity-0 group-hover/dot:opacity-100 transition-opacity duration-150 pointer-events-none">
+                <rect 
+                  x={p.x - 25} 
+                  y={p.y - 28} 
+                  width="50" 
+                  height="18" 
+                  rx="4" 
+                  fill={darkMode ? '#1e293b' : '#334155'} 
+                  className="shadow"
+                />
+                <text 
+                  x={p.x} 
+                  y={p.y - 16} 
+                  textAnchor="middle" 
+                  className="text-[8px] font-bold fill-white"
+                >
+                  {p.count} tix
+                </text>
+              </g>
+              {/* X Axis Label */}
+              {(trendMode === 'monthly' || index % 2 === 0 || index === points.length - 1) && (
+                <text 
+                  x={p.x} 
+                  y={height - 5} 
+                  textAnchor="middle" 
+                  className="text-[8px] font-bold fill-gray-400 dark:fill-slate-500"
+                >
+                  {p.label}
+                </text>
+              )}
+            </g>
+          ))}
+        </svg>
+      </div>
+    );
+  };
+
+  const renderDoughnutChart = () => {
+    if (!analytics || !analytics.status) return null;
+    
+    const statusData = Object.entries(analytics.status).map(([status, count]) => ({
+      status,
+      count,
+      color: 
+        status === 'OPEN' ? '#3b82f6' :
+        status === 'IN_PROGRESS' ? '#f59e0b' :
+        status === 'PENDING' ? '#64748b' :
+        status === 'RESOLVED' ? '#10b981' : '#94a3b8' // CLOSED
+    }));
+
+    const total = statusData.reduce((acc, d) => acc + d.count, 0) || 1;
+    const radius = 38;
+    const circumference = 2 * Math.PI * radius;
+
+    let cumulativePercent = 0;
+
+    return (
+      <div className="relative w-full flex flex-col items-center sm:flex-row justify-center gap-6">
+        {/* Doughnut SVG */}
+        <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+            <circle 
+              cx="50" 
+              cy="50" 
+              r={radius} 
+              fill="transparent" 
+              stroke={darkMode ? '#1e293b' : '#f1f5f9'} 
+              strokeWidth="9"
+            />
+            {statusData.map((d) => {
+              const percent = (d.count / total) * 100;
+              if (percent === 0) return null;
+              
+              const strokeDashoffset = circumference - (percent / 100) * circumference;
+              const rotation = cumulativePercent * 3.6 - 90;
+              cumulativePercent += percent;
+
+              const isHovered = hoveredStatus === d.status;
+
+              return (
+                <circle
+                  key={d.status}
+                  cx="50"
+                  cy="50"
+                  r={radius}
+                  fill="transparent"
+                  stroke={d.color}
+                  strokeWidth={isHovered ? 11 : 9}
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  className="transition-all duration-200 cursor-pointer"
+                  style={{
+                    transformOrigin: '50px 50px',
+                    transform: `rotate(${rotation}deg)`
+                  }}
+                  onMouseEnter={() => setHoveredStatus(d.status)}
+                  onMouseLeave={() => setHoveredStatus(null)}
+                />
+              );
+            })}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-2">
+            {hoveredStatus ? (
+              <>
+                <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: 
+                  hoveredStatus === 'OPEN' ? '#3b82f6' :
+                  hoveredStatus === 'IN_PROGRESS' ? '#f59e0b' :
+                  hoveredStatus === 'PENDING' ? '#64748b' :
+                  hoveredStatus === 'RESOLVED' ? '#10b981' : '#94a3b8'
+                }}>
+                  {hoveredStatus}
+                </span>
+                <span className="text-sm font-extrabold text-gray-800 dark:text-slate-100">
+                  {analytics.status[hoveredStatus]}
+                </span>
+                <span className="text-[9px] text-gray-400 dark:text-slate-500 font-semibold">
+                  ({Math.round((analytics.status[hoveredStatus] / total) * 100)}%)
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-[8px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-widest">
+                  Total
+                </span>
+                <span className="text-lg font-black text-gray-800 dark:text-slate-100">
+                  {total}
+                </span>
+                <span className="text-[8px] text-gray-400 dark:text-slate-500 font-semibold">
+                  tickets
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[120px]">
+          {statusData.map(d => {
+            const percent = Math.round((d.count / total) * 100);
+            return (
+              <div 
+                key={d.status}
+                className={`flex items-center justify-between p-1 rounded-lg transition-colors cursor-pointer ${
+                  hoveredStatus === d.status ? 'bg-slate-100/60 dark:bg-slate-800/40' : ''
+                }`}
+                onMouseEnter={() => setHoveredStatus(d.status)}
+                onMouseLeave={() => setHoveredStatus(null)}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                  <span className="text-[11px] font-semibold text-gray-700 dark:text-slate-300 truncate max-w-[80px]">
+                    {d.status}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 shrink-0 ml-2">
+                  {d.count} ({percent}%)
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   const getSlaColor = (rate) => {
@@ -579,6 +887,46 @@ export default function Dashboard({ user, token, darkMode }) {
 
           </div>
 
+          {/* Ticket Volume Trend Chart */}
+          <div className="bg-white dark:bg-slate-900/60 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm hover:shadow-md transition-all duration-300 mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <h4 className="font-bold text-base text-gray-800 dark:text-slate-200 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-[#06b6d4]" />
+                  <span>Ticket Volume Trend</span>
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  Daily and monthly trends of incoming IT support requests.
+                </p>
+              </div>
+              
+              {/* Daily / Monthly toggle */}
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+                <button
+                  onClick={() => setTrendMode('daily')}
+                  className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${
+                    trendMode === 'daily' 
+                      ? 'bg-white dark:bg-slate-700 text-gray-800 dark:text-white shadow-sm' 
+                      : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Harian (15 Hari)
+                </button>
+                <button
+                  onClick={() => setTrendMode('monthly')}
+                  className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${
+                    trendMode === 'monthly' 
+                      ? 'bg-white dark:bg-slate-700 text-gray-800 dark:text-white shadow-sm' 
+                      : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Bulanan (Tahun Ini)
+                </button>
+              </div>
+            </div>
+            {renderAreaChart()}
+          </div>
+
           {/* Main Visual Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
@@ -587,41 +935,11 @@ export default function Dashboard({ user, token, darkMode }) {
               
               {/* Category & Status Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* Tickets by Status */}
-                <div className="stagger-2 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all duration-300">
-                  <h4 className="font-bold text-base text-gray-800 dark:text-slate-200 mb-5">Status Distribution</h4>
-                  <div className="space-y-4">
-                    {Object.entries(analytics.status).map(([statusKey, count]) => {
-                      const total = analytics.totalTickets || 1;
-                      const percentage = Math.round((count / total) * 100);
-                      
-                      // Status gradient colors
-                      const colors = {
-                        OPEN: 'bg-gradient-to-r from-blue-400 to-blue-600',
-                        IN_PROGRESS: 'bg-gradient-to-r from-amber-400 to-amber-600',
-                        PENDING: 'bg-gradient-to-r from-slate-400 to-slate-500',
-                        RESOLVED: 'bg-gradient-to-r from-emerald-400 to-emerald-600',
-                        CLOSED: 'bg-gradient-to-r from-gray-400 to-gray-500'
-                      };
-
-                      return (
-                        <div key={statusKey} className="space-y-1">
-                          <div className="flex justify-between text-xs font-semibold text-gray-600 dark:text-slate-400">
-                            <span>{statusKey}</span>
-                            <span>{count} tickets ({percentage}%)</span>
-                          </div>
-                          <div className="w-full h-2 bg-gray-100 dark:bg-slate-800/50 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full ${colors[statusKey] || 'bg-brand-500'} shimmer-bar transition-all duration-700 ease-out`}
-                              style={{ width: `${percentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+              {/* Tickets by Status */}
+              <div className="stagger-2 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all duration-300">
+                <h4 className="font-bold text-base text-gray-800 dark:text-slate-200 mb-5">Status Distribution</h4>
+                {renderDoughnutChart()}
+              </div>
 
                 {/* Tickets by Category */}
                 <div className="stagger-3 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 border-l-4 border-l-brand-500 shadow-sm hover:shadow-md transition-all duration-300">
