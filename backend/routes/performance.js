@@ -141,7 +141,11 @@ router.get('/', verifyToken, async (req, res, next) => {
           slaBreached,
           complianceRate, // KPI SLA %
           avgResponseMin,  // Speed (min)
-          avgResolutionHour // Speed (hrs)
+          avgResolutionHour, // Speed (hrs)
+          totalResponseMs,
+          respondedCount,
+          totalResolutionMs,
+          resolvedCountWithTime
         }
       };
     });

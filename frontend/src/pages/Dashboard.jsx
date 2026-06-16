@@ -376,13 +376,31 @@ export default function Dashboard({ user, token, darkMode }) {
               const totalSlaMet = timeframedLeaderboard.reduce((acc, agent) => acc + agent.metrics.slaMet, 0);
               const teamComplianceRate = totalResolved > 0 ? Math.round((totalSlaMet / totalResolved) * 100) : 100;
 
-              const agentsWithResponse = timeframedLeaderboard.filter(agent => agent.metrics.avgResponseMin > 0);
-              const totalResponseMin = agentsWithResponse.reduce((acc, agent) => acc + agent.metrics.avgResponseMin, 0);
-              const avgTeamResponse = agentsWithResponse.length > 0 ? Math.round(totalResponseMin / agentsWithResponse.length) : 0;
+              // Calculate true team average response time (with fallback to average of averages if raw metrics are missing)
+              const hasRawResponse = timeframedLeaderboard.some(agent => agent.metrics.respondedCount !== undefined);
+              let avgTeamResponse = 0;
+              if (hasRawResponse) {
+                const totalResponseMs = timeframedLeaderboard.reduce((acc, agent) => acc + (agent.metrics.totalResponseMs || 0), 0);
+                const totalRespondedCount = timeframedLeaderboard.reduce((acc, agent) => acc + (agent.metrics.respondedCount || 0), 0);
+                avgTeamResponse = totalRespondedCount > 0 ? Math.round(totalResponseMs / totalRespondedCount / 1000 / 60) : 0;
+              } else {
+                const agentsWithResponse = timeframedLeaderboard.filter(agent => agent.metrics.avgResponseMin > 0);
+                const totalResponseMin = agentsWithResponse.reduce((acc, agent) => acc + agent.metrics.avgResponseMin, 0);
+                avgTeamResponse = agentsWithResponse.length > 0 ? Math.round(totalResponseMin / agentsWithResponse.length) : 0;
+              }
 
-              const agentsWithResolution = timeframedLeaderboard.filter(agent => agent.metrics.avgResolutionHour > 0);
-              const totalResolutionHour = agentsWithResolution.reduce((acc, agent) => acc + agent.metrics.avgResolutionHour, 0);
-              const avgTeamResolution = agentsWithResolution.length > 0 ? parseFloat((totalResolutionHour / agentsWithResolution.length).toFixed(1)) : 0;
+              // Calculate true team average resolution time (with fallback to average of averages if raw metrics are missing)
+              const hasRawResolution = timeframedLeaderboard.some(agent => agent.metrics.resolvedCountWithTime !== undefined);
+              let avgTeamResolution = 0;
+              if (hasRawResolution) {
+                const totalResolutionMs = timeframedLeaderboard.reduce((acc, agent) => acc + (agent.metrics.totalResolutionMs || 0), 0);
+                const totalResolvedCount = timeframedLeaderboard.reduce((acc, agent) => acc + (agent.metrics.resolvedCountWithTime || 0), 0);
+                avgTeamResolution = totalResolvedCount > 0 ? parseFloat((totalResolutionMs / totalResolvedCount / 1000 / 60 / 60).toFixed(1)) : 0;
+              } else {
+                const agentsWithResolution = timeframedLeaderboard.filter(agent => agent.metrics.avgResolutionHour > 0);
+                const totalResolutionHour = agentsWithResolution.reduce((acc, agent) => acc + agent.metrics.avgResolutionHour, 0);
+                avgTeamResolution = agentsWithResolution.length > 0 ? parseFloat((totalResolutionHour / agentsWithResolution.length).toFixed(1)) : 0;
+              }
 
               const topAgent = timeframedLeaderboard.length > 0 && timeframedLeaderboard[0].metrics.resolvedTickets > 0 ? timeframedLeaderboard[0] : null;
 
