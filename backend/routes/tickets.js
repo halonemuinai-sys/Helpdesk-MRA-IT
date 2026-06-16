@@ -287,6 +287,90 @@ router.get('/open-count', verifyToken, async (req, res, next) => {
   }
 });
 
+// POST /api/tickets/bulk-close
+// Bulk close tickets that are currently in RESOLVED status
+router.post('/bulk-close', verifyToken, async (req, res, next) => {
+  try {
+    const { role, name: currentUserName } = req.user;
+    if (role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Access forbidden. Only Admins can bulk close tickets.' });
+    }
+
+    const { ticketIds } = req.body;
+    if (!ticketIds || !Array.isArray(ticketIds) || ticketIds.length === 0) {
+      return res.status(400).json({ error: 'Array of ticketIds is required.' });
+    }
+
+    // Fetch resolved tickets corresponding to the IDs
+    const tickets = await prisma.ticket.findMany({
+      where: {
+        id: { in: ticketIds },
+        status: 'RESOLVED'
+      },
+      include: {
+        company: true,
+        requester: true,
+        assignedTo: {
+          select: { id: true, name: true, email: true }
+        }
+      }
+    });
+
+    if (tickets.length === 0) {
+      return res.status(400).json({ error: 'Tidak ada tiket berstatus RESOLVED yang cocok untuk ditutup.' });
+    }
+
+    const closedTickets = [];
+
+    // Perform database updates and email sending
+    for (const ticket of tickets) {
+      const updatedTicket = await prisma.ticket.update({
+        where: { id: ticket.id },
+        data: {
+          status: 'CLOSED',
+          auditLogs: {
+            create: {
+              action: 'STATUS_CHANGED',
+              details: `Status tiket diubah dari RESOLVED ke CLOSED secara bulk oleh Admin ${currentUserName}.`,
+              performedBy: currentUserName
+            }
+          }
+        },
+        include: {
+          company: true,
+          requester: true,
+          assignedTo: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      });
+
+      // Send email notification to agent (non-blocking)
+      sendTicketClosedToAgentEmail(updatedTicket);
+      
+      closedTickets.push(updatedTicket);
+    }
+
+    // Log the bulk close action in system audit logs
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'TICKETS_BULK_CLOSED',
+        details: `Bulk closed ${tickets.length} resolved tickets by Admin ${currentUserName}. Ticket IDs: ${tickets.map(t => t.id).join(', ')}`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log system audit event:", err));
+
+    res.json({
+      success: true,
+      message: `${closedTickets.length} tiket berhasil dipindahkan ke status CLOSED.`,
+      tickets: closedTickets
+    });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/tickets/:id
 // Get detailed ticket by ID
 router.get('/:id', verifyToken, async (req, res, next) => {
