@@ -23,6 +23,7 @@ import Peripherals from './pages/Peripherals';
 import RentalAnalysis from './pages/RentalAnalysis';
 import Approvals from './pages/Approvals';
 import AuditTrail from './pages/AuditTrail';
+import SetupCompany from './pages/SetupCompany';
 
 function ProtectedRoute({ user, allowedRoles, children }) {
   if (!user) {
@@ -242,6 +243,14 @@ export default function App() {
               element={
                 <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
                   <RentalAnalysis user={user} token={token} darkMode={darkMode} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/setup-company"
+              element={
+                <ProtectedRoute user={user} allowedRoles={['ADMIN']}>
+                  <SetupCompany user={user} token={token} />
                 </ProtectedRoute>
               }
             />

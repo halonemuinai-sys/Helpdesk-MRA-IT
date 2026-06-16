@@ -135,6 +135,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
       title: 'Administration',
       items: [
         {
+          label: 'Setup Company',
+          path: '/setup-company',
+          icon: Building2,
+          roles: ['ADMIN']
+        },
+        {
           label: 'Analysis Reports',
           path: '/reports',
           icon: BarChart3,
