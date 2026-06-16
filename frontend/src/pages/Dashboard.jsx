@@ -360,6 +360,28 @@ export default function Dashboard({ user, token, darkMode }) {
 
     return (
       <div className="relative w-full">
+        <style>{`
+          @keyframes drawLine {
+            from { stroke-dashoffset: 1000; }
+            to { stroke-dashoffset: 0; }
+          }
+          @keyframes fadeInArea {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes scaleUpDot {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+          }
+          .animate-draw-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawLine 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          }
+          .animate-fade-in-area {
+            animation: fadeInArea 0.8s ease-out 0.8s forwards;
+          }
+        `}</style>
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
           <defs>
             <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -392,10 +414,10 @@ export default function Dashboard({ user, token, darkMode }) {
           ))}
 
           {/* Shaded Area */}
-          <path d={areaD} fill="url(#areaGradient)" />
+          <path d={areaD} fill="url(#areaGradient)" className="opacity-0 animate-fade-in-area" />
 
           {/* Main Line */}
-          <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" pathLength="1000" className="animate-draw-line" />
 
           {/* Interactive Dots and Labels */}
           {points.map((p, index) => (
@@ -408,6 +430,12 @@ export default function Dashboard({ user, token, darkMode }) {
                 stroke="#06b6d4" 
                 strokeWidth="2"
                 className="transition-all duration-150 hover:r-5"
+                style={{
+                  transformOrigin: `${p.x}px ${p.y}px`,
+                  opacity: 0,
+                  animation: 'scaleUpDot 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                  animationDelay: `${0.8 + index * 0.04}s`
+                }}
               />
               {/* Hover Tooltip */}
               <g className="opacity-0 group-hover/dot:opacity-100 transition-opacity duration-150 pointer-events-none">
