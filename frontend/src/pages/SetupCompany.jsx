@@ -114,7 +114,7 @@ export default function SetupCompany({ user, token }) {
       setEditingMaster(master);
       setMasterName(master.name);
       setMasterSector(master.sector);
-      setMasterBudget(formatNumberForInput(master.sharedBudget || 0));
+      setMasterBudget(master.sharedBudget ? formatNumberForInput(master.sharedBudget) : '');
     } else {
       setEditingMaster(null);
       setMasterName('');
@@ -607,7 +607,7 @@ export default function SetupCompany({ user, token }) {
                   placeholder="Contoh: PT Mugi Rekso Abadi"
                   value={masterName}
                   onChange={(e) => setMasterName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition"
                 />
               </div>
 
@@ -618,7 +618,7 @@ export default function SetupCompany({ user, token }) {
                 <select
                   value={masterSector}
                   onChange={(e) => setMasterSector(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 cursor-pointer"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition cursor-pointer"
                 >
                   {SECTORS.map(s => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -637,7 +637,7 @@ export default function SetupCompany({ user, token }) {
                     placeholder="0"
                     value={masterBudget}
                     onChange={(e) => setMasterBudget(formatNumberForInput(e.target.value))}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition"
                   />
                 </div>
                 <p className="text-[9px] text-gray-400 mt-1">
@@ -701,7 +701,7 @@ export default function SetupCompany({ user, token }) {
                   placeholder="Contoh: PT Hourlogy Indah Perkasa"
                   value={branchName}
                   onChange={(e) => setBranchName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition"
                 />
               </div>
 
@@ -715,7 +715,7 @@ export default function SetupCompany({ user, token }) {
                   placeholder="Contoh: Butik Omega Plaza Indonesia atau HQ"
                   value={branchLocation}
                   onChange={(e) => setBranchLocation(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition"
                 />
               </div>
 
@@ -726,7 +726,7 @@ export default function SetupCompany({ user, token }) {
                 <select
                   value={branchSector}
                   onChange={(e) => setBranchSector(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 cursor-pointer"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition cursor-pointer"
                 >
                   {SECTORS.map(s => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -741,7 +741,7 @@ export default function SetupCompany({ user, token }) {
                 <select
                   value={branchMasterId}
                   onChange={(e) => setBranchMasterId(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 cursor-pointer"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition cursor-pointer"
                 >
                   <option value="">-- Tanpa Relasi Induk --</option>
                   {masters.map(m => (
@@ -757,7 +757,7 @@ export default function SetupCompany({ user, token }) {
                 <button
                   type="button"
                   onClick={() => setIsBranchModalOpen(false)}
-                  className="flex-1 py-2 text-xs font-bold border border-slate-200 dark:border-slate-880 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 transition"
+                  className="flex-1 py-2 text-xs font-bold border border-slate-250 dark:border-slate-800 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-650 dark:text-slate-300 transition"
                 >
                   Batal
                 </button>
