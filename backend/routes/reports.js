@@ -236,7 +236,9 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
     }
 
     // 2. Fetch all company masters with their branches and users to aggregate budgets
+    const sector = req.query.sector;
     const companyMasters = await prisma.companyMaster.findMany({
+      where: sector && sector !== 'ALL' ? { sector } : undefined,
       include: {
         companies: {
           include: {
@@ -275,32 +277,41 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
       // Find rental assets for this company master
       const companyAssets = filteredAssets.filter(a => a.companyMasterId === master.id);
       
-      // Calculate monthly costs for each month of the selected year
+      // Calculate monthly costs for each month of the selected year (postpaid shift - delayed 1 month, no prorate)
       const monthlyCosts = Array(12).fill(0);
-      for (let m = 0; m < 12; m++) {
-        const startOfMonth = new Date(year, m, 1);
-        const endOfMonth = new Date(year, m + 1, 0, 23, 59, 59, 999);
+      for (let M = 0; M < 12; M++) {
+        // Payment Month M (0 = Jan, 11 = Dec)
+        // Usage Month is M - 1.
+        let usageYear = year;
+        let usageMonth = M - 1;
+        if (M === 0) {
+          usageYear = year - 1;
+          usageMonth = 11; // December of previous year
+        }
+
+        const usageStartOfMonth = new Date(usageYear, usageMonth, 1);
+        const usageEndOfMonth = new Date(usageYear, usageMonth + 1, 0, 23, 59, 59, 999);
 
         const activeAssets = companyAssets.filter(a => {
           const rentalStart = new Date(a.rentalStart);
           const rentalEnd = new Date(a.rentalEnd);
-          return rentalStart <= endOfMonth && rentalEnd >= startOfMonth;
+          return rentalStart <= usageEndOfMonth && rentalEnd >= usageStartOfMonth;
         });
 
         const cost = activeAssets.reduce((sum, a) => sum + (a.rentalCost || 0), 0);
-        monthlyCosts[m] = cost;
-        monthlyTotals[m] += cost;
+        monthlyCosts[M] = cost;
+        monthlyTotals[M] += cost;
       }
 
       const totalProjectedCost = monthlyCosts.reduce((sum, c) => sum + c, 0);
       
-      // Count total distinct devices active in this year
-      const startOfYear = new Date(year, 0, 1);
-      const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+      // Count total distinct devices active in this year's payment period (Dec Y-1 to Nov Y)
+      const startOfPeriod = new Date(year - 1, 11, 1); // December 1st of previous year
+      const endOfPeriod = new Date(year, 11, 0, 23, 59, 59, 999); // November 30th of current year
       const activeDevices = companyAssets.filter(a => {
         const rentalStart = new Date(a.rentalStart);
         const rentalEnd = new Date(a.rentalEnd);
-        return rentalStart <= endOfYear && rentalEnd >= startOfYear;
+        return rentalStart <= endOfPeriod && rentalEnd >= startOfPeriod;
       });
 
       // Only include company masters that have a budget or have assets/devices

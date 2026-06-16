@@ -33,6 +33,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   const [data, setData] = useState(null);
   const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedCategory, setSelectedCategory] = useState('ALL'); // ALL, LAPTOP, SMARTPHONE
+  const [selectedSector, setSelectedSector] = useState('ALL'); // ALL, RETAIL, FB, MEDIA, RADIO, GENERAL
   
   // Collapse state for employee details per company master
   const [expandedCompanyId, setExpandedCompanyId] = useState(null);
@@ -80,6 +81,14 @@ export default function RentalAnalysis({ user, token, darkMode }) {
     { value: 'LAPTOP', label: 'Laptop / PC' },
     { value: 'SMARTPHONE', label: 'Smartphone' }
   ];
+  const SECTORS = [
+    { value: 'ALL', label: 'Semua Grup' },
+    { value: 'RETAIL', label: 'MRA Retail' },
+    { value: 'FB', label: 'MRA F&B' },
+    { value: 'MEDIA', label: 'MRA Media' },
+    { value: 'RADIO', label: 'MRA Radio' },
+    { value: 'GENERAL', label: 'MRA Holding' }
+  ];
   const headers = {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -88,7 +97,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
   const fetchAnalysisData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/reports/rental-analysis?year=${selectedYear}&category=${selectedCategory}`, { headers });
+      const res = await fetch(`${API_URL}/reports/rental-analysis?year=${selectedYear}&category=${selectedCategory}&sector=${selectedSector}`, { headers });
       if (!res.ok) throw new Error('Gagal mengambil data analisa biaya sewa.');
       const result = await res.json();
       setData(result);
@@ -103,7 +112,7 @@ export default function RentalAnalysis({ user, token, darkMode }) {
 
   useEffect(() => {
     fetchAnalysisData();
-  }, [selectedYear, selectedCategory]);
+  }, [selectedYear, selectedCategory, selectedSector]);
 
   // Format currency with standard dot separator
   const formatNumber = (num) => {
@@ -352,6 +361,19 @@ const areaPath = points.length > 0
 
         {/* Dropdowns */}
         <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-850 rounded-2xl px-3 py-1.5 shadow-sm">
+            <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider">Grup:</span>
+            <select
+              value={selectedSector}
+              onChange={(e) => setSelectedSector(e.target.value)}
+              className="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer hover:text-rose-500 transition"
+            >
+              {SECTORS.map(s => (
+                <option key={s.value} className="dark:bg-slate-950" value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-850 rounded-2xl px-3 py-1.5 shadow-sm">
             <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider">Kategori:</span>
             <select
