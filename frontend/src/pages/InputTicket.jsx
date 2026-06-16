@@ -325,7 +325,8 @@ export default function InputTicket({ user, token }) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 py-4 animate-fade-in relative">
+    <div className="max-w-5xl mx-auto py-4 relative">
+      <div className="space-y-6 animate-fade-in">
       {/* Inline styles for custom form animations */}
       <style>{`
         @keyframes slideLeftCard {
@@ -801,6 +802,7 @@ export default function InputTicket({ user, token }) {
 
         </form>
       )}
+    </div>
 
       {/* Quick Add User Modal */}
       {showQuickUserModal && (

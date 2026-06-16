@@ -319,7 +319,8 @@ export default function Users({ user: currentUser, token }) {
   // Advanced query results are processed directly from the backend API
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="relative min-h-screen">
+      <div className="space-y-6 animate-fade-in">
       
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -592,6 +593,7 @@ export default function Users({ user: currentUser, token }) {
           )}
         </div>
       )}
+    </div>
 
       {/* Add User Modal */}
       {showAddModal && (

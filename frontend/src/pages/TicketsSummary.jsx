@@ -557,7 +557,8 @@ export default function TicketsSummary({ user, token }) {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in relative min-h-screen">
+    <div className="relative min-h-screen">
+      <div className="space-y-6 animate-fade-in">
       
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1064,6 +1065,8 @@ export default function TicketsSummary({ user, token }) {
           </button>
         </div>
       )}
+
+      </div>
 
       {/* Ticket Details Modular Modal (Kotak Tengah) */}
       {selectedTicketId && (
