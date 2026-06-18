@@ -144,6 +144,7 @@
 .stagger-3 { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 300ms; }
 .stagger-4 { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 400ms; }
 .stagger-5 { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 500ms; }
+.stagger-6 { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 600ms; }
 
 /* Pulse Glow for Critical/Urgent Items */
 @keyframes pulseGlow {
