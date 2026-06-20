@@ -46,6 +46,9 @@ export default function Assets({ user, token }) {
   const [companies, setCompanies] = useState([]);
   const [companyMasters, setCompanyMasters] = useState([]);
   const [users, setUsers] = useState([]);
+  const [userSearchText, setUserSearchText] = useState('');
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -128,6 +131,19 @@ export default function Assets({ user, token }) {
     }
     fetchAssets(debouncedSearchQuery);
   }, [debouncedSearchQuery, selectedStatus, selectedCompanyMasterId, selectedCategory]);
+
+  // Handle click outside searchable user dropdown to close it
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setIsUserDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [userDropdownRef]);
 
   const fetchStats = async () => {
     try {
@@ -256,6 +272,8 @@ export default function Assets({ user, token }) {
     setFormNotes('');
     setFormUpdateJourney('');
     setFormUserId('');
+    setUserSearchText('');
+    setIsUserDropdownOpen(false);
     setFormCompanyId(companies[0]?.id || '');
     setFormCompanyMasterId(companyMasters[0]?.id || '');
     setFormOwnershipType('RENTAL');
@@ -285,6 +303,8 @@ export default function Assets({ user, token }) {
     setFormNotes(asset.notes || '');
     setFormUpdateJourney('');
     setFormUserId(asset.userId || '');
+    setUserSearchText('');
+    setIsUserDropdownOpen(false);
     setFormCompanyId(asset.companyId || '');
     setFormCompanyMasterId(asset.companyMasterId || '');
     
@@ -1512,28 +1532,104 @@ export default function Assets({ user, token }) {
                       </div>
 
                       {/* Employee Assignee */}
-                      <div className="space-y-1">
+                      <div className="space-y-1" ref={userDropdownRef}>
                         <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
                           Karyawan Pengguna <span className="text-gray-400 normal-case font-normal">(Kosongkan jika Shared / Cabang)</span>
                         </label>
-                        <select
-                          value={formUserId}
-                          onChange={(e) => {
-                            setFormUserId(e.target.value);
-                            // If user is selected, auto set status to ASSIGNED
-                            if (e.target.value) {
-                              setFormStatus('ASSIGNED');
-                            }
-                          }}
-                          className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                        >
-                          <option value="">-- Tanpa Karyawan (Simpan di Inventory IT) --</option>
-                          {users.map(u => (
-                            <option key={u.id} value={u.id}>
-                              {u.name} (NIP: {u.id} - {u.department})
-                            </option>
-                          ))}
-                        </select>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer text-left flex justify-between items-center"
+                          >
+                            <span className="truncate pr-4">
+                              {formUserId ? (
+                                (() => {
+                                  const selectedUser = users.find(u => u.id === formUserId);
+                                  return selectedUser ? `${selectedUser.name} (NIP: ${selectedUser.id} - ${selectedUser.department})` : formUserId;
+                                })()
+                              ) : (
+                                '-- Tanpa Karyawan (Simpan di Inventory IT) --'
+                              )}
+                            </span>
+                            <ChevronDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
+                          </button>
+                          
+                          {isUserDropdownOpen && (
+                            <div className="absolute z-50 mt-1 w-full rounded-xl bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 shadow-xl max-h-64 overflow-hidden flex flex-col p-1.5 gap-1.5 animate-fade-in">
+                              {/* Search Input */}
+                              <div className="relative flex items-center">
+                                <Search className="absolute left-2.5 w-3.5 h-3.5 text-gray-400" />
+                                <input
+                                  type="text"
+                                  placeholder="Cari nama, NIP, atau departemen..."
+                                  value={userSearchText}
+                                  onChange={(e) => setUserSearchText(e.target.value)}
+                                  className="w-full pl-8 pr-2.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-50 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                                  autoFocus
+                                />
+                                {userSearchText && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setUserSearchText('')}
+                                    className="absolute right-2.5 p-0.5 hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 rounded"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              
+                              <div className="flex flex-col overflow-y-auto max-h-48 gap-0.5 custom-scrollbar">
+                                {/* Option: Tanpa Karyawan */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormUserId('');
+                                    setUserSearchText('');
+                                    setIsUserDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left px-2.5 py-2 text-xs font-semibold rounded-lg transition-colors ${!formUserId ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400 font-bold' : 'hover:bg-gray-50 dark:hover:bg-slate-955/40 text-gray-750 dark:text-slate-350'}`}
+                                >
+                                  -- Tanpa Karyawan (Simpan di Inventory IT) --
+                                </button>
+                                
+                                {/* Filtered options */}
+                                {(() => {
+                                  const filtered = users.filter(u => {
+                                    const q = userSearchText.toLowerCase();
+                                    return u.name.toLowerCase().includes(q) || 
+                                           u.id.toString().toLowerCase().includes(q) || 
+                                           (u.department && u.department.toLowerCase().includes(q));
+                                  });
+                                  
+                                  if (filtered.length === 0) {
+                                    return (
+                                      <div className="text-center py-4 text-xs text-gray-400 dark:text-slate-500 font-medium">
+                                        Tidak ada karyawan ditemukan
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  return filtered.map(u => (
+                                    <button
+                                      key={u.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setFormUserId(u.id);
+                                        setFormStatus('ASSIGNED');
+                                        setUserSearchText('');
+                                        setIsUserDropdownOpen(false);
+                                      }}
+                                      className={`w-full text-left px-2.5 py-2 text-xs font-semibold rounded-lg transition-colors ${formUserId === u.id ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400 font-bold' : 'hover:bg-gray-50 dark:hover:bg-slate-955/40 text-gray-750 dark:text-slate-350'}`}
+                                    >
+                                      {u.name} (NIP: {u.id} - {u.department})
+                                    </button>
+                                  ));
+                                })()}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Company Master & Branch */}
