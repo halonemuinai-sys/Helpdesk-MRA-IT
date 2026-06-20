@@ -91,6 +91,7 @@ router.get('/', verifyToken, async (req, res, next) => {
         { assetTag: { contains: search, mode: 'insensitive' } },
         { deviceRef: { contains: search, mode: 'insensitive' } },
         { vendorRef: { contains: search, mode: 'insensitive' } },
+        { vendor: { contains: search, mode: 'insensitive' } },
         { brand: { contains: search, mode: 'insensitive' } },
         { model: { contains: search, mode: 'insensitive' } },
         { user: { name: { contains: search, mode: 'insensitive' } } }
@@ -181,7 +182,8 @@ router.post('/', verifyToken, async (req, res, next) => {
       notes, 
       userId, 
       companyId, 
-      companyMasterId 
+      companyMasterId,
+      vendor
     } = req.body;
 
     if (!assetTag || !brand || !model || rentalCost === undefined || !rentalStart || !rentalEnd) {
@@ -242,7 +244,8 @@ router.post('/', verifyToken, async (req, res, next) => {
         journey: journeyLog,
         userId: userId || null,
         companyId: companyId && !isNaN(parseInt(companyId)) ? parseInt(companyId) : null,
-        companyMasterId: companyMasterId && !isNaN(parseInt(companyMasterId)) ? parseInt(companyMasterId) : null
+        companyMasterId: companyMasterId && !isNaN(parseInt(companyMasterId)) ? parseInt(companyMasterId) : null,
+        vendor: vendor || null
       }
     });
 
@@ -289,7 +292,8 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       userId,
       companyId,
       companyMasterId,
-      updateJourney
+      updateJourney,
+      vendor
     } = req.body;
 
     const current = await prisma.asset.findUnique({
@@ -332,6 +336,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (rentalStart !== undefined) updateData.rentalStart = new Date(rentalStart);
     if (rentalEnd !== undefined) updateData.rentalEnd = new Date(rentalEnd);
     if (notes !== undefined) updateData.notes = notes || null;
+    if (vendor !== undefined) updateData.vendor = vendor || null;
     
     // Assignee and location mapping
     if (userId !== undefined) updateData.userId = userId || null;

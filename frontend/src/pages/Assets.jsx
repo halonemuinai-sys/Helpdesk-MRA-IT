@@ -99,6 +99,7 @@ export default function Assets({ user, token }) {
   const [formNotes, setFormNotes] = useState('');
   const [formUpdateJourney, setFormUpdateJourney] = useState('');
   const [formUserId, setFormUserId] = useState('');
+  const [formVendor, setFormVendor] = useState('');
   const [formCompanyId, setFormCompanyId] = useState('');
   const [formCompanyMasterId, setFormCompanyMasterId] = useState('');
   const [formOwnershipType, setFormOwnershipType] = useState('RENTAL');
@@ -272,6 +273,7 @@ export default function Assets({ user, token }) {
     setFormNotes('');
     setFormUpdateJourney('');
     setFormUserId('');
+    setFormVendor('');
     setUserSearchText('');
     setIsUserDropdownOpen(false);
     setFormCompanyId(companies[0]?.id || '');
@@ -303,6 +305,7 @@ export default function Assets({ user, token }) {
     setFormNotes(asset.notes || '');
     setFormUpdateJourney('');
     setFormUserId(asset.userId || '');
+    setFormVendor(asset.vendor || '');
     setUserSearchText('');
     setIsUserDropdownOpen(false);
     setFormCompanyId(asset.companyId || '');
@@ -453,6 +456,7 @@ export default function Assets({ user, token }) {
         userId: formUserId || null,
         companyId: formCompanyId ? parseInt(formCompanyId) : null,
         companyMasterId: formCompanyMasterId ? parseInt(formCompanyMasterId) : null,
+        vendor: formVendor || null,
         updateJourney: formUpdateJourney || null
       };
 
@@ -584,6 +588,7 @@ export default function Assets({ user, token }) {
       asset.assetTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (asset.deviceRef && asset.deviceRef.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (asset.vendorRef && asset.vendorRef.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (asset.vendor && asset.vendor.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (asset.user && asset.user.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (asset.notes && asset.notes.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -994,6 +999,17 @@ export default function Assets({ user, token }) {
                                       <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[11px] font-semibold text-slate-600 dark:text-slate-300 ml-1">
                                         {asset.vendorRef}
                                       </code>
+                                    </div>
+                                  )}
+                                  
+                                  {asset.ownershipType === 'RENTAL' && (
+                                    <div>
+                                      <span className="text-[10px] text-gray-455 font-bold uppercase">
+                                        VENDOR PENYEDIA SEWA:
+                                      </span>
+                                      <span className="font-bold text-gray-700 dark:text-slate-350 ml-1.5 uppercase">
+                                        {asset.vendor || (asset.brand && asset.brand.toLowerCase() === 'apple' && asset.model && asset.model.toLowerCase().includes('iphone') ? 'PT Permata Landmarq Abadi' : 'PT Teknologi Skoring Nusantara')}
+                                      </span>
                                     </div>
                                   )}
                                   
@@ -1529,6 +1545,28 @@ export default function Assets({ user, token }) {
                             />
                           </div>
                         )}
+                      </div>
+
+                      {/* Vendor Name (Suggestions Datalist) */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                          Vendor Penyedia / Partner *
+                        </label>
+                        <input
+                          type="text"
+                          list="asset-vendor-suggestions"
+                          value={formVendor}
+                          onChange={(e) => setFormVendor(e.target.value)}
+                          placeholder="e.g. PT Teknologi Skoring Nusantara"
+                          className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                          required={formOwnershipType === 'RENTAL'}
+                        />
+                        <datalist id="asset-vendor-suggestions">
+                          <option value="PT Teknologi Skoring Nusantara" />
+                          <option value="PT Permata Landmarq Abadi" />
+                          <option value="Javarent" />
+                          <option value="Asani" />
+                        </datalist>
                       </div>
 
                       {/* Employee Assignee */}

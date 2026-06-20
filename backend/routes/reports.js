@@ -361,7 +361,7 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
             rentalStart: a.rentalStart,
             rentalEnd: a.rentalEnd,
             status: a.status,
-            vendor: getVendorName(a),
+            vendor: a.vendor || getVendorName(a),
             user: a.user ? { name: a.user.name, department: a.user.department } : null
           }))
         });

@@ -225,6 +225,7 @@ model Asset {
   // References
   deviceRef       String?       @unique // e.g. LP10682 (Device code/ID for damage reports)
   vendorRef       String?       // e.g. ASN/20240318/1621/0001 (Payment/Billing unit code)
+  vendor          String?       // Vendor name (e.g. PT Teknologi Skoring Nusantara, Javarent)
   
   // Specifications
   brand           String        // e.g. Lenovo, Dell, HP, Apple
