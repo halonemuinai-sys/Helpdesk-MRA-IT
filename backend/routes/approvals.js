@@ -24,7 +24,28 @@ router.get('/', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async (req, res, n
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json(approvals);
+    const enrichedApprovals = [];
+    for (const req of approvals) {
+      const plainReq = { ...req };
+      if (req.entityType === 'ASSET_ALLOCATION' && req.reason && req.reason.startsWith('ALLOCATE_TO:')) {
+        const employeeId = req.reason.replace('ALLOCATE_TO:', '').trim();
+        const targetUser = await prisma.user.findUnique({
+          where: { id: employeeId },
+          select: { 
+            id: true, 
+            name: true, 
+            email: true, 
+            department: true, 
+            jobPosition: true, 
+            company: { select: { name: true, location: true } } 
+          }
+        });
+        plainReq.targetUser = targetUser || { id: employeeId, name: 'Unknown User', error: true };
+      }
+      enrichedApprovals.push(plainReq);
+    }
+
+    res.json(enrichedApprovals);
   } catch (err) {
     next(err);
   }
@@ -106,12 +127,48 @@ router.post('/:id/approve', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async 
         } else {
           deleteMessage = `Peripheral Category with ID ${entityId} was already deleted or not found.`;
         }
+      } else if (entityType === 'ASSET_ALLOCATION') {
+        const { reason } = request;
+        if (!reason || !reason.startsWith('ALLOCATE_TO:')) {
+          return res.status(400).json({ error: 'Invalid reason format for ASSET_ALLOCATION. Expected "ALLOCATE_TO:<employee_id>"' });
+        }
+        const employeeId = reason.replace('ALLOCATE_TO:', '').trim();
+
+        // Query data User target
+        const userTarget = await prisma.user.findUnique({
+          where: { id: employeeId },
+          include: { company: true }
+        });
+
+        if (!userTarget) {
+          return res.status(404).json({ error: `Karyawan dengan ID ${employeeId} tidak ditemukan di database IT Helpdesk.` });
+        }
+
+        // Query data Asset target
+        const asset = await prisma.asset.findUnique({ where: { id: entityId } });
+        if (!asset) {
+          return res.status(404).json({ error: `Asset/Perangkat dengan ID ${entityId} tidak ditemukan.` });
+        }
+
+        // Update Asset
+        await prisma.asset.update({
+          where: { id: entityId },
+          data: {
+            userId: employeeId,
+            companyId: userTarget.companyId,
+            companyMasterId: userTarget.company?.companyMasterId || null,
+            status: 'ASSIGNED',
+            updatedAt: new Date()
+          }
+        });
+
+        deleteMessage = `Alokasi perangkat ${asset.brand} ${asset.model} (Tag: ${asset.assetTag}) disetujui untuk ${userTarget.name} (${employeeId}).`;
       } else {
         return res.status(400).json({ error: `Unknown entity type: ${entityType}` });
       }
     } catch (dbErr) {
       console.error(`DB error executing approval delete:`, dbErr);
-      return res.status(500).json({ error: `Database failed to delete the target item: ${dbErr.message}` });
+      return res.status(500).json({ error: `Database failed to process target item: ${dbErr.message}` });
     }
 
     // Update approval request status
@@ -125,17 +182,23 @@ router.post('/:id/approve', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async 
     });
 
     // Write to system audit logs
-    const logDetails = `${deleteMessage} (Requested by: ${request.requestedBy.name}, Approved by: ${adminUser.name}). Notes: ${adminNotes || '-'}`;
+    const logDetails = `${deleteMessage} (Requested by: ${request.requestedBy ? request.requestedBy.name : 'GA System'}, Approved by: ${adminUser.name}). Notes: ${adminNotes || '-'}`;
+    
+    let logAction = `${entityType}_DELETED`;
+    if (entityType === 'ASSET_ALLOCATION') {
+      logAction = 'ASSET_ALLOCATED';
+    }
+
     await prisma.systemAuditLog.create({
       data: {
-        action: `${entityType}_DELETED`,
+        action: logAction,
         details: logDetails,
         performedBy: `${adminUser.name} (${adminUser.email})`
       }
     });
 
     res.json({
-      message: 'Deletion approved and item successfully deleted.',
+      message: entityType === 'ASSET_ALLOCATION' ? 'Alokasi perangkat berhasil disetujui.' : 'Deletion approved and item successfully deleted.',
       request: updatedRequest
     });
   } catch (err) {
@@ -179,17 +242,24 @@ router.post('/:id/reject', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async (
     });
 
     // Write to system audit logs
-    const logDetails = `Deletion request for ${request.entityType} "${request.entityName}" rejected by ${adminUser.name}. Reason: ${adminNotes}`;
+    let logDetails = `Deletion request for ${request.entityType} "${request.entityName}" rejected by ${adminUser.name}. Reason: ${adminNotes}`;
+    let logAction = `${request.entityType}_DELETE_REJECTED`;
+    
+    if (request.entityType === 'ASSET_ALLOCATION') {
+      logAction = 'ASSET_ALLOCATION_REJECTED';
+      logDetails = `Asset allocation request for "${request.entityName}" (Asset ID: ${request.entityId}) rejected by ${adminUser.name}. Reason: ${adminNotes}`;
+    }
+
     await prisma.systemAuditLog.create({
       data: {
-        action: `${request.entityType}_DELETE_REJECTED`,
+        action: logAction,
         details: logDetails,
         performedBy: `${adminUser.name} (${adminUser.email})`
       }
     });
 
     res.json({
-      message: 'Deletion request rejected.',
+      message: request.entityType === 'ASSET_ALLOCATION' ? 'Permintaan alokasi perangkat ditolak.' : 'Deletion request rejected.',
       request: updatedRequest
     });
   } catch (err) {

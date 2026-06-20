@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, Loader2, AlertCircle, CheckCircle2, 
-  Check, X, FileText, Laptop, CreditCard, Wifi, FolderTree, MessageSquare, Clock
+  Check, X, FileText, Laptop, CreditCard, Wifi, FolderTree, MessageSquare, Clock, User
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -10,14 +10,16 @@ const ENTITY_ICONS = {
   ASSET: Laptop,
   SUBSCRIPTION: CreditCard,
   WIFI_AP: Wifi,
-  CATEGORY: FolderTree
+  CATEGORY: FolderTree,
+  ASSET_ALLOCATION: User
 };
 
 const ENTITY_LABELS = {
   ASSET: 'Hardware Asset',
   SUBSCRIPTION: 'IT Subscription',
   WIFI_AP: 'Wifi Access Point',
-  CATEGORY: 'Category Detailing'
+  CATEGORY: 'Category Detailing',
+  ASSET_ALLOCATION: 'Alokasi Perangkat Sewa'
 };
 
 export default function Approvals({ user, token }) {
@@ -100,8 +102,12 @@ export default function Approvals({ user, token }) {
       if (!res.ok) throw new Error(data.error || `Failed to ${actionType.toLowerCase()} request.`);
 
       setSuccessMsg(actionType === 'APPROVE' 
-        ? 'Permintaan penghapusan berhasil disetujui dan data telah terhapus dari sistem.' 
-        : 'Permintaan penghapusan berhasil ditolak.'
+        ? (activeRequest.entityType === 'ASSET_ALLOCATION' 
+            ? 'Alokasi perangkat berhasil disetujui dan status perangkat telah ter-update.' 
+            : 'Permintaan penghapusan berhasil disetujui dan data telah terhapus dari sistem.')
+        : (activeRequest.entityType === 'ASSET_ALLOCATION'
+            ? 'Permintaan alokasi perangkat berhasil ditolak.'
+            : 'Permintaan penghapusan berhasil ditolak.')
       );
       
       handleCloseActionModal();
@@ -226,15 +232,34 @@ export default function Approvals({ user, token }) {
 
                       {/* Requester agent details */}
                       <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-slate-300 bg-gray-50/50 dark:bg-slate-900/30 px-3.5 py-2 rounded-xl w-fit">
-                        <span className="font-semibold">Requested By Agent:</span>
-                        <span>{req.requestedBy.name} ({req.requestedBy.email})</span>
+                        <span className="font-semibold">
+                          {req.entityType === 'ASSET_ALLOCATION' ? 'Requested By:' : 'Requested By Agent:'}
+                        </span>
+                        <span>
+                          {req.requestedBy ? `${req.requestedBy.name} (${req.requestedBy.email})` : 'GA System / Otomatis'}
+                        </span>
                       </div>
+
+                      {/* Target Karyawan Alokasi details */}
+                      {req.entityType === 'ASSET_ALLOCATION' && req.targetUser && (
+                        <div className="flex flex-col gap-1 p-3.5 bg-blue-50/50 dark:bg-blue-950/10 border border-blue-150/45 dark:border-blue-900/25 rounded-2xl text-xs">
+                          <p className="font-bold text-blue-700 dark:text-blue-400 text-[10px] uppercase tracking-wider">Target Karyawan Alokasi</p>
+                          <p className="text-gray-900 dark:text-slate-100 font-extrabold mt-0.5">
+                            {req.targetUser.name} (NIK: {req.targetUser.id})
+                          </p>
+                          <p className="text-gray-500 dark:text-slate-400 text-[11px] font-medium">
+                            {req.targetUser.jobPosition} - {req.targetUser.department} at {req.targetUser.company?.name || 'MRA'} ({req.targetUser.company?.location || 'HQ'})
+                          </p>
+                        </div>
+                      )}
 
                       {/* Reason */}
                       <div className="flex items-start gap-2 text-xs bg-brand-50/30 dark:bg-brand-950/5 p-3 rounded-2xl">
                         <MessageSquare className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-semibold text-brand-700 dark:text-brand-400 text-[10px] uppercase tracking-wider">Delete Reason / Note</p>
+                          <p className="font-semibold text-brand-700 dark:text-brand-400 text-[10px] uppercase tracking-wider">
+                            {req.entityType === 'ASSET_ALLOCATION' ? 'Catatan / Alasan Alokasi' : 'Delete Reason / Note'}
+                          </p>
                           <p className="text-gray-700 dark:text-slate-300 mt-0.5 font-medium">{req.reason || '-'}</p>
                         </div>
                       </div>
@@ -267,14 +292,14 @@ export default function Approvals({ user, token }) {
                           className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-colors"
                         >
                           <Check className="w-4 h-4" />
-                          <span>Approve Delete</span>
+                          <span>{req.entityType === 'ASSET_ALLOCATION' ? 'Approve Allocation' : 'Approve Delete'}</span>
                         </button>
                         <button
                           onClick={() => handleOpenActionModal(req, 'REJECT')}
                           className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-650 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-500/10 transition-colors"
                         >
                           <X className="w-4 h-4" />
-                          <span>Reject Request</span>
+                          <span>{req.entityType === 'ASSET_ALLOCATION' ? 'Reject Allocation' : 'Reject Request'}</span>
                         </button>
                       </div>
                     )}
@@ -295,12 +320,12 @@ export default function Approvals({ user, token }) {
                 {actionType === 'APPROVE' ? (
                   <>
                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                    <span>Approve Deletion</span>
+                    <span>{activeRequest.entityType === 'ASSET_ALLOCATION' ? 'Approve Allocation' : 'Approve Deletion'}</span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="w-5 h-5 text-red-500" />
-                    <span>Reject Deletion Request</span>
+                    <span>{activeRequest.entityType === 'ASSET_ALLOCATION' ? 'Reject Allocation Request' : 'Reject Deletion Request'}</span>
                   </>
                 )}
               </h3>
@@ -330,8 +355,12 @@ export default function Approvals({ user, token }) {
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   placeholder={actionType === 'APPROVE' 
-                    ? 'e.g. Asset retired due to severe motherboard failure.' 
-                    : 'Rejection reason is mandatory (e.g. Asset is still in active use).'
+                    ? (activeRequest.entityType === 'ASSET_ALLOCATION'
+                        ? 'e.g. Alokasi disetujui, perangkat siap diserahterimakan.'
+                        : 'e.g. Asset retired due to severe motherboard failure.') 
+                    : (activeRequest.entityType === 'ASSET_ALLOCATION'
+                        ? 'Alasan penolakan alokasi wajib diisi (e.g. NIK karyawan salah).'
+                        : 'Rejection reason is mandatory (e.g. Asset is still in active use).')
                   }
                   className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-850 focus:border-brand-500 rounded-2xl text-gray-800 dark:text-slate-200 focus:outline-none text-xs"
                 />

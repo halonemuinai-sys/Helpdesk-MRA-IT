@@ -335,4 +335,24 @@ router.patch('/:id/location', verifyToken, checkRole(['ADMIN', 'AGENT']), async 
   }
 });
 
+// GET /api/users/:id
+// Get user by ID (verifyToken)
+router.get('/:id', verifyToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userTarget = await prisma.user.findUnique({
+      where: { id },
+      include: { company: true }
+    });
+    if (!userTarget) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    const { password, ...safeUser } = userTarget;
+    res.json(safeUser);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
+
