@@ -422,7 +422,7 @@ export default function Assets({ user, token }) {
         setSubmitting(false);
         return;
       }
-      finalAssetTag = `RENT-${formDeviceRef.trim()}`;
+      finalAssetTag = formDeviceRef.trim();
       if (new Date(formRentalStart) > new Date(formRentalEnd)) {
         setFormError('Tanggal Sewa Berakhir harus setelah Tanggal Sewa Dimulai.');
         setSubmitting(false);
