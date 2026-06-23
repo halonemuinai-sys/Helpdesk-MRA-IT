@@ -1078,7 +1078,7 @@ export default function Peripherals({ user, token }) {
           />
           
           {/* Drawer Panel */}
-          <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border-l border-gray-150 dark:border-slate-800 shadow-2xl flex flex-col h-full animate-slide-left overflow-hidden">
+          <div className="relative w-full max-w-7xl lg:max-w-[90vw] bg-white dark:bg-slate-900 border-l border-gray-150 dark:border-slate-800 shadow-2xl flex flex-col h-full animate-slide-left overflow-hidden">
               
               {/* Header */}
               <div className="flex justify-between items-center p-5 border-b border-gray-150 dark:border-slate-850">
