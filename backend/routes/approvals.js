@@ -115,6 +115,25 @@ router.post('/:id/approve', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async 
         if (peri) {
           await prisma.peripheralAsset.delete({ where: { id: entityId } });
           deleteMessage = `IT Peripheral ${peri.brand} ${peri.model || ''} (${peri.name}) deleted.`;
+
+          // Recalculate linked invoice cost if any
+          if (peri.peripheralInvoiceId) {
+            const remainingItems = await prisma.peripheralAsset.findMany({
+              where: { peripheralInvoiceId: peri.peripheralInvoiceId }
+            });
+            const itemsTotal = remainingItems.reduce((sum, item) => sum + item.totalCost, 0);
+
+            const invoice = await prisma.peripheralInvoice.findUnique({
+              where: { id: peri.peripheralInvoiceId }
+            });
+            if (invoice) {
+              const totalCost = itemsTotal + invoice.serviceCost + invoice.deliveryCost + invoice.taxCost;
+              await prisma.peripheralInvoice.update({
+                where: { id: invoice.id },
+                data: { totalCost }
+              });
+            }
+          }
         } else {
           deleteMessage = `Peripheral with ID ${entityId} was already deleted or not found.`;
         }

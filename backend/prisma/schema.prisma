@@ -40,6 +40,7 @@ model CompanyMaster {
   subscriptions ITSubscription[] // Subscriptions belonging to this master company
   assets        Asset[]          // Assets leased by this master company
   peripheralAssets PeripheralAsset[]
+  peripheralInvoices PeripheralInvoice[]
 }
 
 model Company {
@@ -309,7 +310,7 @@ model PeripheralAsset {
   purchaseCost    Float          // Price per unit in IDR
   quantity        Int            @default(1) // Number of items bought
   totalCost       Float          // Total cost: purchaseCost * quantity
-  purchaseDate    DateTime       // Date bought
+  purchaseDate    DateTime?      // Date bought (made optional for invoice relation)
   warrantyExpiry  DateTime?      // Warranty end date (Optional)
   supplier        String?        // Vendor / Shop where bought (Optional)
   invoiceRef      String?        // Invoice number (Optional)
@@ -325,6 +326,10 @@ model PeripheralAsset {
   companyMasterId Int?
   companyMaster   CompanyMaster? @relation(fields: [companyMasterId], references: [id], onDelete: SetNull)
 
+  // Relasi ke parent invoice (Option A)
+  peripheralInvoiceId String?
+  peripheralInvoice   PeripheralInvoice? @relation(fields: [peripheralInvoiceId], references: [id], onDelete: Cascade)
+
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -332,6 +337,31 @@ model PeripheralAsset {
   @@index([status])
   @@index([companyId])
   @@index([companyMasterId])
+  @@index([peripheralInvoiceId])
+}
+
+model PeripheralInvoice {
+  id              String             @id @default(uuid())
+  invoiceRef      String             @unique // Nomor Invoice
+  poRef           String?            // Nomor PO (optional)
+  supplier        String             // Nama Supplier
+  purchaseDate    DateTime           // Tanggal Invoice
+  serviceCost     Float              @default(0) // Biaya jasa / instalasi
+  deliveryCost    Float              @default(0) // Ongkir (optional)
+  taxCost         Float              @default(0) // Pajak (optional)
+  totalCost       Float              // Total pengeluaran invoice
+  notes           String?            // Catatan
+  
+  companyMasterId Int?
+  companyMaster   CompanyMaster?     @relation(fields: [companyMasterId], references: [id], onDelete: SetNull)
+  
+  items           PeripheralAsset[]  // Items yang dibeli di invoice ini
+  
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([companyMasterId])
+  @@index([invoiceRef])
 }
 
 model PeripheralCategory {
