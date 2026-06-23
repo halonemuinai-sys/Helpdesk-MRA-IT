@@ -1216,11 +1216,17 @@ export default function Subscriptions({ user, token }) {
       </div>
       )}
 
-      {/* CRUD Form Modal */}
-      {isModalOpen && createPortal(
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-250 dark:border-slate-800/80 shadow-2xl w-full max-w-3xl overflow-hidden animate-slide-up">
+      {/* CRUD Form Modal (Side Drawer) */}
+      {isModalOpen && createPortal((
+        <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
+          {/* Backdrop overlay */}
+          <div 
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity cursor-pointer"
+            onClick={() => setIsModalOpen(false)}
+          />
+          
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-l border-gray-150 dark:border-slate-800 shadow-2xl flex flex-col h-full animate-slide-left overflow-hidden">
               
               {/* Header */}
               <div className="flex justify-between items-center p-5 border-b border-gray-150 dark:border-slate-850">
@@ -1250,8 +1256,8 @@ export default function Subscriptions({ user, token }) {
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmit}>
-                <div className="p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+                <div className="p-6 space-y-4 overflow-y-auto flex-1">
                 
                 {formError && (
                   <div className="p-3.5 rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800 text-red-755 text-xs flex items-center gap-2">
@@ -1481,9 +1487,7 @@ export default function Subscriptions({ user, token }) {
             </form>
           </div>
         </div>
-      </div>,
-      document.body
-      )}
+      ), document.body)}
 
     </div>
   );
