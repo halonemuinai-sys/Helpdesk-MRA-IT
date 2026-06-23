@@ -317,6 +317,7 @@ model PeripheralAsset {
   poRef           String?        // Purchase Order number (Optional)
   status          String         @default("STOCK") // STATUS: STOCK, IN_USE, DAMAGED, RETIRED
   notes           String?        // Additional description or serials checklist
+  journey         String?        @default("") // Timeline history log of status, branch, or qty changes
   
   // Placement branch (e.g. Wisma MRA Floor 3, Butik Plaza Indonesia)
   companyId       Int?
@@ -351,6 +352,7 @@ model PeripheralInvoice {
   taxCost         Float              @default(0) // Pajak (optional)
   totalCost       Float              // Total pengeluaran invoice
   notes           String?            // Catatan
+  fileLink        String?            // Link attachment bukti fisik invoice (optional)
   
   companyMasterId Int?
   companyMaster   CompanyMaster?     @relation(fields: [companyMasterId], references: [id], onDelete: SetNull)

@@ -23,7 +23,8 @@ import {
   ChevronUp,
   Receipt,
   TrendingUp,
-  Download
+  Download,
+  Eye
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -59,6 +60,7 @@ export default function Peripherals({ user, token }) {
     monthlyTrend: []
   });
   const [exporting, setExporting] = useState(false);
+  const [viewingAsset, setViewingAsset] = useState(null);
 
   // Stats state
   const [stats, setStats] = useState({
@@ -100,6 +102,7 @@ export default function Peripherals({ user, token }) {
   const [formTaxCost, setFormTaxCost] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [formCompanyMasterId, setFormCompanyMasterId] = useState('');
+  const [formFileLink, setFormFileLink] = useState('');
 
   // Form Fields (Invoice Child Items)
   const [formItems, setFormItems] = useState([
@@ -616,6 +619,7 @@ export default function Peripherals({ user, token }) {
     setFormTaxCost('');
     setFormNotes('');
     setFormCompanyMasterId('');
+    setFormFileLink('');
     setFormItems([
       { name: '', category: '', brand: '', model: '', serialNumber: '', purchaseCost: '', quantity: '1', status: 'STOCK', companyId: '' }
     ]);
@@ -645,6 +649,7 @@ export default function Peripherals({ user, token }) {
       
       setFormNotes(invoice.notes || '');
       setFormCompanyMasterId(invoice.companyMasterId ? invoice.companyMasterId.toString() : '');
+      setFormFileLink(invoice.fileLink || '');
 
       // Load items
       const loadedItems = invoice.items.map(item => ({
@@ -732,6 +737,7 @@ export default function Peripherals({ user, token }) {
       deliveryCost: deliveryCostNum,
       taxCost: taxCostNum,
       notes: formNotes ? formNotes.trim() : null,
+      fileLink: formFileLink ? formFileLink.trim() : null,
       companyMasterId: parseInt(formCompanyMasterId, 10),
       items: validatedItems
     };
@@ -1199,8 +1205,22 @@ export default function Peripherals({ user, token }) {
                             {isExpanded ? <ChevronUp className="w-4 h-4 text-rose-500" /> : <ChevronDown className="w-4 h-4 text-gray-450" />}
                           </td>
                           <td className="py-4 px-6">
-                            <div className="font-extrabold text-gray-900 dark:text-white text-xs">{inv.invoiceRef}</div>
-                            {inv.poRef && <div className="text-[10px] text-gray-450 font-mono mt-0.5">PO: {inv.poRef}</div>}
+                            <div className="font-extrabold text-gray-900 dark:text-white text-xs flex items-center gap-1.5">
+                              <span>{inv.invoiceRef}</span>
+                              {inv.fileLink && (
+                                <a 
+                                  href={inv.fileLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-emerald-500 hover:text-emerald-600 transition shrink-0"
+                                  title="Lihat Bukti Fisik / Attachment Invoice"
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </div>
+                            {inv.poRef && <div className="text-[10px] text-gray-455 font-mono mt-0.5">PO: {inv.poRef}</div>}
                           </td>
                           <td className="py-4 px-6 font-bold text-gray-805 dark:text-slate-205">{inv.supplier}</td>
                           <td className="py-4 px-6">{formatDate(inv.purchaseDate)}</td>
@@ -1256,11 +1276,19 @@ export default function Peripherals({ user, token }) {
                                         <th className="py-2.5 px-4 text-right">Harga Satuan</th>
                                         <th className="py-2.5 px-4 text-right">Total</th>
                                         <th className="py-2.5 px-4 text-center">Status</th>
-                                        {user.role === 'ADMIN' && <th className="py-2.5 px-4 text-right">Aksi</th>}
+                                        <th className="py-2.5 px-4 text-right">Aksi</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-slate-850/50 text-gray-700 dark:text-slate-350">
-                                      <InvoiceItemsSubtable invoiceId={inv.id} token={token} formatRupiah={formatRupiah} statusOptions={STATUS_OPTIONS} onDeleteItem={handleDeleteSingleItem} user={user} />
+                                      <InvoiceItemsSubtable 
+                                        invoiceId={inv.id} 
+                                        token={token} 
+                                        formatRupiah={formatRupiah} 
+                                        statusOptions={STATUS_OPTIONS} 
+                                        onDeleteItem={handleDeleteSingleItem} 
+                                        onViewItem={(item) => setViewingAsset(item)}
+                                        user={user} 
+                                      />
                                     </tbody>
                                   </table>
                                 </div>
@@ -1355,6 +1383,13 @@ export default function Peripherals({ user, token }) {
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setViewingAsset(p)}
+                              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-500 hover:text-blue-500 rounded-lg transition cursor-pointer"
+                              title="Lihat Detail & Riwayat (Journey)"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
                             {p.peripheralInvoiceId && (
                               <button
                                 onClick={() => handleOpenEditModal(p.peripheralInvoiceId)}
@@ -1735,6 +1770,18 @@ export default function Peripherals({ user, token }) {
                         />
                       </div>
 
+                      {/* File Link / Bukti Fisik Attachment */}
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider">Link Bukti Fisik / Attachment Invoice (Optional)</label>
+                        <input
+                          type="text"
+                          value={formFileLink}
+                          onChange={(e) => setFormFileLink(e.target.value)}
+                          placeholder="e.g. https://drive.google.com/drive/folders/... atau link berkas"
+                          className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                        />
+                      </div>
+
                     </div>
                   </div>
 
@@ -2003,12 +2050,165 @@ export default function Peripherals({ user, token }) {
           </div>
       ), document.body)}
 
+      {/* Drawer Detail & Timeline (Journey) Aset Periferal */}
+      {viewingAsset && createPortal((
+        <div className="fixed inset-0 z-[999] flex justify-end">
+          {/* Overlay */}
+          <div 
+            onClick={() => setViewingAsset(null)}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 shadow-2xl h-full flex flex-col animate-slide-in">
+            {/* Header */}
+            <div className="p-5 border-b border-gray-150 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-955/20">
+              <div>
+                <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider font-outfit">
+                  Detail & Timeline Periferal
+                </h3>
+                <p className="text-[10px] text-gray-400 font-bold mt-0.5">
+                  ID: {viewingAsset.id}
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingAsset(null)}
+                className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-450 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              
+              {/* Specification Card */}
+              <div className="p-5 rounded-2xl border border-gray-150 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/10 space-y-4">
+                <div className="flex items-center gap-3 border-b border-gray-150 dark:border-slate-800 pb-3">
+                  <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
+                    <Cpu className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-gray-900 dark:text-white">{viewingAsset.name}</h4>
+                    <span className="text-[9px] font-extrabold uppercase bg-gray-100 dark:bg-slate-800 text-gray-500 px-2 py-0.5 rounded mt-1 inline-block">
+                      {viewingAsset.category}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Brand</span>
+                    <span className="font-bold text-gray-800 dark:text-slate-200 mt-0.5 block">{viewingAsset.brand}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Model / Tipe</span>
+                    <span className="font-bold text-gray-800 dark:text-slate-200 mt-0.5 block">{viewingAsset.model || '-'}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Serial Number (S/N)</span>
+                    <span className="font-mono text-gray-850 dark:text-slate-200 mt-0.5 block break-all">{viewingAsset.serialNumber || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Kuantitas</span>
+                    <span className="font-bold text-gray-850 dark:text-slate-200 mt-0.5 block">{viewingAsset.quantity} Unit</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Status Saat Ini</span>
+                    <span className="mt-1 block">
+                      {(() => {
+                        const statusObj = STATUS_OPTIONS.find(o => o.value === viewingAsset.status) || STATUS_OPTIONS[0];
+                        return (
+                          <span className={`inline-flex items-center gap-1.5 text-[8px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${statusObj.color}`}>
+                            <span className={`w-1 h-1 rounded-full ${statusObj.dot}`} />
+                            {statusObj.label}
+                          </span>
+                        );
+                      })()}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Lokasi Cabang</span>
+                    <span className="font-bold text-gray-805 dark:text-slate-200 mt-0.5 block">
+                      {viewingAsset.company?.name || 'STOCK (Gudang IT MRA)'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Entitas Pembayar</span>
+                    <span className="font-bold text-gray-805 dark:text-slate-200 mt-0.5 block">
+                      {companyMasters.find(c => c.id === viewingAsset.companyMasterId)?.name || '-'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Harga Unit</span>
+                    <span className="font-bold text-gray-850 dark:text-slate-200 mt-0.5 block">{formatRupiah(viewingAsset.purchaseCost)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Total Harga Pembelian</span>
+                    <span className="font-bold text-rose-500 dark:text-rose-455 mt-0.5 block">{formatRupiah(viewingAsset.totalCost)}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">No. Invoice Ref</span>
+                    <span className="font-bold text-gray-850 dark:text-slate-200 mt-0.5 block">{viewingAsset.invoiceRef || '-'}</span>
+                  </div>
+                  {viewingAsset.notes && (
+                    <div className="col-span-2">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Catatan Tambahan</span>
+                      <span className="font-semibold text-gray-700 dark:text-slate-350 mt-0.5 block">{viewingAsset.notes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Timeline Journey Logs */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-gray-150 dark:border-slate-800 pb-2">
+                  <Clock className="w-4 h-4 text-rose-500" />
+                  Riwayat & Pergerakan Aset (Journey)
+                </h4>
+                
+                {(!viewingAsset.journey || !viewingAsset.journey.trim()) ? (
+                  <div className="p-8 text-center border border-dashed border-gray-200 dark:border-slate-800 rounded-2xl text-xs text-gray-400 font-semibold italic">
+                    Belum ada riwayat tercatat untuk perangkat periferal ini.
+                  </div>
+                ) : (
+                  <div className="relative border-l border-gray-200 dark:border-slate-800 ml-3 pl-5 space-y-6 py-2">
+                    {viewingAsset.journey.split('\n').filter(Boolean).map((line, idx) => (
+                      <div key={idx} className="relative">
+                        {/* Timeline Bullet */}
+                        <div className="absolute -left-[26px] top-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white dark:border-slate-900 shadow-sm" />
+                        <p className="text-xs font-semibold text-gray-700 dark:text-slate-350 leading-relaxed font-mono">
+                          {line}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-150 dark:border-slate-800 flex justify-end bg-gray-50/30 dark:bg-slate-955/10">
+              <button
+                type="button"
+                onClick={() => setViewingAsset(null)}
+                className="px-4 py-2 border border-gray-250 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+
+          </div>
+        </div>
+      ), document.body)}
+
     </div>
   );
 }
 
 // Subcomponent to fetch and render invoice items inside expanded row on demand
-function InvoiceItemsSubtable({ invoiceId, token, formatRupiah, statusOptions, onDeleteItem, user }) {
+function InvoiceItemsSubtable({ invoiceId, token, formatRupiah, statusOptions, onDeleteItem, onViewItem, user }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -2073,18 +2273,28 @@ function InvoiceItemsSubtable({ invoiceId, token, formatRupiah, statusOptions, o
                 {statusObj.label}
               </span>
             </td>
-            {user.role === 'ADMIN' && (
-              <td className="py-2.5 px-4 text-right">
+            <td className="py-2.5 px-4 text-right">
+              <div className="flex items-center justify-end gap-1.5">
                 <button
                   type="button"
-                  onClick={() => onDeleteItem(item)}
-                  className="p-1 hover:bg-red-50 hover:text-red-500 rounded text-gray-400 transition"
-                  title="Hapus Barang"
+                  onClick={() => onViewItem(item)}
+                  className="p-1 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-500 rounded text-gray-400 transition"
+                  title="Lihat Detail & Riwayat (Journey)"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Eye className="w-3.5 h-3.5" />
                 </button>
-              </td>
-            )}
+                {user.role === 'ADMIN' && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteItem(item)}
+                    className="p-1 hover:bg-red-50 dark:hover:bg-red-950/25 hover:text-red-500 rounded text-gray-400 transition"
+                    title="Hapus Barang"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </td>
           </tr>
         );
       })}

@@ -335,7 +335,8 @@ router.post('/invoices', verifyToken, async (req, res, next) => {
       taxCost,
       notes,
       companyMasterId,
-      items
+      items,
+      fileLink
     } = req.body;
 
     if (!invoiceRef || !supplier || !purchaseDate || !items || !Array.isArray(items) || items.length === 0) {
@@ -353,6 +354,9 @@ router.post('/invoices', verifyToken, async (req, res, next) => {
     const parsedService = parseFloat(serviceCost) || 0;
     const parsedDelivery = parseFloat(deliveryCost) || 0;
     const parsedTax = parseFloat(taxCost) || 0;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     // Calculate total cost
     let itemsTotal = 0;
@@ -378,7 +382,8 @@ router.post('/invoices', verifyToken, async (req, res, next) => {
         status: item.status || 'STOCK',
         notes: item.notes || null,
         companyId: item.companyId ? parseInt(item.companyId) : null,
-        companyMasterId: companyMasterId ? parseInt(companyMasterId) : null
+        companyMasterId: companyMasterId ? parseInt(companyMasterId) : null,
+        journey: `[${todayStr}]: Periferal didaftarkan via Invoice ${invoiceRef.trim()} oleh IT Staff. Status: ${item.status || 'STOCK'}.`
       };
     });
 
@@ -397,6 +402,7 @@ router.post('/invoices', verifyToken, async (req, res, next) => {
           taxCost: parsedTax,
           totalCost,
           notes: notes || null,
+          fileLink: fileLink || null,
           companyMasterId: companyMasterId ? parseInt(companyMasterId) : null,
           items: {
             create: processedItems
@@ -443,7 +449,8 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
       taxCost,
       notes,
       companyMasterId,
-      items
+      items,
+      fileLink
     } = req.body;
 
     const currentInvoice = await prisma.peripheralInvoice.findUnique({
@@ -471,6 +478,9 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
     const parsedService = parseFloat(serviceCost) || 0;
     const parsedDelivery = parseFloat(deliveryCost) || 0;
     const parsedTax = parseFloat(taxCost) || 0;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     let itemsTotal = 0;
     const currentItemIds = currentInvoice.items.map(item => item.id);
@@ -513,11 +523,35 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
         };
 
         if (item.id) {
+          const currentItem = currentInvoice.items.find(x => x.id === item.id);
+          if (currentItem) {
+            let journey = currentItem.journey || '';
+            let autoJourneyLines = [];
+            if (currentItem.status !== (item.status || 'STOCK')) {
+              autoJourneyLines.push(`Status berubah dari ${currentItem.status} menjadi ${item.status || 'STOCK'}`);
+            }
+            if (currentItem.companyId !== (item.companyId ? parseInt(item.companyId) : null)) {
+              autoJourneyLines.push(`Lokasi penempatan cabang diperbarui`);
+            }
+            if (currentItem.quantity !== (parseInt(item.quantity) || 1)) {
+              autoJourneyLines.push(`Kuantitas berubah dari ${currentItem.quantity} menjadi ${parseInt(item.quantity) || 1}`);
+            }
+            
+            if (autoJourneyLines.length > 0) {
+              autoJourneyLines.forEach(line => {
+                const newLine = `[${todayStr}]: ${line} oleh IT Staff.`;
+                journey = journey ? `${journey}\n${newLine}` : newLine;
+              });
+              itemData.journey = journey;
+            }
+          }
+
           await tx.peripheralAsset.update({
             where: { id: item.id },
             data: itemData
           });
         } else {
+          itemData.journey = `[${todayStr}]: Periferal didaftarkan via update Invoice ${invoiceRef.trim()} oleh IT Staff. Status: ${item.status || 'STOCK'}.`;
           await tx.peripheralAsset.create({
             data: {
               ...itemData,
@@ -541,6 +575,7 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
           taxCost: parsedTax,
           totalCost,
           notes: notes || null,
+          fileLink: fileLink || null,
           companyMasterId: companyMasterId ? parseInt(companyMasterId) : null
         },
         include: { items: true }
