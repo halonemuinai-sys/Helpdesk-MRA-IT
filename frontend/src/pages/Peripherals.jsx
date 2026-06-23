@@ -22,7 +22,8 @@ import {
   ChevronDown,
   ChevronUp,
   Receipt,
-  TrendingUp
+  TrendingUp,
+  Download
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -57,6 +58,7 @@ export default function Peripherals({ user, token }) {
     expensesBySupplier: [],
     monthlyTrend: []
   });
+  const [exporting, setExporting] = useState(false);
 
   // Stats state
   const [stats, setStats] = useState({
@@ -258,6 +260,270 @@ export default function Peripherals({ user, token }) {
     setSelectedStatus('');
     setSelectedCompanyMasterId('');
     setSelectedCategory('');
+  };
+
+  const escapeXml = (str) => {
+    if (!str) return '';
+    return str.toString()
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      const headers = { 'Authorization': `Bearer ${token}` };
+      
+      const [invRes, assetRes] = await Promise.all([
+        fetch(`${API_URL}/peripherals/invoices?limit=100000`, { headers }),
+        fetch(`${API_URL}/peripherals?limit=100000`, { headers })
+      ]);
+
+      if (!invRes.ok || !assetRes.ok) throw new Error('Gagal memuat data untuk ekspor.');
+
+      const exportInvoices = await invRes.json();
+      const exportAssets = await assetRes.json();
+
+      let xml = `<?xml version="1.0" encoding="utf-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Bottom"/>
+   <Borders/>
+   <Font ss:FontName="Segoe UI" x:CharSet="1" x:Family="Swiss" ss:Size="10" ss:Color="#374151"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="Title">
+   <Font ss:FontName="Segoe UI" ss:Size="14" ss:Bold="1" ss:Color="#1E293B"/>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#E11D48" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="TableHeaderRow">
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Bold="1" ss:Color="#475569"/>
+  </Style>
+  <Style ss:ID="Currency">
+   <NumberFormat ss:Format="&quot;Rp&quot;\ #,##0"/>
+  </Style>
+  <Style ss:ID="BoldText">
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="BoldCurrency">
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Bold="1"/>
+   <NumberFormat ss:Format="&quot;Rp&quot;\ #,##0"/>
+  </Style>
+ </Styles>
+`;
+
+      // SHEET 1: RINGKASAN INVOICE
+      xml += `
+ <Worksheet ss:Name="Ringkasan Invoice">
+  <Table x:FullColumns="1" x:FullRows="1" ss:DefaultColumnWidth="100" ss:DefaultRowHeight="20">
+   <Column ss:Width="120"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="95"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="200"/>
+
+   <Row ss:Height="25">
+    <Cell ss:MergeAcross="10" ss:StyleID="Title"><Data ss:Type="String">LAPORAN BIAYA PEMBELIAN IT PERIPHERALS</Data></Cell>
+   </Row>
+   <Row ss:Height="15"><Cell/></Row>
+
+   <Row ss:StyleID="TableHeaderRow">
+    <Cell><Data ss:Type="String">No. Invoice</Data></Cell>
+    <Cell><Data ss:Type="String">No. PO</Data></Cell>
+    <Cell><Data ss:Type="String">Supplier/Vendor</Data></Cell>
+    <Cell><Data ss:Type="String">Tanggal Invoice</Data></Cell>
+    <Cell><Data ss:Type="String">Entitas Pembayar</Data></Cell>
+    <Cell><Data ss:Type="String">Jml Item</Data></Cell>
+    <Cell><Data ss:Type="String">Biaya Jasa</Data></Cell>
+    <Cell><Data ss:Type="String">Ongkos Kirim</Data></Cell>
+    <Cell><Data ss:Type="String">Pajak</Data></Cell>
+    <Cell><Data ss:Type="String">Total Invoice</Data></Cell>
+    <Cell><Data ss:Type="String">Catatan</Data></Cell>
+   </Row>
+`;
+
+      let totalInvoicesCost = 0;
+      let totalServicesCost = 0;
+      let totalDeliveryCost = 0;
+      let totalTaxCost = 0;
+      let totalItemQty = 0;
+
+      exportInvoices.forEach(inv => {
+        totalInvoicesCost += inv.totalCost || 0;
+        totalServicesCost += inv.serviceCost || 0;
+        totalDeliveryCost += inv.deliveryCost || 0;
+        totalTaxCost += inv.taxCost || 0;
+        totalItemQty += inv._count?.items || 0;
+
+        xml += `
+   <Row>
+    <Cell><Data ss:Type="String">${escapeXml(inv.invoiceRef)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(inv.poRef || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(inv.supplier)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(formatDate(inv.purchaseDate))}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(inv.companyMaster?.name || '-')}</Data></Cell>
+    <Cell><Data ss:Type="Number">${inv._count?.items || 0}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${inv.serviceCost || 0}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${inv.deliveryCost || 0}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${inv.taxCost || 0}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${inv.totalCost || 0}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(inv.notes || '')}</Data></Cell>
+   </Row>`;
+      });
+
+      xml += `
+   <Row ss:StyleID="TableHeaderRow">
+    <Cell><Data ss:Type="String">TOTAL KESELURUHAN</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="Number">${totalItemQty}</Data></Cell>
+    <Cell ss:StyleID="BoldCurrency"><Data ss:Type="Number">${totalServicesCost}</Data></Cell>
+    <Cell ss:StyleID="BoldCurrency"><Data ss:Type="Number">${totalDeliveryCost}</Data></Cell>
+    <Cell ss:StyleID="BoldCurrency"><Data ss:Type="Number">${totalTaxCost}</Data></Cell>
+    <Cell ss:StyleID="BoldCurrency"><Data ss:Type="Number">${totalInvoicesCost}</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+`;
+
+      // SHEET 2: DETIL ASET
+      xml += `
+ <Worksheet ss:Name="Daftar Aset Fisik">
+  <Table x:FullColumns="1" x:FullRows="1" ss:DefaultColumnWidth="100" ss:DefaultRowHeight="20">
+   <Column ss:Width="180"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="60"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="95"/>
+
+   <Row ss:Height="25">
+    <Cell ss:MergeAcross="13" ss:StyleID="Title"><Data ss:Type="String">LAPORAN INVENTORI ASET FISIK IT PERIPHERALS</Data></Cell>
+   </Row>
+   <Row ss:Height="15"><Cell/></Row>
+
+   <Row ss:StyleID="TableHeaderRow">
+    <Cell><Data ss:Type="String">Nama Perangkat</Data></Cell>
+    <Cell><Data ss:Type="String">Kategori</Data></Cell>
+    <Cell><Data ss:Type="String">Brand</Data></Cell>
+    <Cell><Data ss:Type="String">Model</Data></Cell>
+    <Cell><Data ss:Type="String">Serial Number</Data></Cell>
+    <Cell><Data ss:Type="String">Kuantitas</Data></Cell>
+    <Cell><Data ss:Type="String">Harga Unit</Data></Cell>
+    <Cell><Data ss:Type="String">Total Biaya</Data></Cell>
+    <Cell><Data ss:Type="String">Entitas Induk</Data></Cell>
+    <Cell><Data ss:Type="String">Lokasi Penempatan</Data></Cell>
+    <Cell><Data ss:Type="String">Status</Data></Cell>
+    <Cell><Data ss:Type="String">No. Invoice</Data></Cell>
+    <Cell><Data ss:Type="String">Supplier/Vendor</Data></Cell>
+    <Cell><Data ss:Type="String">Tanggal Beli</Data></Cell>
+   </Row>
+`;
+
+      let totalAssetsQty = 0;
+      let totalAssetsCost = 0;
+
+      exportAssets.forEach(p => {
+        totalAssetsQty += p.quantity || 0;
+        totalAssetsCost += p.totalCost || 0;
+
+        const statusLabel = STATUS_OPTIONS.find(o => o.value === p.status)?.label || p.status;
+
+        xml += `
+   <Row>
+    <Cell><Data ss:Type="String">${escapeXml(p.name)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(p.category)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(p.brand)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(p.model || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(p.serialNumber || '')}</Data></Cell>
+    <Cell><Data ss:Type="Number">${p.quantity || 0}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${p.purchaseCost || 0}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${p.totalCost || 0}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(p.companyMaster?.name || '-')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(p.company ? `${p.company.name} (${p.company.location})` : '-')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(statusLabel)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(p.peripheralInvoice?.invoiceRef || p.invoiceRef || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(p.peripheralInvoice?.supplier || p.supplier || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(formatDate(p.peripheralInvoice?.purchaseDate || p.purchaseDate))}</Data></Cell>
+   </Row>`;
+      });
+
+      xml += `
+   <Row ss:StyleID="TableHeaderRow">
+    <Cell><Data ss:Type="String">TOTAL KESELURUHAN</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="Number">${totalAssetsQty}</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="BoldCurrency"><Data ss:Type="Number">${totalAssetsCost}</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+`;
+
+      xml += `</Workbook>`;
+
+      const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `IT_Peripherals_Report_${new Date().toISOString().split('T')[0]}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Ekspor Gagal',
+        text: err.message,
+        confirmButtonColor: '#f43f5e'
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const toggleRow = (id) => {
@@ -662,13 +928,24 @@ export default function Peripherals({ user, token }) {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-rose-500/20 hover:shadow-xl transition transform hover:-translate-y-0.5 active:translate-y-0 duration-200"
-        >
-          <Plus className="w-4 h-4" />
-          Daftarkan Pembelian Periferal
-        </button>
+        <div className="flex items-center gap-2.5 w-full md:w-auto">
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="flex items-center gap-1.5 border border-emerald-500 hover:bg-emerald-55/10 dark:hover:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition transform hover:-translate-y-0.5 active:translate-y-0 duration-200 disabled:opacity-50 cursor-pointer"
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Export Excel
+          </button>
+
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-rose-500/20 hover:shadow-xl transition transform hover:-translate-y-0.5 active:translate-y-0 duration-200 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Daftarkan Pembelian Periferal
+          </button>
+        </div>
       </div>
 
       {error && (
