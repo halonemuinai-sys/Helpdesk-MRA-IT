@@ -21,7 +21,8 @@ import {
   Tag,
   ChevronDown,
   ChevronUp,
-  Receipt
+  Receipt,
+  TrendingUp
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -42,7 +43,7 @@ const DEFAULT_BRANDS = [
 ];
 
 export default function Peripherals({ user, token }) {
-  const [activeTab, setActiveTab] = useState('invoices'); // 'invoices' or 'items'
+  const [activeTab, setActiveTab] = useState('invoices'); // 'invoices', 'items', or 'analysis'
   const [peripherals, setPeripherals] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -50,6 +51,12 @@ export default function Peripherals({ user, token }) {
   const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [analysisData, setAnalysisData] = useState({
+    expensesByCategory: [],
+    expensesByCompany: [],
+    expensesBySupplier: [],
+    monthlyTrend: []
+  });
 
   // Stats state
   const [stats, setStats] = useState({
@@ -219,12 +226,30 @@ export default function Peripherals({ user, token }) {
     }
   };
 
+  const fetchAnalysis = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const headers = { 'Authorization': `Bearer ${token}` };
+      const res = await fetch(`${API_URL}/peripherals/analysis`, { headers });
+      if (!res.ok) throw new Error('Gagal memuat analisa biaya.');
+      const data = await res.json();
+      setAnalysisData(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRefreshData = async () => {
     await fetchStats();
     if (activeTab === 'invoices') {
       await fetchInvoices();
-    } else {
+    } else if (activeTab === 'items') {
       await fetchPeripherals();
+    } else if (activeTab === 'analysis') {
+      await fetchAnalysis();
     }
   };
 
@@ -742,99 +767,112 @@ export default function Peripherals({ user, token }) {
           <Package className="w-4 h-4" />
           <span>Stok & Aset Fisik (Inventory Stock)</span>
         </button>
+        <button
+          onClick={() => { setActiveTab('analysis'); handleResetFilters(); }}
+          className={`py-3 px-6 text-xs font-bold transition flex items-center gap-2 border-b-2 -mb-[2px] ${
+            activeTab === 'analysis' 
+              ? 'border-rose-500 text-rose-500' 
+              : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-slate-350'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          <span>Analisa Biaya (Cost Analysis)</span>
+        </button>
       </div>
 
       {/* Control Filter Bar */}
-      <div className="glass-panel p-5 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-gray-250/60 dark:border-slate-800/60 space-y-4">
-        
-        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-          {/* Search Input */}
-          <div className="relative w-full lg:w-80 group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
-            <input
-              type="text"
-              placeholder={activeTab === 'invoices' ? "Cari No. Invoice, Supplier, Catatan..." : "Cari Nama, Brand, Invoice, Supplier, S/N..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-            />
-          </div>
-
-          {/* Dropdowns */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:flex gap-3 w-full lg:w-auto">
-            
-            {/* Category Selector (Items Only) */}
-            {activeTab === 'items' && (
-              <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full lg:w-48">
-                <Tag className="w-4 h-4 text-gray-400 shrink-0" />
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
-                >
-                  <option value="">Semua Kategori</option>
-                  {allFormCategories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Master Company Selector */}
-            <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full lg:w-56">
-              <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
-              <select
-                value={selectedCompanyMasterId}
-                onChange={(e) => setSelectedCompanyMasterId(e.target.value)}
-                className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
-              >
-                <option value="">Semua Entitas Induk</option>
-                {companyMasters.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
+      {activeTab !== 'analysis' && (
+        <div className="glass-panel p-5 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-gray-250/60 dark:border-slate-800/60 space-y-4">
+          
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+            {/* Search Input */}
+            <div className="relative w-full lg:w-80 group">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
+              <input
+                type="text"
+                placeholder={activeTab === 'invoices' ? "Cari No. Invoice, Supplier, Catatan..." : "Cari Nama, Brand, Invoice, Supplier, S/N..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+              />
             </div>
 
-            {/* Status Selector (Items Only) */}
-            {activeTab === 'items' && (
-              <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full lg:w-48">
-                <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+            {/* Dropdowns */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:flex gap-3 w-full lg:w-auto">
+              
+              {/* Category Selector (Items Only) */}
+              {activeTab === 'items' && (
+                <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full lg:w-48">
+                  <Tag className="w-4.5 h-4.5 text-gray-400 shrink-0" />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
+                  >
+                    <option value="">Semua Kategori</option>
+                    {allFormCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Master Company Selector */}
+              <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full lg:w-56">
+                <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
                 <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  value={selectedCompanyMasterId}
+                  onChange={(e) => setSelectedCompanyMasterId(e.target.value)}
                   className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
                 >
-                  <option value="">Semua Status</option>
-                  {STATUS_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option value="">Semua Entitas Induk</option>
+                  {companyMasters.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
                 </select>
               </div>
-            )}
 
+              {/* Status Selector (Items Only) */}
+              {activeTab === 'items' && (
+                <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full lg:w-48">
+                  <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
+                  >
+                    <option value="">Semua Status</option>
+                    {STATUS_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          {/* Action Button Row */}
+          <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
+            {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
+              <button
+                onClick={handleResetFilters}
+                className="px-4 py-2 border border-gray-255 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/55 text-gray-655 dark:text-slate-350 text-xs font-bold rounded-xl transition"
+              >
+                Reset Filter
+              </button>
+            )}
+            <button
+              onClick={handleRefreshData}
+              disabled={loading}
+              className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
+            >
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+              Proses / Muat Data
+            </button>
           </div>
         </div>
-
-        {/* Action Button Row */}
-        <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
-          {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
-            <button
-              onClick={handleResetFilters}
-              className="px-4 py-2 border border-gray-255 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/55 text-gray-655 dark:text-slate-350 text-xs font-bold rounded-xl transition"
-            >
-              Reset Filter
-            </button>
-          )}
-          <button
-            onClick={handleRefreshData}
-            disabled={loading}
-            className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
-          >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
-            Proses / Muat Data
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Main Content Area (Tab Invoices or Tab Items) */}
       {activeTab === 'invoices' ? (
@@ -961,7 +999,7 @@ export default function Peripherals({ user, token }) {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'items' ? (
         /* ==================== TAB 2: INVENTORY STOCK ITEMS ==================== */
         <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden">
           {loading && peripherals.length === 0 ? (
@@ -1065,6 +1103,225 @@ export default function Peripherals({ user, token }) {
               </table>
             </div>
           )}
+        </div>
+      ) : (
+        /* ==================== TAB 3: COST ANALYSIS ==================== */
+        <div className="space-y-6">
+          {/* Analysis KPI Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            {/* average cost per invoice */}
+            <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 hover:shadow-md transition">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Rata-rata Biaya Invoice</p>
+              <h3 className="text-lg font-black text-rose-500 mt-1 truncate">
+                {formatRupiah(stats.totalInvoices > 0 ? Math.round(stats.totalInvoiceBudget / stats.totalInvoices) : 0)}
+              </h3>
+              <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-1">
+                Total dari {stats.totalInvoices || 0} invoice terdaftar
+              </p>
+            </div>
+
+            {/* most expensive category */}
+            <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 hover:shadow-md transition">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Kategori Pengeluaran Terbesar</p>
+              <h3 className="text-lg font-black text-gray-800 dark:text-slate-100 mt-1 truncate">
+                {analysisData.expensesByCategory?.[0]?.name || '-'}
+              </h3>
+              <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-1">
+                Total: <span className="font-bold text-rose-500">{formatRupiah(analysisData.expensesByCategory?.[0]?.totalCost || 0)}</span>
+              </p>
+            </div>
+
+            {/* top spending company */}
+            <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 hover:shadow-md transition">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Entitas Pembayar Terbesar</p>
+              <h3 className="text-lg font-black text-gray-800 dark:text-slate-100 mt-1 truncate">
+                {analysisData.expensesByCompany?.[0]?.name || '-'}
+              </h3>
+              <p className="text-[9px] text-gray-455 dark:text-slate-500 font-semibold mt-1">
+                Total: <span className="font-bold text-rose-500">{formatRupiah(analysisData.expensesByCompany?.[0]?.totalCost || 0)}</span>
+              </p>
+            </div>
+
+            {/* top supplier */}
+            <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 hover:shadow-md transition">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Supplier/Vendor Terbesar</p>
+              <h3 className="text-lg font-black text-gray-800 dark:text-slate-100 mt-1 truncate">
+                {analysisData.expensesBySupplier?.[0]?.name || '-'}
+              </h3>
+              <p className="text-[9px] text-gray-455 dark:text-slate-500 font-semibold mt-1">
+                Total: <span className="font-bold text-rose-500">{formatRupiah(analysisData.expensesBySupplier?.[0]?.totalCost || 0)}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Monthly Trend Chart */}
+          {analysisData.monthlyTrend && analysisData.monthlyTrend.length > 0 ? (
+            <div className="flex flex-col items-stretch bg-white/80 dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
+                  <TrendingUp className="w-4.5 h-4.5 text-rose-500" />
+                  <span>Tren Pengeluaran Bulanan</span>
+                </h3>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  Hover batang untuk rincian detail
+                </span>
+              </div>
+
+              {/* Chart container */}
+              <div className="relative h-64 flex items-end justify-between gap-2 pt-6 border-b border-gray-200 dark:border-slate-800 pb-1">
+                {analysisData.monthlyTrend.map((item) => {
+                  const maxCost = analysisData.monthlyTrend.reduce((max, x) => Math.max(max, x.totalCost), 0) || 1;
+                  const heightPct = (item.totalCost / maxCost) * 90; // scale to 90% max height
+                  
+                  const [yr, mo] = item.yearMonth.split('-');
+                  const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+                  const formattedLabel = `${monthNames[parseInt(mo, 10) - 1]} ${yr.slice(2)}`;
+
+                  return (
+                    <div key={item.yearMonth} className="flex-1 flex flex-col items-center group relative cursor-pointer">
+                      {/* Tooltip Card */}
+                      <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-955 text-white dark:bg-white dark:text-slate-955 p-3 rounded-xl shadow-xl border border-slate-800 dark:border-gray-200 text-[10px] space-y-1 z-30 w-44 font-semibold -translate-x-1/2 left-1/2 animate-fade-in pointer-events-none">
+                        <div className="font-extrabold border-b border-slate-800 dark:border-gray-150 pb-1 text-center text-xs text-rose-500">
+                          {formattedLabel}
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span className="text-gray-400 dark:text-gray-500">Total Pengeluaran:</span>
+                          <span className="font-bold">{formatRupiah(item.totalCost)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400 dark:text-gray-500">Biaya Jasa/Instalasi:</span>
+                          <span className="font-bold text-amber-500">{formatRupiah(item.serviceCost)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400 dark:text-gray-500">Jumlah Unit Beli:</span>
+                          <span className="font-bold text-blue-500">{item.quantity} Unit</span>
+                        </div>
+                      </div>
+
+                      {/* Visual Bar */}
+                      <div className="w-full bg-slate-100 dark:bg-slate-800/50 rounded-t-lg h-48 flex items-end overflow-hidden">
+                        <div 
+                          className="w-full bg-gradient-to-t from-rose-600 to-rose-400 hover:from-rose-500 hover:to-rose-300 rounded-t-lg transition-all duration-300 shadow-lg group-hover:shadow-rose-500/20"
+                          style={{ height: `${Math.max(heightPct, 4)}%` }}
+                        />
+                      </div>
+
+                      {/* Label */}
+                      <span className="text-[10px] font-bold text-gray-450 dark:text-slate-500 mt-2 block whitespace-nowrap">
+                        {formattedLabel}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white/80 dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200/55 dark:border-slate-800/40 text-center text-xs text-gray-450 font-semibold italic">
+              Belum ada data tren bulanan yang tercatat.
+            </div>
+          )}
+
+          {/* Grid for breakdowns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* 1. Category Breakdown */}
+            <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 space-y-4">
+              <h3 className="font-bold text-xs text-gray-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-wider pb-2 border-b border-gray-100 dark:border-slate-800">
+                <Tag className="w-4 h-4 text-rose-500" />
+                <span>Pengeluaran per Kategori</span>
+              </h3>
+              
+              {analysisData.expensesByCategory && analysisData.expensesByCategory.length > 0 ? (
+                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                  {(() => {
+                    const totalCategoryCost = analysisData.expensesByCategory.reduce((sum, item) => sum + item.totalCost, 0) || 1;
+                    return analysisData.expensesByCategory.map((item) => {
+                      const pct = (item.totalCost / totalCategoryCost) * 100;
+                      return (
+                        <div key={item.name} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-gray-700 dark:text-slate-200">{item.name} ({item.quantity} Unit)</span>
+                            <span className="text-gray-900 dark:text-white font-extrabold">{formatRupiah(item.totalCost)}</span>
+                          </div>
+                          <div className="w-full bg-gray-150 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              ) : (
+                <p className="text-center text-xs text-gray-455 italic py-6">Tidak ada data kategori.</p>
+              )}
+            </div>
+
+            {/* 2. Company Breakdown */}
+            <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 space-y-4">
+              <h3 className="font-bold text-xs text-gray-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-wider pb-2 border-b border-gray-100 dark:border-slate-800">
+                <Building2 className="w-4 h-4 text-rose-500" />
+                <span>Pengeluaran per Entitas</span>
+              </h3>
+              
+              {analysisData.expensesByCompany && analysisData.expensesByCompany.length > 0 ? (
+                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                  {(() => {
+                    const totalCompanyCost = analysisData.expensesByCompany.reduce((sum, item) => sum + item.totalCost, 0) || 1;
+                    return analysisData.expensesByCompany.map((item) => {
+                      const pct = (item.totalCost / totalCompanyCost) * 100;
+                      return (
+                        <div key={item.name} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-gray-700 dark:text-slate-200">{item.name} ({item.invoicesCount} Invoice)</span>
+                            <span className="text-gray-900 dark:text-white font-extrabold">{formatRupiah(item.totalCost)}</span>
+                          </div>
+                          <div className="w-full bg-gray-150 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              ) : (
+                <p className="text-center text-xs text-gray-455 italic py-6">Tidak ada data entitas.</p>
+              )}
+            </div>
+
+            {/* 3. Supplier Breakdown */}
+            <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 space-y-4">
+              <h3 className="font-bold text-xs text-gray-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-wider pb-2 border-b border-gray-100 dark:border-slate-800">
+                <Receipt className="w-4 h-4 text-rose-500" />
+                <span>Pengeluaran per Supplier</span>
+              </h3>
+              
+              {analysisData.expensesBySupplier && analysisData.expensesBySupplier.length > 0 ? (
+                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                  {(() => {
+                    const totalSupplierCost = analysisData.expensesBySupplier.reduce((sum, item) => sum + item.totalCost, 0) || 1;
+                    return analysisData.expensesBySupplier.map((item) => {
+                      const pct = (item.totalCost / totalSupplierCost) * 100;
+                      return (
+                        <div key={item.name} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-gray-700 dark:text-slate-200">{item.name} ({item.invoicesCount} Invoice)</span>
+                            <span className="text-gray-900 dark:text-white font-extrabold">{formatRupiah(item.totalCost)}</span>
+                          </div>
+                          <div className="w-full bg-gray-150 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              ) : (
+                <p className="text-center text-xs text-gray-455 italic py-6">Tidak ada data supplier.</p>
+              )}
+            </div>
+            
+          </div>
         </div>
       )}
 

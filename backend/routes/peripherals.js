@@ -74,6 +74,106 @@ router.get('/stats', verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/peripherals/analysis
+// Aggregates cost by category, company master, supplier, and monthly trends
+router.get('/analysis', verifyToken, async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const invoices = await prisma.peripheralInvoice.findMany({
+      include: {
+        companyMaster: { select: { name: true } },
+        items: {
+          select: { category: true, totalCost: true, quantity: true }
+        }
+      },
+      orderBy: { purchaseDate: 'asc' }
+    });
+
+    const categoryMap = {};
+    const companyMap = {};
+    const supplierMap = {};
+    const monthlyTrendMap = {};
+
+    invoices.forEach(inv => {
+      // Company master breakdown
+      const compName = inv.companyMaster?.name || 'Unknown';
+      if (!companyMap[compName]) {
+        companyMap[compName] = { totalCost: 0, invoicesCount: 0 };
+      }
+      companyMap[compName].totalCost += inv.totalCost;
+      companyMap[compName].invoicesCount += 1;
+
+      // Supplier breakdown
+      const supplier = inv.supplier || 'Unknown';
+      if (!supplierMap[supplier]) {
+        supplierMap[supplier] = { totalCost: 0, invoicesCount: 0 };
+      }
+      supplierMap[supplier].totalCost += inv.totalCost;
+      supplierMap[supplier].invoicesCount += 1;
+
+      // Monthly trend
+      const date = new Date(inv.purchaseDate);
+      const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthlyTrendMap[yearMonth]) {
+        monthlyTrendMap[yearMonth] = { totalCost: 0, serviceCost: 0, quantity: 0 };
+      }
+      monthlyTrendMap[yearMonth].totalCost += inv.totalCost;
+      monthlyTrendMap[yearMonth].serviceCost += inv.serviceCost;
+
+      // Items category breakdown
+      inv.items.forEach(item => {
+        const cat = item.category || 'Unknown';
+        if (!categoryMap[cat]) {
+          categoryMap[cat] = { totalCost: 0, quantity: 0 };
+        }
+        categoryMap[cat].totalCost += item.totalCost;
+        categoryMap[cat].quantity += item.quantity;
+        
+        // Add item quantity to monthly trend
+        monthlyTrendMap[yearMonth].quantity += item.quantity;
+      });
+    });
+
+    // Format maps into sorted arrays
+    const expensesByCategory = Object.entries(categoryMap).map(([name, data]) => ({
+      name,
+      totalCost: data.totalCost,
+      quantity: data.quantity
+    })).sort((a, b) => b.totalCost - a.totalCost);
+
+    const expensesByCompany = Object.entries(companyMap).map(([name, data]) => ({
+      name,
+      totalCost: data.totalCost,
+      invoicesCount: data.invoicesCount
+    })).sort((a, b) => b.totalCost - a.totalCost);
+
+    const expensesBySupplier = Object.entries(supplierMap).map(([name, data]) => ({
+      name,
+      totalCost: data.totalCost,
+      invoicesCount: data.invoicesCount
+    })).sort((a, b) => b.totalCost - a.totalCost);
+
+    const monthlyTrend = Object.entries(monthlyTrendMap).map(([yearMonth, data]) => ({
+      yearMonth,
+      totalCost: data.totalCost,
+      serviceCost: data.serviceCost,
+      quantity: data.quantity
+    })).sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
+
+    res.json({
+      expensesByCategory,
+      expensesByCompany,
+      expensesBySupplier,
+      monthlyTrend
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/peripherals
 // Lists all individual peripheral assets with filters & search
 router.get('/', verifyToken, async (req, res, next) => {
