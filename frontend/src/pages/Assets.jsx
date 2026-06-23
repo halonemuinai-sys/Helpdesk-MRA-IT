@@ -20,7 +20,8 @@ import {
   Cpu,
   FileText,
   DollarSign,
-  ChevronDown
+  ChevronDown,
+  Eye
 } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 import Swal from 'sweetalert2';
@@ -75,6 +76,8 @@ export default function Assets({ user, token }) {
 
   // UI state
   const [expandedRows, setExpandedRows] = useState({});
+  const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
+  const [viewingAsset, setViewingAsset] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -320,6 +323,11 @@ export default function Assets({ user, token }) {
     
     setFormError(null);
     setIsModalOpen(true);
+  };
+
+  const handleOpenViewDrawer = (asset) => {
+    setViewingAsset(asset);
+    setIsViewDrawerOpen(true);
   };
 
   // Helper for Indonesian dates formatting
@@ -832,246 +840,127 @@ export default function Assets({ user, token }) {
                                   (asset.ram && (asset.ram.toLowerCase().includes('4 gb') || asset.ram.toLowerCase().includes('4gb')));
 
                   return (
-                    <React.Fragment key={asset.id}>
-                      <tr 
-                        className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer" 
-                        onClick={() => toggleRow(asset.id)}
-                      >
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <div className={`p-1.5 rounded-lg shrink-0 ${isPhone ? 'bg-indigo-500/10 text-indigo-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                              {isPhone ? <Smartphone className="w-3.5 h-3.5" /> : <Laptop className="w-3.5 h-3.5" />}
-                            </div>
-                            <div className="overflow-hidden">
-                              <h4 className="font-bold text-gray-800 dark:text-slate-100 text-xs truncate max-w-[220px] flex items-center gap-1.5">
-                                <span>{asset.brand} {asset.model}</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase shrink-0 ${
-                                  asset.ownershipType === 'OWNED' 
-                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400' 
-                                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-455'
-                                }`}>
-                                  {asset.ownershipType === 'OWNED' ? 'Milik' : 'Sewa'}
-                                </span>
-                              </h4>
-                              <p className="text-[10px] text-gray-400 font-medium truncate">
-                                CPU: {asset.processor || '-'} | OS: {asset.os || '-'}
-                              </p>
+                    <tr 
+                      key={asset.id}
+                      className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors" 
+                    >
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 rounded-lg shrink-0 ${isPhone ? 'bg-indigo-500/10 text-indigo-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                            {isPhone ? <Smartphone className="w-3.5 h-3.5" /> : <Laptop className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="overflow-hidden">
+                            <h4 className="font-bold text-gray-800 dark:text-slate-100 text-xs truncate max-w-[220px] flex items-center gap-1.5">
+                              <span>{asset.brand} {asset.model}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase shrink-0 ${
+                                asset.ownershipType === 'OWNED' 
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400' 
+                                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-455'
+                              }`}>
+                                {asset.ownershipType === 'OWNED' ? 'Milik' : 'Sewa'}
+                              </span>
+                            </h4>
+                            <p className="text-[10px] text-gray-400 font-medium truncate">
+                              CPU: {asset.processor || '-'} | OS: {asset.os || '-'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div>{asset.assetTag}</div>
+                        {asset.deviceRef && (
+                          <div className="text-[10px] text-rose-500 font-semibold font-mono">
+                            Ref: {asset.deviceRef}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 font-bold text-gray-750 dark:text-slate-350">
+                        {asset.companyMaster?.name || '-'}
+                      </td>
+                      <td className="py-4 px-6">
+                        {asset.user ? (
+                          <div>
+                            <div className="font-bold text-gray-800 dark:text-slate-200">{asset.user.name}</div>
+                            <div className="text-[10px] text-gray-405 dark:text-slate-400 font-medium truncate max-w-[150px]">
+                              {asset.user.department}
                             </div>
                           </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div>{asset.assetTag}</div>
-                          {asset.deviceRef && (
-                            <div className="text-[10px] text-rose-500 font-semibold font-mono">
-                              Ref: {asset.deviceRef}
+                        ) : asset.company ? (
+                          <div>
+                            <div className="font-bold text-slate-700 dark:text-slate-300">Shared / Cabang</div>
+                            <div className="text-[10px] text-gray-405 dark:text-slate-400 font-semibold truncate max-w-[150px]">
+                              {asset.company.location}
                             </div>
-                          )}
-                        </td>
-                        <td className="py-4 px-6 font-bold text-gray-750 dark:text-slate-350">
-                          {asset.companyMaster?.name || '-'}
-                        </td>
-                        <td className="py-4 px-6">
-                          {asset.user ? (
-                            <div>
-                              <div className="font-bold text-gray-800 dark:text-slate-200">{asset.user.name}</div>
-                              <div className="text-[10px] text-gray-400 font-medium truncate max-w-[150px]">
-                                {asset.user.department}
-                              </div>
-                            </div>
-                          ) : asset.company ? (
-                            <div>
-                              <div className="font-bold text-slate-700 dark:text-slate-300">Shared / Cabang</div>
-                              <div className="text-[10px] text-gray-405 dark:text-slate-400 font-semibold truncate max-w-[150px]">
-                                {asset.company.location}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 italic font-medium">Tersedia di IT</span>
-                          )}
-                        </td>
-                        <td className="py-4 px-6 font-mono text-gray-850 dark:text-slate-100 font-bold">
-                          <div>{formatRupiah(asset.rentalCost)}</div>
-                          <div className="text-[8px] font-semibold uppercase tracking-wider mt-0.5">
-                            {asset.ownershipType === 'OWNED' 
-                              ? <span className="text-emerald-500">Harga Beli</span> 
-                              : <span className="text-gray-450">/ bulan</span>}
                           </div>
-                        </td>
-                        <td className="py-4 px-6 font-mono">
-                          {asset.ownershipType === 'OWNED' ? (
-                            <span className="text-gray-400 font-semibold italic text-[10px]">N/A (Milik)</span>
-                          ) : (
-                            <>
-                              <div>{formatDateYYMMDD(asset.rentalEnd)}</div>
-                              {isLeaseExpired ? (
-                                <span className="text-[9px] font-black text-red-500 block">Sewa Habis!</span>
-                              ) : isLeaseNearExpiry ? (
-                                <span className="text-[9px] font-bold text-amber-500 block">{remainingDays} hari sisa sewa</span>
-                              ) : (
-                                <span className="text-[9px] text-slate-400 block">{remainingDays} hari sisa sewa</span>
-                              )}
-                            </>
-                          )}
-                        </td>
-                        <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold ${statusObj.color}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statusObj.dot}`} />
-                            {statusObj.label}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1.5">
-                            {asset.status === 'ASSIGNED' && (
-                              <button
-                                onClick={() => handleOpenBastModal(asset)}
-                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-500 hover:text-indigo-500 rounded-lg transition"
-                                title="Cetak BAST (Serah Terima)"
-                              >
-                                <FileText className="w-3.5 h-3.5" />
-                              </button>
+                        ) : (
+                          <span className="text-gray-400 italic font-medium">Tersedia di IT</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 font-mono text-gray-850 dark:text-slate-100 font-bold">
+                        <div>{formatRupiah(asset.rentalCost)}</div>
+                        <div className="text-[8px] font-semibold uppercase tracking-wider mt-0.5">
+                          {asset.ownershipType === 'OWNED' 
+                            ? <span className="text-emerald-500">Harga Beli</span> 
+                            : <span className="text-gray-450">/ bulan</span>}
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 font-mono">
+                        {asset.ownershipType === 'OWNED' ? (
+                          <span className="text-gray-400 font-semibold italic text-[10px]">N/A (Milik)</span>
+                        ) : (
+                          <>
+                            <div>{formatDateYYMMDD(asset.rentalEnd)}</div>
+                            {isLeaseExpired ? (
+                              <span className="text-[9px] font-black text-red-500 block">Sewa Habis!</span>
+                            ) : isLeaseNearExpiry ? (
+                              <span className="text-[9px] font-bold text-amber-500 block">{remainingDays} hari sisa sewa</span>
+                            ) : (
+                              <span className="text-[9px] text-slate-400 block">{remainingDays} hari sisa sewa</span>
                             )}
+                          </>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold ${statusObj.color}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusObj.dot}`} />
+                          {statusObj.label}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleOpenViewDrawer(asset)}
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-500 hover:text-emerald-500 rounded-lg transition"
+                            title="Lihat Detail Aset"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          {asset.status === 'ASSIGNED' && (
                             <button
-                              onClick={() => handleOpenEditModal(asset)}
-                              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-500 hover:text-rose-500 rounded-lg transition"
-                              title="Edit Detail Aset"
+                              onClick={() => handleOpenBastModal(asset)}
+                              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-500 hover:text-indigo-500 rounded-lg transition"
+                              title="Cetak BAST (Serah Terima)"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
+                              <FileText className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => handleDelete(asset)}
-                              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-500 hover:text-red-555 rounded-lg transition"
-                              title="Hapus Aset"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      {/* Expanded Specification Details & Journey */}
-                      {isExpanded && (
-                        <tr className="bg-slate-50/30 dark:bg-slate-900/15">
-                          <td colSpan="8" className="p-5 border-t border-gray-100 dark:border-slate-850">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                              
-                              {/* Specs */}
-                              <div className="space-y-4">
-                                <h5 className="font-extrabold text-[10px] uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
-                                  <Cpu className="w-3.5 h-3.5 text-rose-500" />
-                                  Spesifikasi Perangkat
-                                </h5>
-
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 bg-white/80 dark:bg-slate-955/40 p-4 rounded-xl border border-gray-150 dark:border-slate-850/60 text-xs text-gray-700 dark:text-slate-300">
-                                  <div>
-                                    <span className="text-[10px] text-gray-400 block font-semibold">BRAND & MODEL:</span>
-                                    <span className="font-bold">{asset.brand} {asset.model}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-gray-400 block font-semibold">PROCESSOR:</span>
-                                    <span className="font-bold">{asset.processor || '-'}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-gray-400 block font-semibold">RAM (MEMORY):</span>
-                                    <span className="font-bold">{asset.ram || '-'}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-gray-400 block font-semibold">STORAGE:</span>
-                                    <span className="font-bold">{asset.storage || '-'}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-gray-400 block font-semibold">OPERATING SYSTEM (OS):</span>
-                                    <span className="font-bold">{asset.os || '-'}</span>
-                                  </div>
-                                  {!isPhone && (
-                                    <div>
-                                      <span className="text-[10px] text-gray-400 block font-semibold">MICROSOFT OFFICE:</span>
-                                      <span className="font-bold">{asset.office || '-'}</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="space-y-1.5 text-xs">
-                                  {asset.vendorRef && (
-                                    <div>
-                                      <span className="text-[10px] text-gray-450 font-bold uppercase">
-                                        {asset.ownershipType === 'OWNED' ? 'NO. INVOICE / PO:' : 'NO. KONTRAK VENDOR (BILLING):'}
-                                      </span>
-                                      <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[11px] font-semibold text-slate-600 dark:text-slate-300 ml-1">
-                                        {asset.vendorRef}
-                                      </code>
-                                    </div>
-                                  )}
-                                  
-                                  {asset.ownershipType === 'RENTAL' && (
-                                    <div>
-                                      <span className="text-[10px] text-gray-455 font-bold uppercase">
-                                        VENDOR PENYEDIA SEWA:
-                                      </span>
-                                      <span className="font-bold text-gray-700 dark:text-slate-350 ml-1.5 uppercase">
-                                        {asset.vendor || (asset.brand && asset.brand.toLowerCase() === 'apple' && asset.model && asset.model.toLowerCase().includes('iphone') ? 'PT Permata Landmarq Abadi' : 'PT Teknologi Skoring Nusantara')}
-                                      </span>
-                                    </div>
-                                  )}
-                                  
-                                  <div>
-                                    <span className="text-[10px] text-gray-455 font-bold uppercase">
-                                      {asset.ownershipType === 'OWNED' ? 'TANGGAL PEMBELIAN:' : 'PERIODE KONTRAK SEWA:'}
-                                    </span>
-                                    <span className="font-bold text-gray-700 dark:text-slate-300 ml-1.5">
-                                      {formatDateYYMMDD(asset.rentalStart)}
-                                      {asset.ownershipType !== 'OWNED' && ` s/d ${formatDateYYMMDD(asset.rentalEnd)}`}
-                                    </span>
-                                  </div>
-
-                                  {asset.company && (
-                                    <div>
-                                      <span className="text-[10px] text-gray-455 font-bold uppercase">LOKASI KANTOR (FISIK):</span>
-                                      <span className="font-bold text-gray-700 dark:text-slate-300 ml-1.5">
-                                        {asset.company.name} ({asset.company.location})
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {asset.notes && (
-                                    <div className="pt-2">
-                                      <span className="text-[10px] text-gray-400 block font-semibold">CATATAN TAMBAHAN:</span>
-                                      <p className="text-gray-500 dark:text-slate-400 bg-white/50 dark:bg-slate-955/20 p-2.5 rounded-lg border border-gray-150/50 dark:border-slate-855/50 whitespace-pre-wrap">
-                                        {asset.notes}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-
-                              </div>
-
-                              {/* Journey / Timeline Log */}
-                              <div className="space-y-4">
-                                <h5 className="font-extrabold text-[10px] uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
-                                  <History className="w-3.5 h-3.5 text-rose-500" />
-                                  Riwayat Aset & Serah Terima (Journey)
-                                </h5>
-
-                                <div className="max-h-52 overflow-y-auto pr-2">
-                                  {(!asset.journey || !asset.journey.trim()) ? (
-                                    <p className="text-xs text-gray-400 italic py-2">Belum ada riwayat aktivitas tercatat.</p>
-                                  ) : (
-                                    <div className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-800 space-y-3 py-1 text-xs">
-                                      {asset.journey.split('\n').filter(Boolean).map((line, idx) => (
-                                        <div key={idx} className="relative">
-                                          <span className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white dark:border-slate-900" />
-                                          <div className="font-semibold text-gray-700 dark:text-slate-350">{line}</div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
+                          )}
+                          <button
+                            onClick={() => handleOpenEditModal(asset)}
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-500 hover:text-rose-500 rounded-lg transition"
+                            title="Edit Detail Aset"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(asset)}
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-500 hover:text-red-555 rounded-lg transition"
+                            title="Hapus Aset"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -2094,12 +1983,223 @@ export default function Assets({ user, token }) {
                 </div>
 
               </div>
-
             </div>
           </div>
         </div>,
         document.body
       )}
+
+      {/* View Detail Drawer */}
+      {isViewDrawerOpen && viewingAsset && createPortal((
+        <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-955/60 backdrop-blur-sm transition-opacity cursor-pointer animate-fade-in"
+            onClick={() => { setIsViewDrawerOpen(false); setViewingAsset(null); }}
+          />
+          
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border-l border-gray-150 dark:border-slate-800 shadow-2xl flex flex-col h-full animate-slide-left overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center p-5 border-b border-gray-150 dark:border-slate-850">
+              <div className="flex items-center gap-2">
+                <div className={`p-2 rounded-xl ${
+                  (viewingAsset.brand && viewingAsset.brand.toLowerCase() === 'apple' && viewingAsset.model && viewingAsset.model.toLowerCase().includes('iphone'))
+                    ? 'bg-indigo-500/10 text-indigo-500' 
+                    : 'bg-rose-500/10 text-rose-500'
+                }`}>
+                  {(viewingAsset.brand && viewingAsset.brand.toLowerCase() === 'apple' && viewingAsset.model && viewingAsset.model.toLowerCase().includes('iphone')) 
+                    ? <Smartphone className="w-5 h-5" /> 
+                    : <Laptop className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                    <span>{viewingAsset.brand} {viewingAsset.model}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                      viewingAsset.ownershipType === 'OWNED' 
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400' 
+                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-455'
+                    }`}>
+                      {viewingAsset.ownershipType === 'OWNED' ? 'Milik' : 'Sewa'}
+                    </span>
+                  </h3>
+                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5 font-mono">
+                    Tag Aset: {viewingAsset.assetTag} {viewingAsset.deviceRef ? `| Ref: ${viewingAsset.deviceRef}` : ''}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setIsViewDrawerOpen(false); setViewingAsset(null); }}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs font-semibold text-gray-700 dark:text-slate-350">
+              
+              {/* Status Badge */}
+              <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-955/20 p-3 rounded-xl border border-gray-150 dark:border-slate-850">
+                <span className="text-gray-400 uppercase tracking-wider text-[10px]">Status Perangkat:</span>
+                <span className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider ${
+                  (STATUS_OPTIONS.find(o => o.value === viewingAsset.status) || STATUS_OPTIONS[0]).color
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    (STATUS_OPTIONS.find(o => o.value === viewingAsset.status) || STATUS_OPTIONS[0]).dot
+                  }`} />
+                  {(STATUS_OPTIONS.find(o => o.value === viewingAsset.status) || STATUS_OPTIONS[0]).label}
+                </span>
+              </div>
+
+              {/* Specs */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 border-b border-gray-100 dark:border-slate-800 pb-2">
+                  <Cpu className="w-3.5 h-3.5 text-rose-500" />
+                  Spesifikasi Perangkat
+                </h4>
+                <div className="grid grid-cols-2 gap-3 bg-slate-50/50 dark:bg-slate-955/20 p-4 rounded-xl border border-gray-150/60 dark:border-slate-850/60">
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">Brand & Model</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{viewingAsset.brand} {viewingAsset.model}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">Processor</span>
+                    <span className="font-bold text-gray-950 dark:text-slate-200">{viewingAsset.processor || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">RAM (Memory)</span>
+                    <span className="font-bold text-gray-950 dark:text-slate-200">{viewingAsset.ram || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">Storage</span>
+                    <span className="font-bold text-gray-955 dark:text-slate-200">{viewingAsset.storage || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">Operating System (OS)</span>
+                    <span className="font-bold text-gray-950 dark:text-slate-200">{viewingAsset.os || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">Microsoft Office</span>
+                    <span className="font-bold text-gray-955 dark:text-slate-200">{viewingAsset.office || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financials & Lease info */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 border-b border-gray-100 dark:border-slate-800 pb-2">
+                  <DollarSign className="w-3.5 h-3.5 text-rose-500" />
+                  Informasi Finansial & Sewa
+                </h4>
+                <div className="space-y-2 bg-slate-50/50 dark:bg-slate-955/20 p-4 rounded-xl border border-gray-150/60 dark:border-slate-850/60">
+                  <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-slate-850/40">
+                    <span className="text-gray-400">Entitas Master:</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{viewingAsset.companyMaster?.name || '-'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-slate-850/40">
+                    <span className="text-gray-400">Pengguna / Cabang:</span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {viewingAsset.user ? `${viewingAsset.user.name} (${viewingAsset.user.department})` : viewingAsset.company ? `Shared / ${viewingAsset.company.location}` : 'Tersedia di IT'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-slate-850/40">
+                    <span className="text-gray-400">{viewingAsset.ownershipType === 'OWNED' ? 'Harga Pembelian:' : 'Biaya Sewa Bulanan:'}</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{formatRupiah(viewingAsset.rentalCost)}</span>
+                  </div>
+                  {viewingAsset.vendorRef && (
+                    <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-slate-850/40">
+                      <span className="text-gray-400">{viewingAsset.ownershipType === 'OWNED' ? 'No. Invoice / PO:' : 'No. Kontrak Vendor:'}</span>
+                      <span className="font-mono font-bold text-gray-900 dark:text-white">{viewingAsset.vendorRef}</span>
+                    </div>
+                  )}
+                  {viewingAsset.ownershipType === 'RENTAL' && (
+                    <>
+                      <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-slate-850/40">
+                        <span className="text-gray-400">Vendor Penyedia:</span>
+                        <span className="font-bold text-gray-900 dark:text-white">{viewingAsset.vendor || '-'}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-slate-850/40">
+                        <span className="text-gray-400">Periode Kontrak Sewa:</span>
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          {formatDateYYMMDD(viewingAsset.rentalStart)} s/d {formatDateYYMMDD(viewingAsset.rentalEnd)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {viewingAsset.ownershipType === 'OWNED' && (
+                    <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-slate-850/40">
+                      <span className="text-gray-400">Tanggal Pembelian:</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{formatDateYYMMDD(viewingAsset.rentalStart)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Notes */}
+              {viewingAsset.notes && (
+                <div className="space-y-2">
+                  <span className="text-[10px] text-gray-400 uppercase tracking-wider block">Catatan Tambahan:</span>
+                  <p className="text-gray-600 dark:text-slate-350 bg-slate-50/50 dark:bg-slate-955/20 p-3 rounded-lg border border-gray-150 dark:border-slate-855/60 whitespace-pre-wrap">
+                    {viewingAsset.notes}
+                  </p>
+                </div>
+              )}
+
+              {/* Journey / Timeline Log */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 border-b border-gray-100 dark:border-slate-800 pb-2">
+                  <History className="w-3.5 h-3.5 text-rose-500" />
+                  Riwayat Aset & Serah Terima (Journey)
+                </h4>
+                <div className="bg-slate-50/30 dark:bg-slate-955/10 p-4 rounded-xl border border-gray-150 dark:border-slate-855/50 max-h-60 overflow-y-auto">
+                  {(!viewingAsset.journey || !viewingAsset.journey.trim()) ? (
+                    <p className="text-gray-400 italic py-2 text-center">Belum ada riwayat aktivitas tercatat.</p>
+                  ) : (
+                    <div className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-800 space-y-4 py-1 text-xs">
+                      {viewingAsset.journey.split('\n').filter(Boolean).map((line, idx) => (
+                        <div key={idx} className="relative">
+                          <span className="absolute -left-[21px] top-1.5 w-2 h-2 rounded-full bg-rose-500 border border-white dark:border-slate-900" />
+                          <div className="font-semibold text-gray-700 dark:text-slate-300">{line}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-5 border-t border-gray-150 dark:border-slate-855 bg-slate-50/50 dark:bg-slate-955/20 flex justify-end gap-3">
+              {viewingAsset.status === 'ASSIGNED' && (
+                <button
+                  onClick={() => { handleOpenBastModal(viewingAsset); setIsViewDrawerOpen(false); }}
+                  className="flex items-center gap-1.5 px-4 py-2 border border-gray-250 dark:border-slate-855 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300 text-xs font-bold rounded-xl transition"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Cetak BAST
+                </button>
+              )}
+              <button
+                onClick={() => { handleOpenEditModal(viewingAsset); setIsViewDrawerOpen(false); }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                Edit Aset
+              </button>
+              <button
+                onClick={() => { setIsViewDrawerOpen(false); setViewingAsset(null); }}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-bold rounded-xl transition"
+              >
+                Tutup
+              </button>
+            </div>
+
+          </div>
+        </div>
+      ), document.body)}
 
     </div>
   );
