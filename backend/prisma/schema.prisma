@@ -347,7 +347,8 @@ model PeripheralInvoice {
   poRef           String?            // Nomor PO (optional)
   supplier        String             // Nama Supplier
   purchaseDate    DateTime           // Tanggal Invoice
-  serviceCost     Float              @default(0) // Biaya jasa / instalasi
+  serviceCost     Float              @default(0) // Total biaya jasa / instalasi (sum of serviceCostBreakdown)
+  serviceCostBreakdown Json?         // Rincian biaya jasa per item: [{ description, cost }]
   deliveryCost    Float              @default(0) // Ongkir (optional)
   taxCost         Float              @default(0) // Pajak (optional)
   totalCost       Float              // Total pengeluaran invoice

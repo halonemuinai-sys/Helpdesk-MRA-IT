@@ -4,6 +4,24 @@ const { verifyToken } = require('../api/authMiddleware');
 
 const router = express.Router();
 
+// Normalizes the service cost breakdown array and sums it into the total service cost.
+// Falls back to the raw serviceCost value when no breakdown rows are provided (legacy clients).
+function processServiceCostBreakdown(serviceCostBreakdown, fallbackServiceCost) {
+  if (!Array.isArray(serviceCostBreakdown) || serviceCostBreakdown.length === 0) {
+    return { serviceCost: parseFloat(fallbackServiceCost) || 0, breakdown: null };
+  }
+
+  const breakdown = serviceCostBreakdown
+    .map(row => ({
+      description: (row.description || '').trim(),
+      cost: parseFloat(row.cost) || 0
+    }))
+    .filter(row => row.description || row.cost);
+
+  const serviceCost = breakdown.reduce((sum, row) => sum + row.cost, 0);
+  return { serviceCost, breakdown: breakdown.length > 0 ? breakdown : null };
+}
+
 // GET /api/peripherals/stats
 // Returns global stats and list of unique categories in use
 router.get('/stats', verifyToken, async (req, res, next) => {
@@ -331,6 +349,7 @@ router.post('/invoices', verifyToken, async (req, res, next) => {
       supplier,
       purchaseDate,
       serviceCost,
+      serviceCostBreakdown,
       deliveryCost,
       taxCost,
       notes,
@@ -351,7 +370,7 @@ router.post('/invoices', verifyToken, async (req, res, next) => {
       return res.status(400).json({ error: `Nomor invoice "${invoiceRef}" sudah terdaftar di sistem.` });
     }
 
-    const parsedService = parseFloat(serviceCost) || 0;
+    const { serviceCost: parsedService, breakdown: serviceBreakdown } = processServiceCostBreakdown(serviceCostBreakdown, serviceCost);
     const parsedDelivery = parseFloat(deliveryCost) || 0;
     const parsedTax = parseFloat(taxCost) || 0;
 
@@ -398,6 +417,7 @@ router.post('/invoices', verifyToken, async (req, res, next) => {
           supplier: supplier.trim(),
           purchaseDate: new Date(purchaseDate),
           serviceCost: parsedService,
+          serviceCostBreakdown: serviceBreakdown,
           deliveryCost: parsedDelivery,
           taxCost: parsedTax,
           totalCost,
@@ -445,6 +465,7 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
       supplier,
       purchaseDate,
       serviceCost,
+      serviceCostBreakdown,
       deliveryCost,
       taxCost,
       notes,
@@ -475,7 +496,7 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
       }
     }
 
-    const parsedService = parseFloat(serviceCost) || 0;
+    const { serviceCost: parsedService, breakdown: serviceBreakdown } = processServiceCostBreakdown(serviceCostBreakdown, serviceCost);
     const parsedDelivery = parseFloat(deliveryCost) || 0;
     const parsedTax = parseFloat(taxCost) || 0;
 
@@ -571,6 +592,7 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
           supplier: supplier.trim(),
           purchaseDate: new Date(purchaseDate),
           serviceCost: parsedService,
+          serviceCostBreakdown: serviceBreakdown,
           deliveryCost: parsedDelivery,
           taxCost: parsedTax,
           totalCost,

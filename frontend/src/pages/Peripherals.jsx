@@ -102,7 +102,7 @@ export default function Peripherals({ user, token }) {
   const [formPoRef, setFormPoRef] = useState('');
   const [formSupplier, setFormSupplier] = useState('');
   const [formPurchaseDate, setFormPurchaseDate] = useState('');
-  const [formServiceCost, setFormServiceCost] = useState('');
+  const [formServiceItems, setFormServiceItems] = useState([{ description: '', cost: '' }]);
   const [formDeliveryCost, setFormDeliveryCost] = useState('');
   const [formTaxCost, setFormTaxCost] = useState('');
   const [formNotes, setFormNotes] = useState('');
@@ -593,6 +593,27 @@ export default function Peripherals({ user, token }) {
     handleUpdateItemField(index, 'purchaseCost', formatted);
   };
 
+  // Form service row helpers (a single invoice can have multiple service/labor charges)
+  const handleAddServiceRow = () => {
+    setFormServiceItems(prev => [...prev, { description: '', cost: '' }]);
+  };
+
+  const handleRemoveServiceRow = (index) => {
+    setFormServiceItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateServiceField = (index, field, value) => {
+    setFormServiceItems(prev => {
+      const next = [...prev];
+      next[index][field] = value;
+      return next;
+    });
+  };
+
+  const handleServiceCostChange = (index, val) => {
+    handleUpdateServiceField(index, 'cost', formatCostDigits(val));
+  };
+
   // Dynamic cost calculation in Form Drawer
   const calculateTotalInvoiceCost = () => {
     let itemsCost = 0;
@@ -601,7 +622,7 @@ export default function Peripherals({ user, token }) {
       const qty = parseInt(item.quantity) || 1;
       itemsCost += cost * qty;
     });
-    const service = parseFloat(formServiceCost.toString().replace(/\./g, '')) || 0;
+    const service = formServiceItems.reduce((sum, svc) => sum + (parseFloat(svc.cost.toString().replace(/\./g, '')) || 0), 0);
     const delivery = parseFloat(formDeliveryCost.toString().replace(/\./g, '')) || 0;
     const tax = parseFloat(formTaxCost.toString().replace(/\./g, '')) || 0;
     return itemsCost + service + delivery + tax;
@@ -614,7 +635,7 @@ export default function Peripherals({ user, token }) {
     setFormPoRef('');
     setFormSupplier('');
     setFormPurchaseDate('');
-    setFormServiceCost('');
+    setFormServiceItems([{ description: '', cost: '' }]);
     setFormDeliveryCost('');
     setFormTaxCost('');
     setFormNotes('');
@@ -643,7 +664,17 @@ export default function Peripherals({ user, token }) {
       setFormSupplier(invoice.supplier);
       setFormPurchaseDate(invoice.purchaseDate ? invoice.purchaseDate.split('T')[0] : '');
       
-      setFormServiceCost(invoice.serviceCost ? parseInt(invoice.serviceCost, 10).toLocaleString('id-ID') : '');
+      if (Array.isArray(invoice.serviceCostBreakdown) && invoice.serviceCostBreakdown.length > 0) {
+        setFormServiceItems(invoice.serviceCostBreakdown.map(svc => ({
+          description: svc.description || '',
+          cost: svc.cost ? parseInt(svc.cost, 10).toLocaleString('id-ID') : ''
+        })));
+      } else if (invoice.serviceCost) {
+        // Legacy invoice: only a lump total was stored, no itemized breakdown
+        setFormServiceItems([{ description: 'Biaya Jasa', cost: parseInt(invoice.serviceCost, 10).toLocaleString('id-ID') }]);
+      } else {
+        setFormServiceItems([{ description: '', cost: '' }]);
+      }
       setFormDeliveryCost(invoice.deliveryCost ? parseInt(invoice.deliveryCost, 10).toLocaleString('id-ID') : '');
       setFormTaxCost(invoice.taxCost ? parseInt(invoice.taxCost, 10).toLocaleString('id-ID') : '');
       
@@ -724,7 +755,27 @@ export default function Peripherals({ user, token }) {
       });
     }
 
-    const serviceCostNum = parseFloat(formServiceCost.toString().replace(/\./g, '')) || 0;
+    // Validate and format service cost rows (description required only if a row has any content)
+    const validatedServiceItems = [];
+    for (let i = 0; i < formServiceItems.length; i++) {
+      const svc = formServiceItems[i];
+      if (!svc.description && !svc.cost) continue; // skip fully empty rows
+
+      if (!svc.description || !svc.cost) {
+        setFormError(`Harap lengkapi deskripsi dan biaya pada baris jasa ke-${i + 1}`);
+        setSubmitting(false);
+        return;
+      }
+      const cost = parseFloat(svc.cost.toString().replace(/\./g, ''));
+      if (isNaN(cost) || cost < 0) {
+        setFormError(`Biaya pada baris jasa ke-${i + 1} tidak valid.`);
+        setSubmitting(false);
+        return;
+      }
+      validatedServiceItems.push({ description: svc.description.trim(), cost });
+    }
+
+    const serviceCostNum = validatedServiceItems.reduce((sum, svc) => sum + svc.cost, 0);
     const deliveryCostNum = parseFloat(formDeliveryCost.toString().replace(/\./g, '')) || 0;
     const taxCostNum = parseFloat(formTaxCost.toString().replace(/\./g, '')) || 0;
 
@@ -734,6 +785,7 @@ export default function Peripherals({ user, token }) {
       supplier: formSupplier.trim(),
       purchaseDate: formPurchaseDate,
       serviceCost: serviceCostNum,
+      serviceCostBreakdown: validatedServiceItems,
       deliveryCost: deliveryCostNum,
       taxCost: taxCostNum,
       notes: formNotes ? formNotes.trim() : null,
@@ -1818,22 +1870,57 @@ export default function Peripherals({ user, token }) {
                       2. Biaya Tambahan Jasa & Pengiriman (Expense Non-Inventory)
                     </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      
-                      {/* Service / Labor Cost */}
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider">Biaya Jasa / Setting (Rp)</label>
-                        <div className="relative">
-                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-gray-400">Rp</span>
-                          <input
-                            type="text"
-                            value={formServiceCost}
-                            onChange={(e) => setFormServiceCost(formatCostDigits(e.target.value))}
-                            placeholder="0"
-                            className="w-full pl-9 pr-4 py-2 text-xs font-bold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                          />
-                        </div>
+                    {/* Service / Labor Cost (multiple rows allowed, e.g. instalasi + setting + training) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider">Biaya Jasa / Instalasi (Rp)</label>
+                        <button
+                          type="button"
+                          onClick={handleAddServiceRow}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10px] rounded-lg shadow-sm transition"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Tambah Jasa
+                        </button>
                       </div>
+
+                      {formServiceItems.length === 0 ? (
+                        <p className="text-[10px] text-gray-400 dark:text-slate-500 italic py-1">Tidak ada biaya jasa pada invoice ini.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {formServiceItems.map((svc, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={svc.description}
+                                onChange={(e) => handleUpdateServiceField(index, 'description', e.target.value)}
+                                placeholder="e.g. Jasa Instalasi CCTV"
+                                className="flex-1 px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                              />
+                              <div className="relative w-44 shrink-0">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-gray-400">Rp</span>
+                                <input
+                                  type="text"
+                                  value={svc.cost}
+                                  onChange={(e) => handleServiceCostChange(index, e.target.value)}
+                                  placeholder="0"
+                                  className="w-full pl-9 pr-3 py-2 text-xs font-bold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveServiceRow(index)}
+                                className="p-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition shrink-0"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                       {/* Delivery Cost */}
                       <div className="space-y-1">
