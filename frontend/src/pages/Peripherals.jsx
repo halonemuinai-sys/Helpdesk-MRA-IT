@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { 
+import { motion } from 'framer-motion';
+import {
   Package, 
   Plus, 
   Search, 
@@ -78,11 +79,15 @@ export default function Peripherals({ user, token }) {
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const isMounted = useRef(false);
+
+  // Tracks whether each tab's data has been explicitly loaded at least once
+  // (data only loads on demand via the "Proses / Muat Data" button, never automatically)
+  const [invoicesLoaded, setInvoicesLoaded] = useState(false);
+  const [itemsLoaded, setItemsLoaded] = useState(false);
+  const [analysisLoaded, setAnalysisLoaded] = useState(false);
 
   // UI state
   const [expandedRows, setExpandedRows] = useState({});
@@ -112,23 +117,8 @@ export default function Peripherals({ user, token }) {
   const activeCategories = dbCategories.length > 0 ? dbCategories.map(c => c.name) : DEFAULT_CATEGORIES;
   const allFormCategories = Array.from(new Set([...activeCategories, ...stats.categories]));
 
-  // Debounce search query by 300ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Trigger loading automatically on filter/tab changes
-  useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      return;
-    }
-    handleRefreshData();
-  }, [debouncedSearchQuery, selectedStatus, selectedCompanyMasterId, selectedCategory, activeTab]);
-
+  // Data is loaded strictly on demand via the "Proses / Muat Data" button — opening the
+  // page, switching tabs, and changing filters never auto-fetch the invoice/items/analysis data.
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -152,17 +142,26 @@ export default function Peripherals({ user, token }) {
       setError(null);
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      // 1. Fetch Master Companies
-      const masterRes = await fetch(`${API_URL}/companies/master`, { headers });
-      if (!masterRes.ok) throw new Error('Gagal memuat data perusahaan induk.');
-      const masterData = await masterRes.json();
-      setCompanyMasters(masterData);
+      // 1. Fetch Master Companies (non-blocking: a transient failure here must not
+      // prevent the main invoice/items table from loading below)
+      try {
+        const masterRes = await fetch(`${API_URL}/companies/master`, { headers });
+        if (masterRes.ok) {
+          setCompanyMasters(await masterRes.json());
+        }
+      } catch (masterErr) {
+        console.error("Gagal memuat data perusahaan induk:", masterErr);
+      }
 
       // 2. Fetch Companies (Branch locations)
-      const branchRes = await fetch(`${API_URL}/companies`, { headers });
-      if (!branchRes.ok) throw new Error('Gagal memuat data kantor cabang.');
-      const branchData = await branchRes.json();
-      setCompanies(branchData);
+      try {
+        const branchRes = await fetch(`${API_URL}/companies`, { headers });
+        if (branchRes.ok) {
+          setCompanies(await branchRes.json());
+        }
+      } catch (branchErr) {
+        console.error("Gagal memuat data kantor cabang:", branchErr);
+      }
 
       // 3. Fetch Peripheral Category Metadata
       try {
@@ -175,8 +174,6 @@ export default function Peripherals({ user, token }) {
         console.error("Gagal memuat kategori dari database:", catErr);
       }
 
-      // Load initial lists
-      await handleRefreshData();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -192,7 +189,7 @@ export default function Peripherals({ user, token }) {
 
       const params = new URLSearchParams();
       if (selectedCompanyMasterId) params.append('companyMasterId', selectedCompanyMasterId);
-      if (debouncedSearchQuery && debouncedSearchQuery.trim() !== '') params.append('search', debouncedSearchQuery.trim());
+      if (searchQuery && searchQuery.trim() !== '') params.append('search', searchQuery.trim());
 
       const queryString = params.toString() ? `?${params.toString()}` : '';
       const res = await fetch(`${API_URL}/peripherals/invoices${queryString}`, { headers });
@@ -203,10 +200,11 @@ export default function Peripherals({ user, token }) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setInvoicesLoaded(true);
     }
   };
 
-  const fetchPeripherals = async (currentSearch = debouncedSearchQuery) => {
+  const fetchPeripherals = async (currentSearch = searchQuery) => {
     try {
       setLoading(true);
       setError(null);
@@ -228,6 +226,7 @@ export default function Peripherals({ user, token }) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setItemsLoaded(true);
     }
   };
 
@@ -244,6 +243,7 @@ export default function Peripherals({ user, token }) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setAnalysisLoaded(true);
     }
   };
 
@@ -1064,9 +1064,9 @@ export default function Peripherals({ user, token }) {
       </div>
 
       {/* Control Filter Bar */}
-      {activeTab !== 'analysis' && (
-        <div className="glass-panel p-5 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-gray-250/60 dark:border-slate-800/60 space-y-4">
-          
+      <div className="glass-panel p-5 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-gray-250/60 dark:border-slate-800/60 space-y-4">
+
+        {activeTab !== 'analysis' && (
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             {/* Search Input */}
             <div className="relative w-full lg:w-80 group">
@@ -1082,7 +1082,7 @@ export default function Peripherals({ user, token }) {
 
             {/* Dropdowns */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:flex gap-3 w-full lg:w-auto">
-              
+
               {/* Category Selector (Items Only) */}
               {activeTab === 'items' && (
                 <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full lg:w-48">
@@ -1134,32 +1134,38 @@ export default function Peripherals({ user, token }) {
 
             </div>
           </div>
+        )}
 
-          {/* Action Button Row */}
-          <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
-            {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
-              <button
-                onClick={handleResetFilters}
-                className="px-4 py-2 border border-gray-255 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/55 text-gray-655 dark:text-slate-350 text-xs font-bold rounded-xl transition"
-              >
-                Reset Filter
-              </button>
-            )}
+        {/* Action Button Row */}
+        <div className={`flex justify-end items-center gap-3 ${activeTab !== 'analysis' ? 'pt-3 border-t border-gray-150 dark:border-slate-800/60' : ''}`}>
+          {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
             <button
-              onClick={handleRefreshData}
-              disabled={loading}
-              className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
+              onClick={handleResetFilters}
+              className="px-4 py-2 border border-gray-255 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/55 text-gray-655 dark:text-slate-350 text-xs font-bold rounded-xl transition"
             >
-              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
-              Proses / Muat Data
+              Reset Filter
             </button>
-          </div>
+          )}
+          <button
+            onClick={handleRefreshData}
+            disabled={loading}
+            className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+            Proses / Muat Data
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Main Content Area (Tab Invoices or Tab Items) */}
       {activeTab === 'invoices' ? (
         /* ==================== TAB 1: INVOICES ==================== */
+        !invoicesLoaded && !loading ? (
+          <PendingProcessPlaceholder
+            title="Filter & Proses Data Invoice"
+            description={'Pilih kriteria pencarian dan filter di atas (opsional), lalu klik tombol "Proses / Muat Data" untuk menampilkan data invoice pembelian periferal.'}
+          />
+        ) : (
         <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden">
           {loading && invoices.length === 0 ? (
             <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
@@ -1304,8 +1310,15 @@ export default function Peripherals({ user, token }) {
             </div>
           )}
         </div>
+        )
       ) : activeTab === 'items' ? (
         /* ==================== TAB 2: INVENTORY STOCK ITEMS ==================== */
+        !itemsLoaded && !loading ? (
+          <PendingProcessPlaceholder
+            title="Filter & Proses Data Aset"
+            description={'Pilih kriteria pencarian dan filter di atas (opsional), lalu klik tombol "Proses / Muat Data" untuk menampilkan data aset/stok periferal.'}
+          />
+        ) : (
         <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden">
           {loading && peripherals.length === 0 ? (
             <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
@@ -1416,8 +1429,20 @@ export default function Peripherals({ user, token }) {
             </div>
           )}
         </div>
+        )
       ) : (
         /* ==================== TAB 3: COST ANALYSIS ==================== */
+        !analysisLoaded && !loading ? (
+          <PendingProcessPlaceholder
+            title="Proses Analisa Biaya"
+            description={'Klik tombol "Proses / Muat Data" di atas untuk menampilkan analisa biaya pembelian periferal.'}
+          />
+        ) : !analysisLoaded ? (
+          <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden py-20 text-center flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
+            <span className="text-xs text-gray-500 font-semibold">Memuat Analisa Biaya...</span>
+          </div>
+        ) : (
         <div className="space-y-6">
           {/* Analysis KPI Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1632,9 +1657,10 @@ export default function Peripherals({ user, token }) {
                 <p className="text-center text-xs text-gray-455 italic py-6">Tidak ada data supplier.</p>
               )}
             </div>
-            
+
           </div>
         </div>
+        )
       )}
 
       {/* CRUD Form Modal (Side Drawer) */}
@@ -2299,5 +2325,143 @@ function InvoiceItemsSubtable({ invoiceId, token, formatRupiah, statusOptions, o
         );
       })}
     </>
+  );
+}
+
+// Idle/searching radar animation shown in a tab before "Proses / Muat Data" has been clicked
+function SearchingRadarAnimation() {
+  return (
+    <div className="relative w-44 h-44 flex items-center justify-center select-none pointer-events-none mb-3">
+      {/* Background Pulse Rings */}
+      <motion.div
+        className="absolute w-32 h-32 rounded-full border border-rose-500/20 dark:border-rose-400/10 bg-rose-500/5 dark:bg-rose-400/5"
+        animate={{ scale: [0.9, 1.2, 0.9], opacity: [0.3, 0.6, 0.3] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute w-40 h-40 rounded-full border border-amber-500/15 dark:border-amber-400/5"
+        animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      />
+
+      {/* Rotating Radar Sweep Ring */}
+      <motion.div
+        className="absolute w-36 h-36 rounded-full border border-dashed border-rose-500/30 dark:border-rose-400/20"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+      />
+
+      {/* Rotating sweep gradient */}
+      <div className="absolute w-36 h-36 overflow-hidden rounded-full pointer-events-none z-10">
+        <motion.div
+          className="w-full h-full bg-gradient-to-tr from-transparent via-transparent to-rose-500/10 origin-center"
+          style={{ transformOrigin: '50% 50%' }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        />
+      </div>
+
+      {/* Animated Floating Nodes */}
+      <motion.div
+        className="absolute w-2 h-2 rounded-full bg-rose-500 top-10 left-14 shadow-lg shadow-rose-500/50"
+        animate={{ scale: [0.6, 1.2, 0.6], opacity: [0.3, 1, 0.3] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+      />
+      <motion.div
+        className="absolute w-1.5 h-1.5 rounded-full bg-amber-500 bottom-14 right-10 shadow-lg shadow-amber-500/50"
+        animate={{ scale: [0.5, 1.2, 0.5], opacity: [0.2, 1, 0.2] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+      />
+      <motion.div
+        className="absolute w-1.5 h-1.5 rounded-full bg-emerald-500 top-16 right-14 shadow-lg shadow-emerald-500/50"
+        animate={{ scale: [0.5, 1.2, 0.5], opacity: [0.2, 1, 0.2] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+      />
+
+      {/* Center Icon: floating Package outline */}
+      <motion.div
+        className="relative z-20 w-14 h-14 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-900/5 dark:shadow-black/40"
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <svg
+          className="w-7 h-7 text-rose-500"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <motion.path
+            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2.5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+          />
+          <motion.polyline
+            points="3.27 6.96 12 12.01 20.73 6.96"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2.5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut", delay: 0.3 }}
+          />
+          <motion.line
+            x1="12"
+            y1="22.08"
+            x2="12"
+            y2="12"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2.5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut", delay: 0.6 }}
+          />
+        </svg>
+      </motion.div>
+    </div>
+  );
+}
+
+// Wrapper card for the "not yet loaded" placeholder shown before "Proses / Muat Data" is clicked
+function PendingProcessPlaceholder({ title, description }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      className="relative bg-white/60 dark:bg-slate-900/55 border border-gray-250/60 dark:border-slate-800/50 rounded-3xl p-12 text-center shadow-sm flex flex-col items-center justify-center min-h-[380px] overflow-hidden"
+    >
+      {/* Floating abstract backdrop blur circles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
+        <motion.div
+          className="absolute w-40 h-40 rounded-full bg-rose-500/5 -top-12 -left-12 blur-2xl"
+          animate={{ x: [0, 20, 0], y: [0, 15, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute w-44 h-44 rounded-full bg-amber-500/5 -bottom-16 -right-16 blur-2xl"
+          animate={{ x: [0, -20, 0], y: [0, -15, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
+      <SearchingRadarAnimation />
+
+      <motion.h3
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+        className="text-sm font-black text-gray-800 dark:text-white relative z-10"
+      >
+        {title}
+      </motion.h3>
+
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.28, duration: 0.4 }}
+        className="text-gray-500 dark:text-slate-400 text-xs max-w-sm mt-3 leading-relaxed relative z-10"
+      >
+        {description}
+      </motion.p>
+    </motion.div>
   );
 }
