@@ -14,12 +14,63 @@ function processServiceCostBreakdown(serviceCostBreakdown, fallbackServiceCost) 
   const breakdown = serviceCostBreakdown
     .map(row => ({
       description: (row.description || '').trim(),
-      cost: parseFloat(row.cost) || 0
+      cost: parseFloat(row.cost) || 0,
+      isSubscription: !!row.isSubscription,
+      category: row.category || 'Subscription',
+      billingCycle: row.billingCycle || '1 Tahun',
+      subscriptionId: row.subscriptionId || null
     }))
     .filter(row => row.description || row.cost);
 
   const serviceCost = breakdown.reduce((sum, row) => sum + row.cost, 0);
   return { serviceCost, breakdown: breakdown.length > 0 ? breakdown : null };
+}
+
+// Mirrors the billing-cycle math used on the IT Subscriptions page (e.g. "1 Tahun" -> +1 year)
+function calculateExpiryDate(startDate, billingCycle) {
+  const expiry = new Date(startDate);
+  if (billingCycle.includes('Tahun')) {
+    const years = parseInt(billingCycle, 10) || 1;
+    expiry.setFullYear(expiry.getFullYear() + years);
+  } else {
+    const months = parseInt(billingCycle, 10) || 1;
+    expiry.setMonth(expiry.getMonth() + months);
+  }
+  return expiry;
+}
+
+// Auto-creates an ITSubscription for each service-breakdown row flagged as recurring that
+// isn't linked to one yet, so the cloud/service subscription shows up in IT Subscriptions &
+// Renewals without having to be entered twice. Returns the breakdown with subscriptionId filled in.
+async function createSubscriptionsForServiceBreakdown(tx, breakdown, { supplier, purchaseDate, fileLink, companyMasterId, invoiceRef }) {
+  if (!breakdown || !breakdown.some(row => row.isSubscription && !row.subscriptionId)) {
+    return breakdown;
+  }
+
+  const updated = [];
+  for (const row of breakdown) {
+    if (row.isSubscription && !row.subscriptionId) {
+      const subscription = await tx.iTSubscription.create({
+        data: {
+          category: row.category || 'Subscription',
+          vendor: supplier,
+          name: row.description,
+          billingCycle: row.billingCycle || '1 Tahun',
+          cost: row.cost,
+          startDate: new Date(purchaseDate),
+          expiryDate: calculateExpiryDate(purchaseDate, row.billingCycle || '1 Tahun'),
+          status: 'ACTIVE',
+          evidenceLink: fileLink || null,
+          notes: `Dibuat otomatis dari Invoice ${invoiceRef} (IT Peripherals Purchase).`,
+          companyMasterId: companyMasterId || null
+        }
+      });
+      updated.push({ ...row, subscriptionId: subscription.id });
+    } else {
+      updated.push(row);
+    }
+  }
+  return updated;
 }
 
 // GET /api/peripherals/stats
@@ -433,6 +484,21 @@ router.post('/invoices', verifyToken, async (req, res, next) => {
         }
       });
 
+      const finalBreakdown = await createSubscriptionsForServiceBreakdown(tx, serviceBreakdown, {
+        supplier: supplier.trim(),
+        purchaseDate,
+        fileLink,
+        companyMasterId: companyMasterId ? parseInt(companyMasterId) : null,
+        invoiceRef: invoiceRef.trim()
+      });
+      if (finalBreakdown !== serviceBreakdown) {
+        await tx.peripheralInvoice.update({
+          where: { id: invoice.id },
+          data: { serviceCostBreakdown: finalBreakdown }
+        });
+        invoice.serviceCostBreakdown = finalBreakdown;
+      }
+
       return invoice;
     });
 
@@ -582,7 +648,16 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
         }
       }
 
-      // 3. Update Invoice
+      // 3. Auto-create subscriptions for any newly-flagged recurring service rows
+      const finalBreakdown = await createSubscriptionsForServiceBreakdown(tx, serviceBreakdown, {
+        supplier: supplier.trim(),
+        purchaseDate,
+        fileLink,
+        companyMasterId: companyMasterId ? parseInt(companyMasterId) : null,
+        invoiceRef: invoiceRef.trim()
+      });
+
+      // 4. Update Invoice
       const totalCost = itemsTotal + parsedService + parsedDelivery + parsedTax;
       const updatedInvoice = await tx.peripheralInvoice.update({
         where: { id },
@@ -592,7 +667,7 @@ router.put('/invoices/:id', verifyToken, async (req, res, next) => {
           supplier: supplier.trim(),
           purchaseDate: new Date(purchaseDate),
           serviceCost: parsedService,
-          serviceCostBreakdown: serviceBreakdown,
+          serviceCostBreakdown: finalBreakdown,
           deliveryCost: parsedDelivery,
           taxCost: parsedTax,
           totalCost,

@@ -25,11 +25,17 @@ import {
   Receipt,
   TrendingUp,
   Download,
-  Eye
+  Eye,
+  Repeat
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Mirrors the options used on the IT Subscriptions & Renewals page, so a service row
+// flagged as recurring creates a subscription record consistent with that page's data.
+const SUBSCRIPTION_CATEGORIES = ['Hosting', 'Domain', 'VPN', 'ISP', 'Subscription', 'Security', 'Others'];
+const BILLING_CYCLES = ['1 Bulan', '3 Bulan', '6 Bulan', '1 Tahun', '2 Tahun', '3 Tahun'];
 
 const STATUS_OPTIONS = [
   { value: 'STOCK', label: 'Tersedia (Stok)', color: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400', dot: 'bg-emerald-500' },
@@ -102,7 +108,9 @@ export default function Peripherals({ user, token }) {
   const [formPoRef, setFormPoRef] = useState('');
   const [formSupplier, setFormSupplier] = useState('');
   const [formPurchaseDate, setFormPurchaseDate] = useState('');
-  const [formServiceItems, setFormServiceItems] = useState([{ description: '', cost: '' }]);
+  const [formServiceItems, setFormServiceItems] = useState([
+    { description: '', cost: '', isSubscription: false, category: 'Subscription', billingCycle: '1 Tahun', subscriptionId: null }
+  ]);
   const [formDeliveryCost, setFormDeliveryCost] = useState('');
   const [formTaxCost, setFormTaxCost] = useState('');
   const [formNotes, setFormNotes] = useState('');
@@ -595,7 +603,10 @@ export default function Peripherals({ user, token }) {
 
   // Form service row helpers (a single invoice can have multiple service/labor charges)
   const handleAddServiceRow = () => {
-    setFormServiceItems(prev => [...prev, { description: '', cost: '' }]);
+    setFormServiceItems(prev => [
+      ...prev,
+      { description: '', cost: '', isSubscription: false, category: 'Subscription', billingCycle: '1 Tahun', subscriptionId: null }
+    ]);
   };
 
   const handleRemoveServiceRow = (index) => {
@@ -635,7 +646,9 @@ export default function Peripherals({ user, token }) {
     setFormPoRef('');
     setFormSupplier('');
     setFormPurchaseDate('');
-    setFormServiceItems([{ description: '', cost: '' }]);
+    setFormServiceItems([
+      { description: '', cost: '', isSubscription: false, category: 'Subscription', billingCycle: '1 Tahun', subscriptionId: null }
+    ]);
     setFormDeliveryCost('');
     setFormTaxCost('');
     setFormNotes('');
@@ -667,13 +680,22 @@ export default function Peripherals({ user, token }) {
       if (Array.isArray(invoice.serviceCostBreakdown) && invoice.serviceCostBreakdown.length > 0) {
         setFormServiceItems(invoice.serviceCostBreakdown.map(svc => ({
           description: svc.description || '',
-          cost: svc.cost ? parseInt(svc.cost, 10).toLocaleString('id-ID') : ''
+          cost: svc.cost ? parseInt(svc.cost, 10).toLocaleString('id-ID') : '',
+          isSubscription: !!svc.subscriptionId,
+          category: svc.category || 'Subscription',
+          billingCycle: svc.billingCycle || '1 Tahun',
+          subscriptionId: svc.subscriptionId || null
         })));
       } else if (invoice.serviceCost) {
         // Legacy invoice: only a lump total was stored, no itemized breakdown
-        setFormServiceItems([{ description: 'Biaya Jasa', cost: parseInt(invoice.serviceCost, 10).toLocaleString('id-ID') }]);
+        setFormServiceItems([{
+          description: 'Biaya Jasa', cost: parseInt(invoice.serviceCost, 10).toLocaleString('id-ID'),
+          isSubscription: false, category: 'Subscription', billingCycle: '1 Tahun', subscriptionId: null
+        }]);
       } else {
-        setFormServiceItems([{ description: '', cost: '' }]);
+        setFormServiceItems([
+          { description: '', cost: '', isSubscription: false, category: 'Subscription', billingCycle: '1 Tahun', subscriptionId: null }
+        ]);
       }
       setFormDeliveryCost(invoice.deliveryCost ? parseInt(invoice.deliveryCost, 10).toLocaleString('id-ID') : '');
       setFormTaxCost(invoice.taxCost ? parseInt(invoice.taxCost, 10).toLocaleString('id-ID') : '');
@@ -772,7 +794,14 @@ export default function Peripherals({ user, token }) {
         setSubmitting(false);
         return;
       }
-      validatedServiceItems.push({ description: svc.description.trim(), cost });
+      validatedServiceItems.push({
+        description: svc.description.trim(),
+        cost,
+        isSubscription: !!svc.isSubscription,
+        category: svc.category || 'Subscription',
+        billingCycle: svc.billingCycle || '1 Tahun',
+        subscriptionId: svc.subscriptionId || null
+      });
     }
 
     const serviceCostNum = validatedServiceItems.reduce((sum, svc) => sum + svc.cost, 0);
@@ -818,13 +847,16 @@ export default function Peripherals({ user, token }) {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || 'Gagal menyimpan data.');
 
+      const newSubscriptionsCount = validatedServiceItems.filter(svc => svc.isSubscription && !svc.subscriptionId).length;
+
       setIsModalOpen(false);
       Swal.fire({
         icon: 'success',
         title: isEditMode ? 'Invoice Diperbarui!' : 'Invoice Terdaftar!',
-        text: `Invoice ${formInvoiceRef} berhasil disimpan dengan ${validatedItems.length} item.`,
+        text: `Invoice ${formInvoiceRef} berhasil disimpan dengan ${validatedItems.length} item.` +
+          (newSubscriptionsCount > 0 ? ` ${newSubscriptionsCount} biaya jasa otomatis dibuat sebagai Subscription baru di IT Subscriptions & Renewals.` : ''),
         confirmButtonColor: '#f43f5e',
-        timer: 2000
+        timer: newSubscriptionsCount > 0 ? 3500 : 2000
       });
 
       handleRefreshData();
@@ -1889,31 +1921,78 @@ export default function Peripherals({ user, token }) {
                       ) : (
                         <div className="space-y-2">
                           {formServiceItems.map((svc, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={svc.description}
-                                onChange={(e) => handleUpdateServiceField(index, 'description', e.target.value)}
-                                placeholder="e.g. Jasa Instalasi CCTV"
-                                className="flex-1 px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                              />
-                              <div className="relative w-44 shrink-0">
-                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-gray-400">Rp</span>
+                            <div key={index} className="p-2.5 rounded-xl border border-gray-150 dark:border-slate-800/60 bg-gray-50/40 dark:bg-slate-950/20 space-y-2">
+                              <div className="flex items-center gap-2">
                                 <input
                                   type="text"
-                                  value={svc.cost}
-                                  onChange={(e) => handleServiceCostChange(index, e.target.value)}
-                                  placeholder="0"
-                                  className="w-full pl-9 pr-3 py-2 text-xs font-bold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                                  value={svc.description}
+                                  onChange={(e) => handleUpdateServiceField(index, 'description', e.target.value)}
+                                  placeholder="e.g. Jasa Instalasi CCTV"
+                                  className="flex-1 px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                                 />
+                                <div className="relative w-44 shrink-0">
+                                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-extrabold text-gray-400">Rp</span>
+                                  <input
+                                    type="text"
+                                    value={svc.cost}
+                                    onChange={(e) => handleServiceCostChange(index, e.target.value)}
+                                    placeholder="0"
+                                    className="w-full pl-9 pr-3 py-2 text-xs font-bold rounded-xl bg-white dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveServiceRow(index)}
+                                  className="p-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition shrink-0"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveServiceRow(index)}
-                                className="p-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition shrink-0"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+
+                              {/* Recurring / Subscription toggle */}
+                              <div className="flex flex-wrap items-center gap-3 pl-1">
+                                <label className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider cursor-pointer ${svc.subscriptionId ? 'text-emerald-600 dark:text-emerald-450' : 'text-gray-500 dark:text-slate-400'}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={svc.isSubscription}
+                                    disabled={!!svc.subscriptionId}
+                                    onChange={(e) => handleUpdateServiceField(index, 'isSubscription', e.target.checked)}
+                                    className="w-3.5 h-3.5 rounded accent-rose-500 cursor-pointer disabled:cursor-not-allowed"
+                                  />
+                                  <Repeat className="w-3 h-3" />
+                                  {svc.subscriptionId ? 'Sudah Terhubung ke Subscription' : 'Jadikan Biaya Berulang (Auto-buat Subscription)'}
+                                </label>
+
+                                {svc.isSubscription && (
+                                  <>
+                                    <select
+                                      value={svc.category}
+                                      disabled={!!svc.subscriptionId}
+                                      onChange={(e) => handleUpdateServiceField(index, 'category', e.target.value)}
+                                      className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-white dark:bg-slate-955/40 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      {SUBSCRIPTION_CATEGORIES.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                      ))}
+                                    </select>
+                                    <select
+                                      value={svc.billingCycle}
+                                      disabled={!!svc.subscriptionId}
+                                      onChange={(e) => handleUpdateServiceField(index, 'billingCycle', e.target.value)}
+                                      className="px-2 py-1 text-[10px] font-semibold rounded-lg bg-white dark:bg-slate-955/40 border border-gray-200 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      {BILLING_CYCLES.map(cycle => (
+                                        <option key={cycle} value={cycle}>{cycle}</option>
+                                      ))}
+                                    </select>
+                                    {!svc.subscriptionId && (
+                                      <span className="text-[9px] text-gray-400 dark:text-slate-500 italic">
+                                        Akan otomatis dibuat di "IT Subscriptions & Renewals" saat disimpan.
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
