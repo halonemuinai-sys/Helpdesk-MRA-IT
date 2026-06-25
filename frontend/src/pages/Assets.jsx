@@ -24,6 +24,7 @@ import {
   Eye
 } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
+import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
 import Swal from 'sweetalert2';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -55,11 +56,12 @@ export default function Assets({ user, token }) {
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const isMounted = useRef(false);
+
+  // Data loads strictly on demand via the "Proses / Muat Data" button — never automatically
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
   // KPI Stats state
   const [kpiStats, setKpiStats] = useState({
@@ -115,26 +117,11 @@ export default function Assets({ user, token }) {
   const [bastAgentName, setBastAgentName] = useState('');
   const [bastNotes, setBastNotes] = useState('');
 
+  // Data is loaded strictly on demand via the "Proses / Muat Data" button — opening the
+  // page and changing filters never auto-fetch the asset list.
   useEffect(() => {
     fetchInitialData();
   }, []);
-
-  // Debounce search query by 300ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Trigger asset loading automatically on filter changes
-  useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      return;
-    }
-    fetchAssets(debouncedSearchQuery);
-  }, [debouncedSearchQuery, selectedStatus, selectedCompanyMasterId, selectedCategory]);
 
   // Handle click outside searchable user dropdown to close it
   useEffect(() => {
@@ -168,29 +155,36 @@ export default function Assets({ user, token }) {
       setError(null);
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      // 1. Fetch Master Companies
-      const masterRes = await fetch(`${API_URL}/companies/master`, { headers });
-      if (!masterRes.ok) throw new Error('Gagal memuat data perusahaan induk.');
-      const masterData = await masterRes.json();
-      setCompanyMasters(masterData);
+      // 1. Fetch Master Companies (non-blocking: a transient failure here must not
+      // prevent the main asset table from loading when "Proses / Muat Data" is clicked)
+      try {
+        const masterRes = await fetch(`${API_URL}/companies/master`, { headers });
+        if (masterRes.ok) {
+          setCompanyMasters(await masterRes.json());
+        }
+      } catch (masterErr) {
+        console.error("Gagal memuat data perusahaan induk:", masterErr);
+      }
 
       // 2. Fetch Companies (Branch locations)
-      const branchRes = await fetch(`${API_URL}/companies`, { headers });
-      if (!branchRes.ok) throw new Error('Gagal memuat data kantor cabang.');
-      const branchData = await branchRes.json();
-      setCompanies(branchData);
+      try {
+        const branchRes = await fetch(`${API_URL}/companies`, { headers });
+        if (branchRes.ok) {
+          setCompanies(await branchRes.json());
+        }
+      } catch (branchErr) {
+        console.error("Gagal memuat data kantor cabang:", branchErr);
+      }
 
       // 3. Fetch Users (Employees)
-      const usersRes = await fetch(`${API_URL}/users`, { headers });
-      if (!usersRes.ok) throw new Error('Gagal memuat data karyawan.');
-      const usersData = await usersRes.json();
-      setUsers(usersData);
-
-      // 4. Load assets and stats automatically on mount
-      await Promise.all([
-        fetchStats(),
-        fetchAssets()
-      ]);
+      try {
+        const usersRes = await fetch(`${API_URL}/users`, { headers });
+        if (usersRes.ok) {
+          setUsers(await usersRes.json());
+        }
+      } catch (usersErr) {
+        console.error("Gagal memuat data karyawan:", usersErr);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -220,13 +214,14 @@ export default function Assets({ user, token }) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setAssetsLoaded(true);
     }
   };
 
   const handleRefreshData = async () => {
     await Promise.all([
       fetchStats(),
-      fetchAssets(debouncedSearchQuery)
+      fetchAssets(searchQuery)
     ]);
   };
 
@@ -785,19 +780,33 @@ export default function Assets({ user, token }) {
         </div>
 
         {/* Action Button Row */}
-        {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
-          <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
+        <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
+          {(searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory) && (
             <button
               onClick={handleResetFilters}
               className="px-4 py-2 border border-gray-250 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-600 dark:text-slate-350 text-xs font-bold rounded-xl transition"
             >
               Clear Filters
             </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={handleRefreshData}
+            disabled={loading}
+            className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+            Proses / Muat Data
+          </button>
+        </div>
       </div>
 
       {/* Main Asset List */}
+      {!assetsLoaded && !loading ? (
+        <PendingProcessPlaceholder
+          title="Filter & Proses Data Aset"
+          description={'Pilih kriteria pencarian dan filter di atas (opsional), lalu klik tombol "Proses / Muat Data" untuk menampilkan data inventaris aset IT.'}
+        />
+      ) : (
       <div className="glass-panel rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 overflow-hidden">
         {loading && assets.length === 0 ? (
           <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
@@ -968,6 +977,7 @@ export default function Assets({ user, token }) {
           </div>
         )}
       </div>
+      )}
 
       {/* CRUD Form Modal */}
       {isModalOpen && createPortal(
