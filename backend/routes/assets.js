@@ -163,25 +163,24 @@ router.post('/', verifyToken, async (req, res, next) => {
     if (req.user.role === 'USER') {
       return res.status(403).json({ error: 'Access denied.' });
     }
-    const { 
-      assetTag, 
-      deviceRef, 
-      vendorRef, 
-      brand, 
-      model, 
-      processor, 
-      ram, 
-      storage, 
-      os, 
-      office, 
+    let { assetTag, deviceRef } = req.body;
+    const {
+      vendorRef,
+      brand,
+      model,
+      processor,
+      ram,
+      storage,
+      os,
+      office,
       ownershipType,
-      status, 
-      rentalCost, 
-      rentalStart, 
-      rentalEnd, 
-      notes, 
-      userId, 
-      companyId, 
+      status,
+      rentalCost,
+      rentalStart,
+      rentalEnd,
+      notes,
+      userId,
+      companyId,
       companyMasterId,
       vendor
     } = req.body;
@@ -189,6 +188,11 @@ router.post('/', verifyToken, async (req, res, next) => {
     if (!assetTag || !brand || !model || rentalCost === undefined || !rentalStart || !rentalEnd) {
       return res.status(400).json({ error: 'Missing mandatory fields.' });
     }
+
+    // Trim defensively — stray leading/trailing whitespace on assetTag/deviceRef has
+    // previously caused GA sync to treat the same physical device as two different ones.
+    assetTag = assetTag.trim();
+    if (deviceRef) deviceRef = deviceRef.trim();
 
     // Check if assetTag or deviceRef already exists
     const duplicateTag = await prisma.asset.findUnique({
@@ -274,9 +278,8 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
     const { id } = req.params;
+    let { assetTag, deviceRef } = req.body;
     const {
-      assetTag,
-      deviceRef,
       vendorRef,
       brand,
       model,
@@ -305,6 +308,11 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (!current) {
       return res.status(404).json({ error: 'Asset not found.' });
     }
+
+    // Trim defensively — stray whitespace has previously caused GA sync to treat the
+    // same physical device as two different ones.
+    if (assetTag !== undefined && assetTag !== null) assetTag = assetTag.trim();
+    if (deviceRef !== undefined && deviceRef !== null) deviceRef = deviceRef.trim();
 
     // Check unique constraints for tag and ref if changed
     if (assetTag && assetTag !== current.assetTag) {

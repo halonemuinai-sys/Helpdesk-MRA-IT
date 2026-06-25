@@ -655,4 +655,79 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/reports/expiring-soon
+// Combines Asset (rental) lease expiry and IT Subscription expiry within the next N days
+// (default 30) so the dashboard can surface both with a single call.
+router.get('/expiring-soon', verifyToken, async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const days = parseInt(req.query.days, 10) || 30;
+    const now = new Date();
+    const horizon = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+    const assets = await prisma.asset.findMany({
+      where: {
+        ownershipType: 'RENTAL',
+        status: { not: 'DISPOSED' },
+        rentalEnd: { lte: horizon }
+      },
+      select: {
+        id: true, assetTag: true, brand: true, model: true, rentalEnd: true,
+        user: { select: { name: true } },
+        companyMaster: { select: { name: true } }
+      },
+      orderBy: { rentalEnd: 'asc' }
+    });
+
+    const subscriptions = await prisma.iTSubscription.findMany({
+      where: {
+        status: 'ACTIVE',
+        expiryDate: { lte: horizon }
+      },
+      select: {
+        id: true, name: true, vendor: true, expiryDate: true,
+        companyMaster: { select: { name: true } }
+      },
+      orderBy: { expiryDate: 'asc' }
+    });
+
+    const toItem = (type, expiryDate) => {
+      const diffDays = Math.ceil((new Date(expiryDate) - now) / (1000 * 60 * 60 * 24));
+      return { type, expiryDate, diffDays, isExpired: diffDays < 0 };
+    };
+
+    const assetItems = assets.map(a => ({
+      ...toItem('ASSET', a.rentalEnd),
+      id: a.id,
+      label: `${a.brand} ${a.model}`,
+      tag: a.assetTag,
+      assignedTo: a.user?.name || null,
+      entity: a.companyMaster?.name || null
+    }));
+
+    const subscriptionItems = subscriptions.map(s => ({
+      ...toItem('SUBSCRIPTION', s.expiryDate),
+      id: s.id,
+      label: s.name,
+      tag: s.vendor,
+      assignedTo: null,
+      entity: s.companyMaster?.name || null
+    }));
+
+    const combined = [...assetItems, ...subscriptionItems].sort((a, b) => a.diffDays - b.diffDays);
+
+    res.json({
+      days,
+      total: combined.length,
+      expiredCount: combined.filter(i => i.isExpired).length,
+      items: combined
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

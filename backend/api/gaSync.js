@@ -96,6 +96,21 @@ async function findExistingDeviceRentalId(asset, previousAssetTag) {
   return null;
 }
 
+// Records the outcome of a sync attempt on the Asset itself, so the UI can show it
+// (gaSyncStatus/gaSyncedAt/gaSyncError). Best-effort: never throws.
+async function recordSyncResult(assetId, success, errorMessage) {
+  try {
+    await prisma.asset.update({
+      where: { id: assetId },
+      data: success
+        ? { gaSyncStatus: 'SYNCED', gaSyncedAt: new Date(), gaSyncError: null }
+        : { gaSyncStatus: 'FAILED', gaSyncError: errorMessage }
+    });
+  } catch (err) {
+    console.error(`Failed to record GA sync status for asset ${assetId}:`, err.message);
+  }
+}
+
 // Pushes/updates one Helpdesk Asset into GA's device_rentals. No-op for OWNED assets
 // (GA's device_rentals concept is rental-only) and for assets without a valid asset id.
 // Pass previousAssetTag when the caller just renamed assetTag, so the existing GA row gets
@@ -110,6 +125,7 @@ async function syncAssetToGA(assetId, previousAssetTag) {
 
     if (asset.status === 'DISPOSED') {
       await deleteAssetFromGA(asset.assetTag, [previousAssetTag, asset.deviceRef]);
+      await recordSyncResult(assetId, true);
       return;
     }
 
@@ -125,7 +141,9 @@ async function syncAssetToGA(assetId, previousAssetTag) {
     const orderId = asset.vendorRef || asset.deviceRef || null;
 
     if (!companyId) {
-      console.error(`GA sync skipped for asset ${asset.assetTag}: no resolvable company.`);
+      const msg = 'No resolvable company in GA for this asset.';
+      console.error(`GA sync skipped for asset ${asset.assetTag}: ${msg}`);
+      await recordSyncResult(assetId, false, msg);
       return;
     }
 
@@ -150,8 +168,11 @@ async function syncAssetToGA(assetId, previousAssetTag) {
         asset.rentalStart, asset.rentalEnd, userId, department, 'Active'
       );
     }
+
+    await recordSyncResult(assetId, true);
   } catch (err) {
     console.error(`GA sync failed for asset ${assetId}:`, err.message);
+    await recordSyncResult(assetId, false, err.message);
   }
 }
 

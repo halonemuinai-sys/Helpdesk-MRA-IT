@@ -446,8 +446,8 @@ export default function Assets({ user, token }) {
       };
 
       const payload = {
-        assetTag: finalAssetTag,
-        deviceRef: formDeviceRef || null,
+        assetTag: finalAssetTag.trim(),
+        deviceRef: formDeviceRef ? formDeviceRef.trim() : null,
         vendorRef: formOwnershipType === 'RENTAL' ? (formVendorRef || null) : 'Milik Sendiri',
         brand: formBrand,
         model: formModel,
@@ -887,6 +887,7 @@ export default function Assets({ user, token }) {
                   <th className="py-4 px-6 text-center cursor-pointer hover:text-gray-600 dark:hover:text-slate-300 transition" onClick={() => handleSort('status')}>
                     <span className="flex items-center justify-center gap-1">Status {renderSortIcon('status')}</span>
                   </th>
+                  <th className="py-4 px-6 text-center">Sync GA</th>
                   <th className="py-4 px-6 text-right">Aksi</th>
                 </tr>
               </thead>
@@ -992,6 +993,32 @@ export default function Assets({ user, token }) {
                           <span className={`w-1.5 h-1.5 rounded-full ${statusObj.dot}`} />
                           {statusObj.label}
                         </span>
+                      </td>
+                      <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
+                        {asset.ownershipType !== 'RENTAL' ? (
+                          <span className="text-[10px] text-gray-350 dark:text-slate-600">-</span>
+                        ) : asset.gaSyncStatus === 'SYNCED' ? (
+                          <span
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 cursor-help"
+                            title={`Tersinkron ke GA${asset.gaSyncedAt ? ' pada ' + new Date(asset.gaSyncedAt).toLocaleString('id-ID') : ''}`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </span>
+                        ) : asset.gaSyncStatus === 'FAILED' ? (
+                          <span
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 cursor-help"
+                            title={`Sync GA Gagal: ${asset.gaSyncError || 'Tidak ada detail error.'}`}
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 cursor-help"
+                            title="Belum pernah disinkronkan ke GA."
+                          >
+                            <Clock className="w-3.5 h-3.5" />
+                          </span>
+                        )}
                       </td>
                       <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
@@ -1405,6 +1432,11 @@ export default function Assets({ user, token }) {
                             className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition font-mono"
                             required={formOwnershipType === 'RENTAL'}
                           />
+                          {formOwnershipType === 'RENTAL' && (
+                            <p className="text-[9px] text-gray-400 dark:text-slate-500 italic">
+                              Nilai ini otomatis dipakai sebagai Tag Aset & kode sync ke GA — pastikan tidak ada spasi/penulisan ganda.
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-1">

@@ -258,7 +258,12 @@ model Asset {
   
   companyMasterId Int?          // Legal master company owning the lease contract
   companyMaster   CompanyMaster? @relation(fields: [companyMasterId], references: [id], onDelete: SetNull)
-  
+
+  // Mirror status into GLC Apps (GA) IT Rental records — see backend/api/gaSync.js
+  gaSyncStatus    String?       @default("PENDING") // PENDING, SYNCED, FAILED
+  gaSyncedAt      DateTime?     // Last successful sync timestamp
+  gaSyncError     String?       // Error message from the last failed attempt
+
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
