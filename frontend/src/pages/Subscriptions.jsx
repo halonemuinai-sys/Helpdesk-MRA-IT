@@ -45,6 +45,7 @@ export default function Subscriptions({ user, token }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
 
   // UI state
   const [expandedRows, setExpandedRows] = useState({});
@@ -103,6 +104,7 @@ export default function Subscriptions({ user, token }) {
       const params = new URLSearchParams();
       if (selectedCategory) params.append('category', selectedCategory);
       if (selectedStatus) params.append('status', selectedStatus);
+      if (selectedCompanyMasterId) params.append('companyMasterId', selectedCompanyMasterId);
       if (searchQuery) params.append('search', searchQuery);
 
       const queryString = params.toString() ? `?${params.toString()}` : '';
@@ -126,6 +128,7 @@ export default function Subscriptions({ user, token }) {
   const handleResetFilters = () => {
     setSelectedCategory('');
     setSelectedStatus('');
+    setSelectedCompanyMasterId('');
     setSearchQuery('');
     setSubscriptions([]);
     setHasProcessed(false);
@@ -808,7 +811,8 @@ export default function Subscriptions({ user, token }) {
       (sub.notes && sub.notes.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesCategory = selectedCategory === '' || sub.category === selectedCategory;
-    
+    const matchesCompanyMaster = selectedCompanyMasterId === '' || sub.companyMasterId === parseInt(selectedCompanyMasterId, 10);
+
     // Status filter
     let matchesStatus = true;
     if (selectedStatus === 'ACTIVE') {
@@ -819,7 +823,7 @@ export default function Subscriptions({ user, token }) {
       matchesStatus = sub.status === 'INACTIVE';
     }
 
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesCategory && matchesCompanyMaster && matchesStatus;
   });
 
   if (loading) {
@@ -951,6 +955,21 @@ export default function Subscriptions({ user, token }) {
                 <option value="">Semua Kategori</option>
                 {CATEGORIES.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Company Master Selector */}
+            <div className="flex items-center gap-2 bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-850/50 px-3 py-2.5 rounded-xl w-full md:w-56">
+              <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
+              <select
+                value={selectedCompanyMasterId}
+                onChange={(e) => setSelectedCompanyMasterId(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-gray-700 dark:text-slate-200 focus:outline-none w-full cursor-pointer"
+              >
+                <option value="">Semua Perusahaan</option>
+                {companies.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>

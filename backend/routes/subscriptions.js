@@ -11,7 +11,7 @@ router.get('/', verifyToken, async (req, res, next) => {
     if (req.user.role === 'USER') {
       return res.status(403).json({ error: 'Access denied.' });
     }
-    const { category, status, search, limit, skip } = req.query;
+    const { category, status, companyMasterId, search, limit, skip } = req.query;
 
     const where = {};
     if (category) {
@@ -19,6 +19,9 @@ router.get('/', verifyToken, async (req, res, next) => {
     }
     if (status) {
       where.status = status;
+    }
+    if (companyMasterId) {
+      where.companyMasterId = parseInt(companyMasterId, 10);
     }
     if (search) {
       where.OR = [

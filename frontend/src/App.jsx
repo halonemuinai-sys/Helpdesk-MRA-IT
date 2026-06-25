@@ -20,6 +20,7 @@ import WifiAps from './pages/WifiAps';
 import Subscriptions from './pages/Subscriptions';
 import Assets from './pages/Assets';
 import Peripherals from './pages/Peripherals';
+import ITCostOverview from './pages/ITCostOverview';
 import RentalAnalysis from './pages/RentalAnalysis';
 import Approvals from './pages/Approvals';
 import AuditTrail from './pages/AuditTrail';
@@ -243,6 +244,14 @@ export default function App() {
               element={
                 <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
                   <RentalAnalysis user={user} token={token} darkMode={darkMode} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/it-cost-overview"
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <ITCostOverview user={user} token={token} darkMode={darkMode} />
                 </ProtectedRoute>
               }
             />

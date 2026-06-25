@@ -484,4 +484,172 @@ router.put('/rental-budget/company', verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/reports/it-cost-overview
+// Combines IT Peripherals purchases, Asset rental costs, and IT Subscriptions into a
+// single 12-month spend overview, broken down by month and by company master entity.
+router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const { companyMasterId, year } = req.query;
+    const parsedCompanyMasterId = companyMasterId ? parseInt(companyMasterId, 10) : null;
+
+    // Build the months window: either Jan-Dec of an explicitly selected year, or
+    // (default, no year given) the trailing 12 months ending at the current month.
+    const now = new Date();
+    const months = [];
+    if (year) {
+      const targetYear = parseInt(year, 10);
+      for (let m = 0; m < 12; m++) {
+        months.push({
+          yearMonth: `${targetYear}-${String(m + 1).padStart(2, '0')}`,
+          year: targetYear,
+          month: m
+        });
+      }
+    } else {
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({
+          yearMonth: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+          year: d.getFullYear(),
+          month: d.getMonth()
+        });
+      }
+    }
+    const rangeStart = new Date(months[0].year, months[0].month, 1);
+    const rangeEnd = new Date(months[11].year, months[11].month + 1, 0, 23, 59, 59, 999);
+
+    // 1. Peripherals invoices dated within the window
+    const invoices = await prisma.peripheralInvoice.findMany({
+      where: {
+        purchaseDate: { gte: rangeStart, lte: rangeEnd },
+        ...(parsedCompanyMasterId ? { companyMasterId: parsedCompanyMasterId } : {})
+      },
+      include: { companyMaster: { select: { name: true } } }
+    });
+
+    // 2. Rental assets active at any point within the window
+    const rentalAssets = await prisma.asset.findMany({
+      where: {
+        ownershipType: 'RENTAL',
+        rentalStart: { lte: rangeEnd },
+        rentalEnd: { gte: rangeStart },
+        ...(parsedCompanyMasterId ? { companyMasterId: parsedCompanyMasterId } : {})
+      },
+      include: { companyMaster: { select: { name: true } } }
+    });
+
+    // 3. Subscriptions actually paid (started/renewed) within the window — cash basis,
+    // same as Peripherals invoices: the full cost lands in the month it was actually paid,
+    // not spread across the months the subscription happens to cover.
+    const subscriptions = await prisma.iTSubscription.findMany({
+      where: {
+        startDate: { gte: rangeStart, lte: rangeEnd },
+        ...(parsedCompanyMasterId ? { companyMasterId: parsedCompanyMasterId } : {})
+      },
+      include: { companyMaster: { select: { name: true } } }
+    });
+
+    // Per-entity-per-month buckets: bucket[yearMonth][entityName] = { peripherals, assetsRental, subscriptions }
+    const bucket = {};
+    months.forEach(m => { bucket[m.yearMonth] = {}; });
+    const ensureBucket = (yearMonth, entityName) => {
+      if (!bucket[yearMonth][entityName]) {
+        bucket[yearMonth][entityName] = { peripherals: 0, assetsRental: 0, subscriptions: 0 };
+      }
+      return bucket[yearMonth][entityName];
+    };
+
+    invoices.forEach(inv => {
+      const d = new Date(inv.purchaseDate);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!bucket[ym]) return;
+      const entityName = inv.companyMaster?.name || 'Tanpa Entitas';
+      ensureBucket(ym, entityName).peripherals += inv.totalCost;
+    });
+
+    // Subscriptions: cash basis, full cost in the month actually paid (same as Peripherals above)
+    subscriptions.forEach(s => {
+      const d = new Date(s.startDate);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!bucket[ym]) return;
+      const entityName = s.companyMaster?.name || 'Tanpa Entitas';
+      ensureBucket(ym, entityName).subscriptions += s.cost;
+    });
+
+    // Rental assets: still spread across active months (these are genuinely billed monthly)
+    months.forEach(m => {
+      const monthStart = new Date(m.year, m.month, 1);
+      const monthEnd = new Date(m.year, m.month + 1, 0, 23, 59, 59, 999);
+
+      rentalAssets.forEach(a => {
+        const rentalStart = new Date(a.rentalStart);
+        const rentalEnd = new Date(a.rentalEnd);
+        if (rentalStart <= monthEnd && rentalEnd >= monthStart) {
+          const entityName = a.companyMaster?.name || 'Tanpa Entitas';
+          ensureBucket(m.yearMonth, entityName).assetsRental += a.rentalCost;
+        }
+      });
+    });
+
+    // Derive monthly trend (summed across entities)
+    const monthlyTrend = months.map(m => {
+      let peripherals = 0, assetsRental = 0, subscriptions = 0;
+      Object.values(bucket[m.yearMonth]).forEach(e => {
+        peripherals += e.peripherals;
+        assetsRental += e.assetsRental;
+        subscriptions += e.subscriptions;
+      });
+      return {
+        yearMonth: m.yearMonth,
+        peripherals: Math.round(peripherals),
+        assetsRental: Math.round(assetsRental),
+        subscriptions: Math.round(subscriptions),
+        total: Math.round(peripherals + assetsRental + subscriptions)
+      };
+    });
+
+    // Derive per-entity totals (summed across the 12-month window)
+    const entityTotals = {};
+    months.forEach(m => {
+      Object.entries(bucket[m.yearMonth]).forEach(([name, vals]) => {
+        if (!entityTotals[name]) entityTotals[name] = { peripherals: 0, assetsRental: 0, subscriptions: 0 };
+        entityTotals[name].peripherals += vals.peripherals;
+        entityTotals[name].assetsRental += vals.assetsRental;
+        entityTotals[name].subscriptions += vals.subscriptions;
+      });
+    });
+    const byEntity = Object.entries(entityTotals)
+      .map(([name, vals]) => ({
+        name,
+        peripherals: Math.round(vals.peripherals),
+        assetsRental: Math.round(vals.assetsRental),
+        subscriptions: Math.round(vals.subscriptions),
+        total: Math.round(vals.peripherals + vals.assetsRental + vals.subscriptions)
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    const currentMonthSummary = monthlyTrend[monthlyTrend.length - 1];
+
+    const grandTotal = monthlyTrend.reduce((acc, m) => ({
+      peripherals: acc.peripherals + m.peripherals,
+      assetsRental: acc.assetsRental + m.assetsRental,
+      subscriptions: acc.subscriptions + m.subscriptions,
+      total: acc.total + m.total
+    }), { peripherals: 0, assetsRental: 0, subscriptions: 0, total: 0 });
+
+    res.json({
+      currentMonthSummary,
+      grandTotal,
+      monthlyTrend,
+      byEntity
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

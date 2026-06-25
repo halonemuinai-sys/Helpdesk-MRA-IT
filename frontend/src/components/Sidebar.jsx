@@ -21,7 +21,8 @@ import {
   CreditCard,
   Laptop,
   TrendingUp,
-  Package
+  Package,
+  Wallet
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -121,6 +122,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           label: 'Analisa Biaya Sewa',
           path: '/rental-analysis',
           icon: TrendingUp,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'IT Cost Overview',
+          path: '/it-cost-overview',
+          icon: Wallet,
           roles: ['AGENT', 'ADMIN']
         },
         {
