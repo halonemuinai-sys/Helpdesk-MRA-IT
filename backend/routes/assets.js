@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../api/db');
 const { verifyToken } = require('../api/authMiddleware');
+const { syncAssetToGA, deleteAssetFromGA } = require('../api/gaSync');
 
 const router = express.Router();
 
@@ -258,6 +259,8 @@ router.post('/', verifyToken, async (req, res, next) => {
       }
     }).catch(err => console.error("Failed to log audit event:", err));
 
+    await syncAssetToGA(asset.id);
+
     res.json(asset);
   } catch (err) {
     next(err);
@@ -393,6 +396,8 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       }
     }).catch(err => console.error("Failed to log audit event:", err));
 
+    await syncAssetToGA(updatedAsset.id);
+
     res.json(updatedAsset);
   } catch (err) {
     next(err);
@@ -419,7 +424,7 @@ router.delete('/:id', verifyToken, async (req, res, next) => {
       await prisma.asset.delete({
         where: { id }
       });
-      
+
       // Write system log
       await prisma.systemAuditLog.create({
         data: {
@@ -428,6 +433,8 @@ router.delete('/:id', verifyToken, async (req, res, next) => {
           performedBy: `${userName} (${userEmail})`
         }
       });
+
+      await deleteAssetFromGA(asset.assetTag);
 
       return res.json({ success: true, message: 'Asset deleted successfully.' });
     } else {

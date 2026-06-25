@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../api/db');
 const { verifyToken, checkRole } = require('../api/authMiddleware');
+const { syncAssetToGA, deleteAssetFromGA } = require('../api/gaSync');
 
 const router = express.Router();
 
@@ -81,6 +82,7 @@ router.post('/:id/approve', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async 
         const asset = await prisma.asset.findUnique({ where: { id: entityId } });
         if (asset) {
           await prisma.asset.delete({ where: { id: entityId } });
+          await deleteAssetFromGA(asset.assetTag);
           deleteMessage = `Asset Tag ${asset.assetTag} (${asset.brand} ${asset.model}) deleted.`;
         } else {
           deleteMessage = `Asset with ID ${entityId} was already deleted or not found.`;
@@ -170,7 +172,7 @@ router.post('/:id/approve', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async 
         }
 
         // Update Asset
-        await prisma.asset.update({
+        const allocatedAsset = await prisma.asset.update({
           where: { id: entityId },
           data: {
             userId: employeeId,
@@ -180,6 +182,8 @@ router.post('/:id/approve', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async 
             updatedAt: new Date()
           }
         });
+
+        await syncAssetToGA(allocatedAsset.id);
 
         deleteMessage = `Alokasi perangkat ${asset.brand} ${asset.model} (Tag: ${asset.assetTag}) disetujui untuk ${userTarget.name} (${employeeId}).`;
       } else {
