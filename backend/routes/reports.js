@@ -568,7 +568,12 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
       const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!bucket[ym]) return;
       const entityName = inv.companyMaster?.name || 'Tanpa Entitas';
-      ensureBucket(ym, entityName).peripherals += inv.totalCost;
+      // Service rows already linked to an auto-created subscription are counted under
+      // "subscriptions" below — exclude them here so the combined total isn't double-counted.
+      const linkedSubscriptionCost = Array.isArray(inv.serviceCostBreakdown)
+        ? inv.serviceCostBreakdown.filter(row => row.subscriptionId).reduce((sum, row) => sum + (row.cost || 0), 0)
+        : 0;
+      ensureBucket(ym, entityName).peripherals += inv.totalCost - linkedSubscriptionCost;
     });
 
     // Subscriptions: cash basis, full cost in the month actually paid (same as Peripherals above)
