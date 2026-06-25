@@ -310,9 +310,9 @@ export default function Assets({ user, token }) {
     setFormCompanyMasterId(asset.companyMasterId || '');
     
     // Auto detect category
-    const isPhone = (asset.brand && asset.brand.toLowerCase() === 'apple' && asset.model && asset.model.toLowerCase().includes('iphone')) || 
-                    (asset.os && asset.os.toLowerCase().includes('ios')) || 
-                    (asset.ram && (asset.ram.toLowerCase().includes('4 gb') || asset.ram.toLowerCase().includes('4gb')));
+    const isPhone = (asset.brand && asset.brand.toLowerCase() === 'apple' && asset.model && asset.model.toLowerCase().includes('iphone')) ||
+                    (asset.os && asset.os.toLowerCase().includes('ios')) ||
+                    (asset.ram && parseInt(asset.ram, 10) === 4);
     setFormDeviceCategory(isPhone ? 'SMARTPHONE' : 'LAPTOP');
     setFormOwnershipType(asset.ownershipType || 'RENTAL');
     
@@ -579,8 +579,7 @@ export default function Assets({ user, token }) {
            brand === 'realme' ||
            brand === 'infinix' ||
            brand === 'iqoo' ||
-           ram.includes('4 gb') ||
-           ram.includes('4gb');
+           parseInt(ram, 10) === 4;
   };
 
   // Apply filters
@@ -844,9 +843,9 @@ export default function Assets({ user, token }) {
                   const isLeaseNearExpiry = remainingDays >= 0 && remainingDays <= 90; // Warn under 3 months
                   const isLeaseExpired = remainingDays < 0;
 
-                  const isPhone = (asset.brand && asset.brand.toLowerCase() === 'apple' && asset.model && asset.model.toLowerCase().includes('iphone')) || 
-                                  (asset.os && asset.os.toLowerCase().includes('ios')) || 
-                                  (asset.ram && (asset.ram.toLowerCase().includes('4 gb') || asset.ram.toLowerCase().includes('4gb')));
+                  const isPhone = (asset.brand && asset.brand.toLowerCase() === 'apple' && asset.model && asset.model.toLowerCase().includes('iphone')) ||
+                                  (asset.os && asset.os.toLowerCase().includes('ios')) ||
+                                  (asset.ram && parseInt(asset.ram, 10) === 4);
 
                   return (
                     <tr 

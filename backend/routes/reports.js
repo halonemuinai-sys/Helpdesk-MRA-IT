@@ -224,8 +224,7 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
              brand === 'realme' ||
              brand === 'infinix' ||
              brand === 'iqoo' ||
-             ram.includes('4 gb') ||
-             ram.includes('4gb');
+             parseInt(ram, 10) === 4;
     };
 
     let filteredAssets = assets;
@@ -331,9 +330,8 @@ router.get('/rental-analysis', verifyToken, async (req, res, next) => {
                                brand === 'realme' ||
                                brand === 'infinix' ||
                                brand === 'iqoo' ||
-                               ram.includes('4 gb') ||
-                               ram.includes('4gb');
-          
+                               parseInt(ram, 10) === 4;
+
           if (isSmartphone) {
             return "PT Permata Landmarq Abadi";
           }

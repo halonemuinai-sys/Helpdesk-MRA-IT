@@ -33,8 +33,8 @@ async function main() {
                            brand === 'samsung' || brand === 'oppo' ||
                            brand === 'vivo' || brand === 'xiaomi' ||
                            brand === 'realme' || brand === 'infinix' || brand === 'iqoo' ||
-                           ram.includes('4 gb') || ram.includes('4gb');
-      
+                           parseInt(ram, 10) === 4;
+
       if (isSmartphone) {
         vendorName = 'PT Permata Landmarq Abadi';
       } else {

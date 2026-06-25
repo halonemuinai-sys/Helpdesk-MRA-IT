@@ -22,7 +22,7 @@ function isSmartphoneAsset(asset) {
   return (brand === 'apple' && model.includes('iphone')) ||
     os.includes('ios') || os.includes('android') ||
     ['samsung', 'oppo', 'vivo', 'xiaomi', 'realme', 'infinix', 'iqoo'].includes(brand) ||
-    ram.includes('4 gb') || ram.includes('4gb');
+    parseInt(ram, 10) === 4;
 }
 
 function monthsBetween(start, end) {
@@ -81,9 +81,26 @@ async function resolveUserId(email) {
   return rows.length > 0 ? rows[0].id : null;
 }
 
+// Finds an existing device_rentals row for this asset, trying the current assetTag first,
+// then the asset's previous tag (covers a rename since the last sync) and deviceRef (covers
+// rows that predate this sync and were keyed off deviceRef instead of assetTag).
+async function findExistingDeviceRentalId(asset, previousAssetTag) {
+  const candidates = [asset.assetTag, previousAssetTag, asset.deviceRef].filter(Boolean);
+  for (const code of candidates) {
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT id FROM glc_mra.device_rentals WHERE LOWER(TRIM(unit_code)) = LOWER(TRIM($1)) LIMIT 1`,
+      code
+    );
+    if (rows.length > 0) return rows[0].id;
+  }
+  return null;
+}
+
 // Pushes/updates one Helpdesk Asset into GA's device_rentals. No-op for OWNED assets
 // (GA's device_rentals concept is rental-only) and for assets without a valid asset id.
-async function syncAssetToGA(assetId) {
+// Pass previousAssetTag when the caller just renamed assetTag, so the existing GA row gets
+// renamed/updated in place instead of leaving an orphan and inserting a duplicate.
+async function syncAssetToGA(assetId, previousAssetTag) {
   try {
     const asset = await prisma.asset.findUnique({
       where: { id: assetId },
@@ -92,7 +109,7 @@ async function syncAssetToGA(assetId) {
     if (!asset || asset.ownershipType !== 'RENTAL') return;
 
     if (asset.status === 'DISPOSED') {
-      await deleteAssetFromGA(asset.assetTag);
+      await deleteAssetFromGA(asset.assetTag, [previousAssetTag, asset.deviceRef]);
       return;
     }
 
@@ -112,20 +129,17 @@ async function syncAssetToGA(assetId) {
       return;
     }
 
-    const existing = await prisma.$queryRawUnsafe(
-      `SELECT id FROM glc_mra.device_rentals WHERE LOWER(TRIM(unit_code)) = LOWER(TRIM($1)) LIMIT 1`,
-      asset.assetTag
-    );
+    const existingId = await findExistingDeviceRentalId(asset, previousAssetTag);
 
-    if (existing.length > 0) {
+    if (existingId) {
       await prisma.$executeRawUnsafe(
         `UPDATE glc_mra.device_rentals SET
-           company_id = $1, vendor_id = $2, device_type = $3, order_id = $4, item_name = $5,
-           price = $6, duration_months = $7, start_rent = $8, end_rent = $9, user_id = $10,
-           department = $11, status = $12
-         WHERE id = $13`,
-        companyId, vendorId, deviceType, orderId, itemName, asset.rentalCost, durationMonths,
-        asset.rentalStart, asset.rentalEnd, userId, department, 'Active', existing[0].id
+           unit_code = $1, company_id = $2, vendor_id = $3, device_type = $4, order_id = $5,
+           item_name = $6, price = $7, duration_months = $8, start_rent = $9, end_rent = $10,
+           user_id = $11, department = $12, status = $13
+         WHERE id = $14`,
+        asset.assetTag, companyId, vendorId, deviceType, orderId, itemName, asset.rentalCost,
+        durationMonths, asset.rentalStart, asset.rentalEnd, userId, department, 'Active', existingId
       );
     } else {
       await prisma.$executeRawUnsafe(
@@ -141,13 +155,15 @@ async function syncAssetToGA(assetId) {
   }
 }
 
-async function deleteAssetFromGA(assetTag) {
+async function deleteAssetFromGA(assetTag, extraCodes = []) {
   try {
-    if (!assetTag) return;
-    await prisma.$executeRawUnsafe(
-      `DELETE FROM glc_mra.device_rentals WHERE LOWER(TRIM(unit_code)) = LOWER(TRIM($1))`,
-      assetTag
-    );
+    const codes = [assetTag, ...extraCodes].filter(Boolean);
+    for (const code of codes) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM glc_mra.device_rentals WHERE LOWER(TRIM(unit_code)) = LOWER(TRIM($1))`,
+        code
+      );
+    }
   } catch (err) {
     console.error(`GA delete-sync failed for assetTag ${assetTag}:`, err.message);
   }

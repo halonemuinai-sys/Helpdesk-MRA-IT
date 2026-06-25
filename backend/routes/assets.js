@@ -132,8 +132,7 @@ router.get('/', verifyToken, async (req, res, next) => {
              brand === 'realme' ||
              brand === 'infinix' ||
              brand === 'iqoo' ||
-             ram.includes('4 gb') ||
-             ram.includes('4gb');
+             parseInt(ram, 10) === 4;
     };
 
     let filteredAssets = allMatchingAssets;
@@ -396,7 +395,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       }
     }).catch(err => console.error("Failed to log audit event:", err));
 
-    await syncAssetToGA(updatedAsset.id);
+    await syncAssetToGA(updatedAsset.id, current.assetTag);
 
     res.json(updatedAsset);
   } catch (err) {
@@ -434,7 +433,7 @@ router.delete('/:id', verifyToken, async (req, res, next) => {
         }
       });
 
-      await deleteAssetFromGA(asset.assetTag);
+      await deleteAssetFromGA(asset.assetTag, [asset.deviceRef]);
 
       return res.json({ success: true, message: 'Asset deleted successfully.' });
     } else {

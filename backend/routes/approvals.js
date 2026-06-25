@@ -82,7 +82,7 @@ router.post('/:id/approve', verifyToken, checkRole(['ADMIN', 'AUDITOR']), async 
         const asset = await prisma.asset.findUnique({ where: { id: entityId } });
         if (asset) {
           await prisma.asset.delete({ where: { id: entityId } });
-          await deleteAssetFromGA(asset.assetTag);
+          await deleteAssetFromGA(asset.assetTag, [asset.deviceRef]);
           deleteMessage = `Asset Tag ${asset.assetTag} (${asset.brand} ${asset.model}) deleted.`;
         } else {
           deleteMessage = `Asset with ID ${entityId} was already deleted or not found.`;
