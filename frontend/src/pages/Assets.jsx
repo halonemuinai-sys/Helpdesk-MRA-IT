@@ -21,7 +21,10 @@ import {
   FileText,
   DollarSign,
   ChevronDown,
-  Eye
+  Eye,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
@@ -62,6 +65,9 @@ export default function Assets({ user, token }) {
 
   // Data loads strictly on demand via the "Proses / Muat Data" button — never automatically
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+
+  // Sort state — defaults to Tag Aset ascending, per team request
+  const [sortConfig, setSortConfig] = useState({ key: 'assetTag', direction: 'asc' });
 
   // KPI Stats state
   const [kpiStats, setKpiStats] = useState({
@@ -603,6 +609,45 @@ export default function Assets({ user, token }) {
     return matchesSearch && matchesStatus && matchesMaster && matchesCategory;
   });
 
+  // Apply sort (natural/alphanumeric-aware, so "LP2" sorts before "LP10")
+  const sortValueGetters = {
+    assetTag: (a) => a.assetTag || '',
+    model: (a) => `${a.brand || ''} ${a.model || ''}`.trim(),
+    companyMaster: (a) => a.companyMaster?.name || '',
+    user: (a) => a.user?.name || '',
+    rentalCost: (a) => a.rentalCost || 0,
+    rentalEnd: (a) => a.rentalEnd ? new Date(a.rentalEnd).getTime() : 0,
+    status: (a) => a.status || ''
+  };
+
+  const sortedAssets = [...filteredAssets].sort((a, b) => {
+    const getValue = sortValueGetters[sortConfig.key];
+    if (!getValue) return 0;
+    const valA = getValue(a);
+    const valB = getValue(b);
+    let comparison;
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      comparison = valA - valB;
+    } else {
+      comparison = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' });
+    }
+    return sortConfig.direction === 'asc' ? comparison : -comparison;
+  });
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const renderSortIcon = (column) => {
+    if (sortConfig.key !== column) return <ArrowUpDown className="w-3 h-3 text-gray-350 dark:text-slate-600" />;
+    return sortConfig.direction === 'asc'
+      ? <ArrowUp className="w-3 h-3 text-rose-500" />
+      : <ArrowDown className="w-3 h-3 text-rose-500" />;
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       
@@ -821,18 +866,32 @@ export default function Assets({ user, token }) {
             <table className="w-full text-left text-xs font-semibold border-collapse">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-800 text-gray-400 uppercase tracking-wider text-[10px]">
-                  <th className="py-4 px-6">Model Perangkat</th>
-                  <th className="py-4 px-6">Tag Aset / Ref</th>
-                  <th className="py-4 px-6">Entitas (Master)</th>
-                  <th className="py-4 px-6">Karyawan / Pengguna</th>
-                  <th className="py-4 px-6">Biaya Sewa / Harga Beli</th>
-                  <th className="py-4 px-6">Selesai Sewa / Milik</th>
-                  <th className="py-4 px-6 text-center">Status</th>
+                  <th className="py-4 px-6 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300 transition" onClick={() => handleSort('model')}>
+                    <span className="flex items-center gap-1">Model Perangkat {renderSortIcon('model')}</span>
+                  </th>
+                  <th className="py-4 px-6 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300 transition" onClick={() => handleSort('assetTag')}>
+                    <span className="flex items-center gap-1">Tag Aset / Ref {renderSortIcon('assetTag')}</span>
+                  </th>
+                  <th className="py-4 px-6 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300 transition" onClick={() => handleSort('companyMaster')}>
+                    <span className="flex items-center gap-1">Entitas (Master) {renderSortIcon('companyMaster')}</span>
+                  </th>
+                  <th className="py-4 px-6 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300 transition" onClick={() => handleSort('user')}>
+                    <span className="flex items-center gap-1">Karyawan / Pengguna {renderSortIcon('user')}</span>
+                  </th>
+                  <th className="py-4 px-6 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300 transition" onClick={() => handleSort('rentalCost')}>
+                    <span className="flex items-center gap-1">Biaya Sewa / Harga Beli {renderSortIcon('rentalCost')}</span>
+                  </th>
+                  <th className="py-4 px-6 cursor-pointer hover:text-gray-600 dark:hover:text-slate-300 transition" onClick={() => handleSort('rentalEnd')}>
+                    <span className="flex items-center gap-1">Selesai Sewa / Milik {renderSortIcon('rentalEnd')}</span>
+                  </th>
+                  <th className="py-4 px-6 text-center cursor-pointer hover:text-gray-600 dark:hover:text-slate-300 transition" onClick={() => handleSort('status')}>
+                    <span className="flex items-center justify-center gap-1">Status {renderSortIcon('status')}</span>
+                  </th>
                   <th className="py-4 px-6 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800/40 text-gray-700 dark:text-slate-300">
-                {filteredAssets.map((asset) => {
+                {sortedAssets.map((asset) => {
                   const isExpanded = !!expandedRows[asset.id];
                   const statusObj = STATUS_OPTIONS.find(o => o.value === asset.status) || STATUS_OPTIONS[0];
                   
