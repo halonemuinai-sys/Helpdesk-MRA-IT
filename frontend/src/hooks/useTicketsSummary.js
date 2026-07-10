@@ -1,0 +1,345 @@
+import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const getDateRange = (filter) => {
+  const now = new Date();
+  if (filter === 'THIS_MONTH') {
+    return { startDate: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(), endDate: null };
+  }
+  if (filter === 'LAST_MONTH') {
+    return {
+      startDate: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString(),
+      endDate: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).toISOString(),
+    };
+  }
+  if (filter === 'LAST_3_MONTHS') {
+    return { startDate: new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString(), endDate: null };
+  }
+  return { startDate: null, endDate: null };
+};
+
+export default function useTicketsSummary({ user, token }) {
+  const [tickets, setTickets] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [statusFilter, setStatusFilter] = useState('ALL_ACTIVE');
+  const [activeTab, setActiveTab] = useState('ACTIVE');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTicketIds, setSelectedTicketIds] = useState([]);
+
+  const [monthFilter, setMonthFilter] = useState('ALL');
+  const [limit, setLimit] = useState(100);
+  const [hasMore, setHasMore] = useState(false);
+
+  const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const [ticketDetails, setTicketDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    fetchTickets();
+    if (user.role !== 'USER') fetchAgents();
+  }, [statusFilter, priorityFilter, monthFilter, limit]);
+
+  useEffect(() => {
+    setSelectedTicketIds([]);
+  }, [statusFilter, tickets]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (selectedTicketId) fetchTicketDetails(selectedTicketId);
+    else setTicketDetails(null);
+  }, [selectedTicketId]);
+
+  const fetchTickets = async () => {
+    try {
+      setLoading(true);
+      const headers = { 'Authorization': `Bearer ${token}` };
+      let query = `?search=${searchQuery}`;
+      if (statusFilter !== 'ALL' && statusFilter !== 'ALL_ACTIVE' && statusFilter !== 'ALL_HISTORY') {
+        query += `&status=${statusFilter}`;
+      }
+      if (priorityFilter) query += `&priority=${priorityFilter}`;
+      if (activeTab === 'HISTORY' && monthFilter !== 'ALL') {
+        const { startDate, endDate } = getDateRange(monthFilter);
+        if (startDate) query += `&startDate=${startDate}`;
+        if (endDate) query += `&endDate=${endDate}`;
+      }
+      query += `&limit=${limit}`;
+
+      const res = await fetch(`${API_URL}/tickets${query}`, { headers });
+      if (!res.ok) throw new Error('Failed to load tickets list.');
+      const data = await res.json();
+      setTickets(data);
+      setHasMore(data.length === limit);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAgents = async () => {
+    try {
+      const res = await fetch(`${API_URL}/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setAgents(data.filter(u => u.role === 'AGENT' || u.role === 'ADMIN'));
+      }
+    } catch (_) {}
+  };
+
+  const fetchTicketDetails = async (id) => {
+    try {
+      setDetailsLoading(true);
+      const res = await fetch(`${API_URL}/tickets/${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Gagal memuat detail tiket.');
+      setTicketDetails(await res.json());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleBulkClose = async (idsToClose) => {
+    const ids = idsToClose || selectedTicketIds;
+    if (ids.length === 0) return;
+
+    const result = await Swal.fire({
+      title: 'Apakah Anda Yakin?',
+      text: `Menutup ${ids.length} tiket secara bulk/instan? Tiket yang sudah ditutup tidak dapat diubah statusnya lagi.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#3b82f6',
+      confirmButtonText: 'Ya, Tutup Tiket!',
+      cancelButtonText: 'Batal',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/tickets/bulk-close`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketIds: ids }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Gagal memproses penutupan tiket bulk.');
+      }
+
+      const resData = await res.json();
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: resData.message || `${ids.length} tiket berhasil ditutup.`,
+        confirmButtonColor: '#10b981',
+        timer: 3000,
+      });
+
+      setSelectedTicketIds([]);
+      fetchTickets();
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Gagal', text: err.message, confirmButtonColor: '#10b981' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (ticketId, newStatus, comment = '') => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: newStatus, comment }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to change status.'); }
+      fetchTickets();
+      if (selectedTicketId === ticketId) fetchTicketDetails(ticketId);
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleAssignAgent = async (ticketId, agentId) => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ assignedToId: agentId }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to assign agent.'); }
+      fetchTickets();
+      if (selectedTicketId === ticketId) fetchTicketDetails(ticketId);
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleSlaOverride = async (ticketId, reason) => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/sla-override`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ reason }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to override SLA.'); }
+      fetchTickets();
+      if (selectedTicketId === ticketId) fetchTicketDetails(ticketId);
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleUpdateRespondedAt = async (ticketId, respondedAt, reason) => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/responded-at`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ respondedAt, reason }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to update response time.'); }
+      fetchTickets();
+      if (selectedTicketId === ticketId) fetchTicketDetails(ticketId);
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleDeleteTicket = async (ticketId) => {
+    const isDark = document.documentElement.classList.contains('dark');
+    const popupClass = {
+      popup: 'rounded-3xl border border-gray-200/50 dark:border-slate-800/40 shadow-2xl p-6 font-sans',
+      title: 'text-lg font-extrabold text-gray-800 dark:text-slate-100 mt-2',
+      htmlContainer: 'text-xs text-gray-500 dark:text-slate-400 leading-relaxed font-medium',
+      confirmButton: 'px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all text-white',
+      cancelButton: 'px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all text-white',
+    };
+
+    const result = await Swal.fire({
+      title: 'Delete Ticket?',
+      text: `Are you sure you want to permanently delete ticket ${ticketId}? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Delete It',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      background: isDark ? '#0f172a' : '#ffffff',
+      color: isDark ? '#f1f5f9' : '#1e293b',
+      iconColor: '#f59e0b',
+      customClass: popupClass,
+      buttonsStyling: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      Swal.fire({
+        title: 'Deleting...',
+        text: 'Please wait while we erase this record.',
+        background: isDark ? '#0f172a' : '#ffffff',
+        color: isDark ? '#f1f5f9' : '#1e293b',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const res = await fetch(`${API_URL}/tickets/${ticketId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to delete ticket.'); }
+
+      await Swal.fire({
+        title: 'Deleted!',
+        text: `Ticket ${ticketId} has been successfully deleted.`,
+        icon: 'success',
+        confirmButtonColor: '#06b6d4',
+        background: isDark ? '#0f172a' : '#ffffff',
+        color: isDark ? '#f1f5f9' : '#1e293b',
+        iconColor: '#10b981',
+        customClass: { ...popupClass, htmlContainer: 'text-xs text-gray-500 dark:text-slate-400 font-medium' },
+      });
+
+      if (selectedTicketId === ticketId) setSelectedTicketId(null);
+      fetchTickets();
+    } catch (err) {
+      Swal.fire({
+        title: 'Error!', text: err.message, icon: 'error', confirmButtonColor: '#ef4444',
+        background: isDark ? '#0f172a' : '#ffffff', color: isDark ? '#f1f5f9' : '#1e293b', iconColor: '#ef4444',
+        customClass: { ...popupClass, htmlContainer: 'text-xs text-gray-500 dark:text-slate-400 font-medium' },
+      });
+    }
+  };
+
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setStatusFilter(tab === 'ACTIVE' ? 'ALL_ACTIVE' : 'ALL_HISTORY');
+    setLimit(100);
+    setMonthFilter('ALL');
+  };
+
+  const handleMonthChange = (val) => { setMonthFilter(val); setLimit(100); };
+  const handlePriorityChange = (val) => { setPriorityFilter(val); setLimit(100); };
+  const handleSearch = () => { setLimit(100); fetchTickets(); };
+  const handleLoadMore = () => setLimit(prev => prev + 100);
+
+  const displayTickets = tickets.filter(t => {
+    if (statusFilter === 'ALL_ACTIVE') return ['OPEN', 'IN_PROGRESS', 'PENDING'].includes(t.status);
+    if (statusFilter === 'ALL_HISTORY') return ['RESOLVED', 'CLOSED'].includes(t.status);
+    return true;
+  });
+
+  const resolvedTickets = displayTickets.filter(t => t.status === 'RESOLVED');
+  const isAllSelected = resolvedTickets.length > 0 && resolvedTickets.every(t => selectedTicketIds.includes(t.id));
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedTicketIds(prev => {
+        const newIds = [...prev];
+        resolvedTickets.forEach(t => { if (!newIds.includes(t.id)) newIds.push(t.id); });
+        return newIds;
+      });
+    } else {
+      setSelectedTicketIds(prev => prev.filter(id => !resolvedTickets.some(t => t.id === id)));
+    }
+  };
+
+  return {
+    tickets, agents, loading, error,
+    statusFilter, setStatusFilter,
+    activeTab,
+    priorityFilter,
+    searchQuery, setSearchQuery,
+    selectedTicketIds, setSelectedTicketIds,
+    monthFilter,
+    hasMore,
+    selectedTicketId, setSelectedTicketId,
+    ticketDetails, detailsLoading,
+    currentTime,
+    displayTickets,
+    resolvedTickets,
+    isAllSelected,
+    handleSelectAll,
+    handleBulkClose,
+    handleStatusChange,
+    handleAssignAgent,
+    handleSlaOverride,
+    handleUpdateRespondedAt,
+    handleDeleteTicket,
+    handleLoadMore,
+    switchTab,
+    handleMonthChange,
+    handlePriorityChange,
+    handleSearch,
+  };
+}

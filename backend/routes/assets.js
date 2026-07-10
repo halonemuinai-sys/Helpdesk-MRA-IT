@@ -403,9 +403,10 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       }
     }).catch(err => console.error("Failed to log audit event:", err));
 
-    await syncAssetToGA(updatedAsset.id, current.assetTag);
-
     res.json(updatedAsset);
+
+    // Fire-and-forget — gaSync is best-effort and has its own try/catch
+    syncAssetToGA(updatedAsset.id, current.assetTag);
   } catch (err) {
     next(err);
   }

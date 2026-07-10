@@ -1,0 +1,77 @@
+{
+  "lastScan": "2026-07-10",
+  "artifactUrl": "https://claude.ai/code/artifact/f15a62b2-1f3d-4548-807d-9d0c8d44ba00",
+  "completed": [
+    {
+      "page": "frontend/src/pages/Peripherals.jsx",
+      "originalLines": 2495,
+      "currentLines": 210,
+      "doneDate": "2026-07-08",
+      "outputFiles": 11,
+      "largestOutput": { "file": "hooks/usePeripherals.js", "lines": 700 },
+      "componentDir": "frontend/src/components/peripherals/",
+      "hook": "frontend/src/hooks/usePeripherals.js"
+    },
+    {
+      "page": "frontend/src/pages/Assets.jsx",
+      "originalLines": 2306,
+      "currentLines": 197,
+      "doneDate": "2026-07-09",
+      "outputFiles": 9,
+      "largestOutput": { "file": "hooks/useAssets.js", "lines": 538 },
+      "componentDir": "frontend/src/components/assets/",
+      "hook": "frontend/src/hooks/useAssets.js"
+    },
+    {
+      "page": "frontend/src/pages/RentalAnalysis.jsx",
+      "originalLines": 1652,
+      "currentLines": 242,
+      "doneDate": "2026-07-10",
+      "outputFiles": 11,
+      "largestOutput": { "file": "components/rental/rentalExport.js", "lines": 257 },
+      "componentDir": "frontend/src/components/rental/",
+      "hook": "frontend/src/hooks/useRentalAnalysis.js"
+    },
+    {
+      "page": "frontend/src/pages/Subscriptions.jsx",
+      "originalLines": 1513,
+      "currentLines": 116,
+      "doneDate": "2026-07-10",
+      "outputFiles": 8,
+      "largestOutput": { "file": "hooks/useSubscriptions.js", "lines": 342 },
+      "componentDir": "frontend/src/components/subscriptions/",
+      "hook": "frontend/src/hooks/useSubscriptions.js"
+    },
+    {
+      "page": "frontend/src/pages/Dashboard.jsx",
+      "originalLines": 1427,
+      "currentLines": 102,
+      "doneDate": "2026-07-10",
+      "outputFiles": 12,
+      "largestOutput": { "file": "hooks/useDashboard.js", "lines": 133 },
+      "componentDir": "frontend/src/components/dashboard/",
+      "hook": "frontend/src/hooks/useDashboard.js"
+    },
+    {
+      "page": "frontend/src/pages/Reports.jsx",
+      "originalLines": 1135,
+      "currentLines": 65,
+      "doneDate": "2026-07-10",
+      "outputFiles": 9,
+      "largestOutput": { "file": "components/reports/reportExport.js", "lines": 220 },
+      "componentDir": "frontend/src/components/reports/",
+      "hook": "frontend/src/hooks/useReports.js"
+    },
+    {
+      "page": "frontend/src/pages/TicketsSummary.jsx",
+      "originalLines": 1090,
+      "currentLines": 74,
+      "doneDate": "2026-07-10",
+      "outputFiles": 8,
+      "largestOutput": { "file": "hooks/useTicketsSummary.js", "lines": 210 },
+      "componentDir": "frontend/src/components/tickets-summary/",
+      "hook": "frontend/src/hooks/useTicketsSummary.js"
+    }
+  ],
+  "pending": []
+}

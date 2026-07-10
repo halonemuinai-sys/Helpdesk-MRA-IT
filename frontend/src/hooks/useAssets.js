@@ -140,9 +140,9 @@ export default function useAssets({ token, user }) {
     }
   };
 
-  const fetchAssets = async (currentSearch = searchQuery) => {
+  const fetchAssets = async (currentSearch = searchQuery, { silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const headers = { Authorization: `Bearer ${token}` };
       const params = new URLSearchParams();
@@ -157,15 +157,15 @@ export default function useAssets({ token, user }) {
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
       setAssetsLoaded(true);
     }
   };
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  const handleRefreshData = async () => {
-    await Promise.all([fetchStats(), fetchAssets(searchQuery)]);
+  const handleRefreshData = async ({ silent = false } = {}) => {
+    await Promise.all([fetchStats(), fetchAssets(searchQuery, { silent })]);
   };
 
   const handleResetFilters = () => {
@@ -355,7 +355,7 @@ export default function useAssets({ token, user }) {
         confirmButtonColor: '#f43f5e',
         timer: 2000
       });
-      handleRefreshData();
+      handleRefreshData({ silent: true });
     } catch (err) {
       setFormError(err.message);
     } finally {
