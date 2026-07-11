@@ -11,6 +11,7 @@ import DashboardCategoryChart from '../components/dashboard/DashboardCategoryCha
 import DashboardPriorityGrid from '../components/dashboard/DashboardPriorityGrid';
 import DashboardUrgentPanel from '../components/dashboard/DashboardUrgentPanel';
 import DashboardPerformanceModal from '../components/dashboard/DashboardPerformanceModal';
+import DashboardSlaHeatmap from '../components/dashboard/DashboardSlaHeatmap';
 
 export default function Dashboard({ user, token, darkMode }) {
   const h = useDashboard({ user, token });
@@ -114,6 +115,7 @@ export default function Dashboard({ user, token, darkMode }) {
             ) : (
               <div className="space-y-6">
                 <DashboardTrendChart analytics={h.analytics} darkMode={darkMode} />
+                <DashboardSlaHeatmap analytics={h.analytics} />
                 <DashboardPerformancePanel
                   timeframedLeaderboard={h.timeframedLeaderboard}
                   perfLoading={h.perfLoading}
