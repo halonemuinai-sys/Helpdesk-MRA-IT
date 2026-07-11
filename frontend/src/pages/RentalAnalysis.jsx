@@ -32,6 +32,7 @@ export default function RentalAnalysis({ token }) {
     onExportExcel,
     formatDateDMY, formatNumber, formatCurrency, formatNumberForInput,
   } = useRentalAnalysis({ token });
+  const [activeTab, setActiveTab] = React.useState('budget');
 
   if (loading && companyStats.length === 0) return <ReactLoader />;
 
@@ -55,7 +56,7 @@ export default function RentalAnalysis({ token }) {
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes scaleUp {
-          from { opacity: 0; transform: scale(0.96); }
+          from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
         }
         @keyframes pulseGlow {
@@ -70,7 +71,7 @@ export default function RentalAnalysis({ token }) {
           to { transform: scaleY(1); }
         }
         .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-scale-up { animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .animate-scale-up { animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .glass-card {
           background: rgba(255, 255, 255, 0.7);
           backdrop-filter: blur(12px);
@@ -164,45 +165,85 @@ export default function RentalAnalysis({ token }) {
         </div>
       </div>
 
-      <RentalKpiStats
-        grandTotalCost={grandTotalCost}
-        grandTotalBudget={grandTotalBudget}
-        grandTotalDifference={grandTotalDifference}
-        grandTotalDevices={grandTotalDevices}
-        grandTotalUtilization={grandTotalUtilization}
-        formatCurrency={formatCurrency}
-        formatNumber={formatNumber}
-      />
+      {/* Cockpit Grid Layout: KPIs & Cash Flow Chart side-by-side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="lg:col-span-1">
+          <RentalKpiStats
+            grandTotalCost={grandTotalCost}
+            grandTotalBudget={grandTotalBudget}
+            grandTotalDifference={grandTotalDifference}
+            grandTotalDevices={grandTotalDevices}
+            grandTotalUtilization={grandTotalUtilization}
+            formatCurrency={formatCurrency}
+            formatNumber={formatNumber}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 h-full"
+          />
+        </div>
 
-      <RentalSvgChart
-        monthlyTotals={monthlyTotals}
-        selectedYear={selectedYear}
-        formatCurrency={formatCurrency}
-        formatNumber={formatNumber}
-      />
+        <div className="lg:col-span-2 flex flex-col">
+          <RentalSvgChart
+            monthlyTotals={monthlyTotals}
+            selectedYear={selectedYear}
+            formatCurrency={formatCurrency}
+            formatNumber={formatNumber}
+          />
+        </div>
+      </div>
 
-      <RentalMonthlyTable
-        companyStats={companyStats}
-        monthlyTotals={monthlyTotals}
-        formatNumber={formatNumber}
-        formatCurrency={formatCurrency}
-        onOpenBreakdown={handleOpenBreakdown}
-      />
+      {/* Tab Switcher & Condensed Data Section */}
+      <div className="space-y-4">
+        <div className="flex border-b border-gray-200/50 dark:border-slate-800/80 pb-px">
+          <div className="flex bg-gray-100/80 dark:bg-slate-900/55 p-1 rounded-2xl border border-gray-200/20 shadow-inner">
+            <button
+              onClick={() => setActiveTab('budget')}
+              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
+                activeTab === 'budget'
+                  ? 'bg-white dark:bg-slate-800 text-rose-500 shadow-sm border border-gray-200/10 dark:border-slate-700/30'
+                  : 'text-gray-450 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              Efisiensi & Utilisasi Anggaran
+            </button>
+            <button
+              onClick={() => setActiveTab('monthly')}
+              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
+                activeTab === 'monthly'
+                  ? 'bg-white dark:bg-slate-800 text-rose-500 shadow-sm border border-gray-200/10 dark:border-slate-700/30'
+                  : 'text-gray-450 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              Proyeksi Arus Kas Bulanan
+            </button>
+          </div>
+        </div>
 
-      <RentalBudgetTable
-        companyStats={companyStats}
-        grandTotalDevices={grandTotalDevices}
-        grandTotalBudget={grandTotalBudget}
-        grandTotalCost={grandTotalCost}
-        grandTotalDifference={grandTotalDifference}
-        grandTotalUtilization={grandTotalUtilization}
-        formatCurrency={formatCurrency}
-        formatNumber={formatNumber}
-        formatNumberForInput={formatNumberForInput}
-        onOpenBreakdown={handleOpenBreakdown}
-        onEditCompany={handleOpenEditCompany}
-        onEditUser={handleOpenEditUser}
-      />
+        <div className="animate-scale-up">
+          {activeTab === 'budget' ? (
+            <RentalBudgetTable
+              companyStats={companyStats}
+              grandTotalDevices={grandTotalDevices}
+              grandTotalBudget={grandTotalBudget}
+              grandTotalCost={grandTotalCost}
+              grandTotalDifference={grandTotalDifference}
+              grandTotalUtilization={grandTotalUtilization}
+              formatCurrency={formatCurrency}
+              formatNumber={formatNumber}
+              formatNumberForInput={formatNumberForInput}
+              onOpenBreakdown={handleOpenBreakdown}
+              onEditCompany={handleOpenEditCompany}
+              onEditUser={handleOpenEditUser}
+            />
+          ) : (
+            <RentalMonthlyTable
+              companyStats={companyStats}
+              monthlyTotals={monthlyTotals}
+              formatNumber={formatNumber}
+              formatCurrency={formatCurrency}
+              onOpenBreakdown={handleOpenBreakdown}
+            />
+          )}
+        </div>
+      </div>
 
       <RentalBreakdownModal
         isOpen={isBreakdownModalOpen}

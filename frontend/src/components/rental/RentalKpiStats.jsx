@@ -5,9 +5,10 @@ export default function RentalKpiStats({
   grandTotalCost, grandTotalBudget, grandTotalDifference,
   grandTotalDevices, grandTotalUtilization,
   formatCurrency, formatNumber,
+  className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className={className}>
 
       <div className="glass-card glow-border rounded-3xl p-5 shadow-sm transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 dark:bg-rose-500/10 rounded-full blur-3xl -mr-8 -mt-8 pointer-events-none" />
