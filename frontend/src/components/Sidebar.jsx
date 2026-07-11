@@ -22,7 +22,8 @@ import {
   Laptop,
   TrendingUp,
   Package,
-  Wallet
+  Wallet,
+  BookOpen
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -81,6 +82,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           label: 'Tickets List',
           path: '/tickets',
           icon: Ticket,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
+          label: 'Jurnal Tiket',
+          path: '/journal',
+          icon: BookOpen,
           roles: ['AGENT', 'ADMIN']
         },
         {

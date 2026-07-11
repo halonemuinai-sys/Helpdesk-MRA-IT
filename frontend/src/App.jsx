@@ -22,6 +22,7 @@ import Assets from './pages/Assets';
 import Peripherals from './pages/Peripherals';
 import ITCostOverview from './pages/ITCostOverview';
 import RentalAnalysis from './pages/RentalAnalysis';
+import TicketJournal from './pages/TicketJournal';
 import Approvals from './pages/Approvals';
 import AuditTrail from './pages/AuditTrail';
 import SetupCompany from './pages/SetupCompany';
@@ -244,6 +245,14 @@ export default function App() {
               element={
                 <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
                   <RentalAnalysis user={user} token={token} darkMode={darkMode} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/journal"
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <TicketJournal user={user} token={token} />
                 </ProtectedRoute>
               }
             />
