@@ -1,42 +1,22 @@
 import React, { useState } from 'react';
-import { User, Clock, CheckCircle2, AlertCircle, HelpCircle, ArrowRight, Filter, Download, Calendar } from 'lucide-react';
+import { User, Clock, CheckCircle2, AlertCircle, HelpCircle, ArrowRight, Filter, Calendar } from 'lucide-react';
 
 const MONTHS_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
   'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
 ];
 
-const STATUS_COLORS = {
-  OPEN: {
-    bar: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400',
-    dot: 'bg-blue-500'
-  },
-  IN_PROGRESS: {
-    bar: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400',
-    dot: 'bg-amber-500'
-  },
-  PENDING: {
-    bar: 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400',
-    dot: 'bg-purple-500'
-  },
-  RESOLVED: {
-    bar: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400',
-    dot: 'bg-emerald-500'
-  },
-  CLOSED: {
-    bar: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400',
-    dot: 'bg-emerald-500'
-  }
-};
+const MONTHS_LONG = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
 
 export default function JournalAgentGantt({ tickets }) {
-  const [selectedCatFilter, setSelectedCatFilter] = useState('Semua');
-  const [hoveredTicket, setHoveredTicket] = useState(null);
+  const [hoveredCell, setHoveredCell] = useState(null);
+  const currentMonthIdx = new Date().getMonth(); // Highlight current month (Jul is index 6)
+  const currentYear = new Date().getFullYear();
 
-  // 1. Highlight current month (Jul is month index 6)
-  const currentMonthIdx = new Date().getMonth(); // 6 for July (0-indexed)
-
-  // 2. Calculations for the 5 KPI cards
+  // 1. Calculations for the 5 KPI cards
   const totalCount = tickets.length;
   
   const resolvedTickets = tickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED');
@@ -73,33 +53,59 @@ export default function JournalAgentGantt({ tickets }) {
   
   const ticketDiffPercent = prevMonthTickets.length > 0
     ? Math.round(((curMonthTickets.length - prevMonthTickets.length) / prevMonthTickets.length) * 100)
-    : 18; // default to match mockup visual if empty
+    : 18;
 
-  // Filtered tickets list for the Gantt Grid
-  const filteredTickets = selectedCatFilter === 'Semua'
-    ? tickets
-    : tickets.filter(t => t.category === selectedCatFilter);
+  // 2. Build agent monthly resolution performance matrix
+  // Group all resolved tickets by agent and then by month
+  const agentsMatrix = {};
+  
+  // Collect all unique agent names
+  tickets.forEach(t => {
+    const name = t.assignedTo?.name || 'Belum Ditugaskan';
+    if (!agentsMatrix[name]) {
+      agentsMatrix[name] = Array.from({ length: 12 }, () => []);
+    }
+  });
+
+  // Populate resolved/closed tickets into their respective month indexes
+  resolvedTickets.forEach(t => {
+    if (t.resolvedAt) {
+      const name = t.assignedTo?.name || 'Belum Ditugaskan';
+      const m = new Date(t.resolvedAt).getMonth();
+      if (agentsMatrix[name] && agentsMatrix[name][m]) {
+        agentsMatrix[name][m].push(t);
+      }
+    }
+  });
 
   const getInitials = (name) => {
-    if (!name) return 'IT';
+    if (!name || name === 'Belum Ditugaskan') return 'IT';
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
 
-  const handleMouseEnter = (e, ticket) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const start = new Date(ticket.createdAt);
-    const end = ticket.resolvedAt ? new Date(ticket.resolvedAt) : new Date();
+  const getCellColorClass = (count) => {
+    if (count === 0) {
+      return 'bg-gray-50/40 dark:bg-slate-900/10 border-gray-150/10 dark:border-slate-800/10 text-gray-300 dark:text-slate-700 cursor-default';
+    }
+    if (count === 1) {
+      return 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:scale-105 cursor-pointer';
+    }
+    if (count <= 4) {
+      return 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/30 text-emerald-700 dark:text-emerald-350 font-extrabold hover:scale-105 cursor-pointer';
+    }
+    return 'bg-emerald-500/35 hover:bg-emerald-500/45 border-emerald-500/40 text-emerald-800 dark:text-emerald-300 font-black hover:scale-105 active-glow cursor-pointer';
+  };
 
-    setHoveredTicket({
+  const handleCellMouseEnter = (e, agentName, monthIdx, monthTickets) => {
+    if (monthTickets.length === 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoveredCell({
       x: rect.left + window.scrollX + rect.width / 2,
       y: rect.top + window.scrollY - 8,
-      title: ticket.title,
-      requester: ticket.requester?.name || '-',
-      company: ticket.company?.name || '-',
-      agent: ticket.assignedTo?.name || 'Belum Ditugaskan',
-      status: ticket.status,
-      start: start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
-      end: ticket.resolvedAt ? end.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Sedang Aktif'
+      agentName,
+      monthName: `${MONTHS_LONG[monthIdx]} ${currentYear}`,
+      ticketsCount: monthTickets.length,
+      ticketTitles: monthTickets.map(t => t.title).slice(0, 4) // Show first 4 tickets resolved
     });
   };
 
@@ -188,58 +194,48 @@ export default function JournalAgentGantt({ tickets }) {
         </div>
       </div>
 
-      {/* Main Gantt Chart Table Section */}
+      {/* Main Grid Performance Section */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm relative overflow-visible">
-        {/* Dropdown Filter & Status Legends */}
+        {/* Header Title & Legends */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2.5 bg-gray-50/70 dark:bg-slate-950/20 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl px-4 py-2 text-xs w-full md:w-56">
-            <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider">Kategori:</span>
-            <select
-              value={selectedCatFilter}
-              onChange={(e) => setSelectedCatFilter(e.target.value)}
-              className="bg-transparent font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer text-xs w-full"
-            >
-              <option value="Semua">Semua</option>
-              <option value="Hardware">Hardware</option>
-              <option value="Software">Software</option>
-              <option value="Network">Network</option>
-              <option value="Access">Access</option>
-              <option value="Layanan">Layanan</option>
-            </select>
+          <div>
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-rose-500" />
+              Performa Penyelesaian Tiket Bulanan Agen IT
+            </h3>
+            <p className="text-[10px] text-gray-405 dark:text-slate-500 font-semibold mt-0.5">
+              Jumlah tiket yang berhasil diselesaikan per petugas IT setiap bulannya (Jan - Des {currentYear})
+            </p>
           </div>
-
+          
           {/* Legends Row */}
-          <div className="flex flex-wrap items-center gap-4 text-[9px] font-black uppercase tracking-wider">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Baru (Open)</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> Dikerjakan (In Progress)</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500" /> Pending</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Selesai (Resolved)</span>
+          <div className="flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-wider">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded bg-gray-50/60 dark:bg-slate-900 border border-slate-200/10" /> 0 Tiket</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded bg-emerald-500/10" /> 1 Tiket</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded bg-emerald-500/20" /> 2-4 Tiket</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded bg-emerald-500/35 animate-pulse" /> 5+ Tiket</span>
           </div>
         </div>
 
-        {/* Gantt Grid Timeline */}
+        {/* 14-Column Grid (2 for Agent, 12 for Months) */}
         <div className="w-full overflow-x-auto custom-scroll pb-3">
-          <div className="min-w-[950px] space-y-3 relative">
+          <div className="min-w-[900px] space-y-4 relative">
             
-            {/* Underlay Vertical Current Month Line (Highlighting current month column) */}
-            <div className="absolute inset-0 grid grid-cols-16 pointer-events-none">
-              {/* Offset columns (col 1 to 4) */}
-              <div className="col-span-4" />
-              {/* 12 Month columns */}
+            {/* Underlay Vertical Line for Current Month */}
+            <div className="absolute inset-0 grid grid-cols-14 pointer-events-none">
+              <div className="col-span-2" />
               {[...Array(12)].map((_, idx) => (
                 <div key={idx} className="border-l border-slate-100/50 dark:border-slate-800/20 h-full relative">
                   {idx === currentMonthIdx && (
-                    <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-rose-500/25 border-l border-rose-500/35 z-20" />
+                    <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-rose-500/20 border-l border-rose-500/30 z-20" />
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Grid Header Row: Issue & Category + 12 Months */}
-            <div className="grid grid-cols-16 gap-2 items-center text-center font-mono text-[10px] font-black text-gray-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/40 pb-2 relative z-10">
-              <div className="col-span-3 text-left pl-2 font-sans text-[9px] uppercase tracking-wider text-gray-450 dark:text-slate-400">ISU & PENANGGUNG JAWAB</div>
-              <div className="col-span-1 text-center font-sans text-[9px] uppercase tracking-wider text-gray-455 dark:text-slate-400">KATEGORI</div>
-              
+            {/* Header row: Agent + Months */}
+            <div className="grid grid-cols-14 gap-2 items-center text-center font-mono text-[10px] font-black text-gray-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/40 pb-2 relative z-10">
+              <div className="col-span-2 text-left pl-2 font-sans text-[9px] uppercase tracking-wider text-gray-450 dark:text-slate-450">PETUGAS / AGEN IT</div>
               {MONTHS_SHORT.map((m, idx) => (
                 <div key={idx} className="flex justify-center items-center h-6">
                   {idx === currentMonthIdx ? (
@@ -253,72 +249,48 @@ export default function JournalAgentGantt({ tickets }) {
               ))}
             </div>
 
-            {/* Gantt Rows per Ticket */}
-            <div className="space-y-1 relative z-10">
-              {filteredTickets.map(ticket => {
-                const startDate = new Date(ticket.createdAt);
-                const endVal = ticket.resolvedAt ? new Date(ticket.resolvedAt) : new Date();
-                
-                const startMonth = startDate.getMonth();
-                const endMonth = ticket.resolvedAt ? endVal.getMonth() : new Date().getMonth();
-
-                const startDayMonth = `${startDate.getDate()} ${MONTHS_SHORT[startMonth]}`;
-                const endDayMonth = `${endVal.getDate()} ${MONTHS_SHORT[endMonth]}`;
-
-                // Month Columns start at Col 5 to 16
-                const startCol = startMonth + 5;
-                const endCol = endMonth + 6; // Span exclusive
-
-                const styles = STATUS_COLORS[ticket.status] || STATUS_COLORS.OPEN;
-                const agentName = ticket.assignedTo?.name || 'Belum Ditugaskan';
-                const companyName = ticket.company?.name || '-';
+            {/* Rows per Agent */}
+            <div className="space-y-2 relative z-10">
+              {Object.keys(agentsMatrix).map(agentName => {
+                const agentMonths = agentsMatrix[agentName];
+                const totalResolvedForAgent = agentMonths.reduce((acc, monthList) => acc + monthList.length, 0);
 
                 return (
-                  <div key={ticket.id} className="grid grid-cols-16 gap-2 items-center py-2.5 border-b border-slate-50 dark:border-slate-900/20 hover:bg-slate-50/50 dark:hover:bg-slate-950/20 rounded-2xl transition duration-150">
+                  <div key={agentName} className="grid grid-cols-14 gap-2 items-center py-2 border-b border-slate-50 dark:border-slate-900/20 hover:bg-slate-50/50 dark:hover:bg-slate-950/20 rounded-2xl transition duration-150">
                     
-                    {/* 1. Issue & Agent Details (Col 1-3) */}
-                    <div className="col-span-3 pl-2 flex items-start gap-2.5 min-w-0 pr-2">
-                      {/* Round Avatar with Initials */}
-                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center text-[9px] font-black text-slate-700 dark:text-slate-300 shrink-0 shadow-inner">
+                    {/* Agent Profile Block (Col 1-2) */}
+                    <div className="col-span-2 flex items-center gap-2.5 pl-2 min-w-0 pr-2">
+                      {/* Avatar initials */}
+                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center text-[9px] font-black text-slate-700 dark:text-slate-350 shrink-0 shadow-inner">
                         {getInitials(agentName)}
                       </div>
                       <div className="truncate">
-                        <p className="font-extrabold text-slate-800 dark:text-slate-200 text-xs truncate leading-tight" title={ticket.title}>
-                          {ticket.title}
+                        <p className="font-extrabold text-slate-800 dark:text-slate-200 text-xs truncate leading-tight" title={agentName}>
+                          {agentName}
                         </p>
-                        <p className="text-[9px] text-gray-400 dark:text-slate-500 font-semibold mt-1 truncate">
-                          👤 {agentName.toUpperCase()} &nbsp;•&nbsp; <span className="font-medium text-[8.5px]">{companyName}</span>
+                        <p className="text-[9px] text-emerald-500 font-extrabold mt-0.5 uppercase tracking-wider">
+                          {totalResolvedForAgent} Resolved
                         </p>
                       </div>
                     </div>
 
-                    {/* 2. Category badge (Col 4) */}
-                    <div className="col-span-1 flex justify-center">
-                      <span className="px-2.5 py-0.5 bg-blue-500/10 text-blue-500 border border-blue-500/15 rounded-full text-[8px] font-black uppercase tracking-wider">
-                        {ticket.category || 'Hardware'}
-                      </span>
-                    </div>
+                    {/* 12 Months Cells (Col 3-14) */}
+                    {agentMonths.map((monthTickets, monthIdx) => {
+                      const count = monthTickets.length;
+                      const cellClass = getCellColorClass(count);
 
-                    {/* 3. Gantt Month Tracks (Col 5-16) */}
-                    <div className="col-span-12 relative min-h-[30px] flex items-center">
-                      {/* Horizontal timeline bar */}
-                      <div
-                        style={{
-                          gridColumnStart: startCol,
-                          gridColumnEnd: endCol
-                        }}
-                        onMouseEnter={(e) => handleMouseEnter(e, ticket)}
-                        onMouseLeave={() => setHoveredTicket(null)}
-                        className={`w-full border rounded-full py-1.5 px-3.5 font-sans font-black text-[9px] flex items-center justify-between shadow-sm cursor-crosshair transition duration-150 ${styles.bar}`}
-                      >
-                        <span className="shrink-0 opacity-80">{startDayMonth}</span>
-                        <span className="truncate mx-2 font-extrabold text-slate-700 dark:text-slate-350">{ticket.title}</span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="opacity-80">{ticket.resolvedAt ? endDayMonth : 'Aktif'}</span>
-                          <span className={`w-1.5 h-1.5 rounded-full ${styles.dot}`} />
+                      return (
+                        <div key={monthIdx} className="flex justify-center items-center h-9">
+                          <div
+                            onMouseEnter={(e) => handleCellMouseEnter(e, agentName, monthIdx, monthTickets)}
+                            onMouseLeave={() => setHoveredCell(null)}
+                            className={`w-10 h-8 border rounded-xl flex items-center justify-center font-mono font-black text-xs transition-all duration-150 ${cellClass}`}
+                          >
+                            {count > 0 ? count : ''}
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })}
 
                   </div>
                 );
@@ -329,40 +301,48 @@ export default function JournalAgentGantt({ tickets }) {
         </div>
 
         <style>{`
-          .grid-cols-16 {
-            grid-template-columns: repeat(16, minmax(0, 1fr));
+          .grid-cols-14 {
+            grid-template-columns: repeat(14, minmax(0, 1fr));
           }
         `}</style>
       </div>
 
-      {/* Hover Tooltip Card */}
-      {hoveredTicket && (
+      {/* Hover Performance Tooltip Card */}
+      {hoveredCell && (
         <div
-          className="absolute z-50 pointer-events-none bg-slate-900/95 dark:bg-slate-950/98 text-white p-3 rounded-2xl border border-slate-800 shadow-xl text-xs space-y-1.5 animate-scale-up min-w-[200px]"
+          className="absolute z-50 pointer-events-none bg-slate-900/95 dark:bg-slate-950/98 text-white p-3 rounded-2xl border border-slate-800 shadow-xl text-xs space-y-2 animate-scale-up min-w-[220px]"
           style={{
-            left: `${hoveredTicket.x - 100}px`,
-            top: `${hoveredTicket.y - 130}px`
+            left: `${hoveredCell.x - 110}px`,
+            top: `${hoveredCell.y - 150}px`
           }}
         >
-          <div className="border-b border-slate-800 pb-1.5">
-            <p className="font-bold text-[10px] uppercase tracking-wider text-rose-500 truncate">{hoveredTicket.title}</p>
+          <div className="border-b border-slate-800 pb-1.5 flex justify-between items-center">
+            <span className="font-bold text-[10px] uppercase tracking-wider text-rose-500 truncate max-w-[120px]">
+              {hoveredCell.agentName}
+            </span>
+            <span className="font-mono text-[9px] font-black text-slate-400 shrink-0">
+              {hoveredCell.monthName}
+            </span>
           </div>
-          <div className="space-y-1 text-[11px] font-semibold">
-            <div className="flex justify-between gap-3">
-              <span className="text-slate-400">Pemohon:</span>
-              <span className="font-bold text-right truncate max-w-[110px]">{hoveredTicket.requester}</span>
+          <div className="space-y-1.5 text-[11px] font-semibold">
+            <div className="flex justify-between border-b border-slate-800/40 pb-1">
+              <span className="text-slate-400">Total Selesai:</span>
+              <span className="font-bold text-emerald-450">{hoveredCell.ticketsCount} Tiket</span>
             </div>
-            <div className="flex justify-between gap-3">
-              <span className="text-slate-400">Entitas:</span>
-              <span className="font-bold text-right truncate max-w-[110px]">{hoveredTicket.company}</span>
-            </div>
-            <div className="flex justify-between gap-3">
-              <span className="text-slate-400">Petugas IT:</span>
-              <span className="font-bold text-right text-emerald-450 truncate max-w-[110px]">{hoveredTicket.agent}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Rentang Waktu:</span>
-              <span className="font-bold text-amber-450">{hoveredTicket.start} - {hoveredTicket.end}</span>
+            <div className="space-y-1">
+              <p className="text-[9px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Daftar Tiket:</p>
+              <ul className="list-disc list-inside space-y-0.5 text-slate-300 font-medium">
+                {hoveredCell.ticketTitles.map((title, i) => (
+                  <li key={i} className="truncate max-w-[190px]" title={title}>
+                    {title}
+                  </li>
+                ))}
+              </ul>
+              {hoveredCell.ticketsCount > 4 && (
+                <p className="text-[9.5px] italic text-slate-500 font-bold pl-3">
+                  + {hoveredCell.ticketsCount - 4} tiket lainnya...
+                </p>
+              )}
             </div>
           </div>
         </div>
