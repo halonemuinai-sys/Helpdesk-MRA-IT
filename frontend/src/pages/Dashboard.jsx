@@ -67,9 +67,16 @@ export default function Dashboard({ user, token, darkMode }) {
         </div>
       )}
 
-      {h.analytics && (
         <div className="space-y-6">
-          {/* Main KPI Cards placed at the top */}
+          <DashboardPerformancePanel
+            timeframedLeaderboard={h.timeframedLeaderboard}
+            perfLoading={h.perfLoading}
+            selectedMonth={h.selectedMonth} setSelectedMonth={h.setSelectedMonth}
+            selectedYear={h.selectedYear} setSelectedYear={h.setSelectedYear}
+            darkMode={darkMode}
+          />
+
+          {/* Main KPI Cards placed below the Performance Panel */}
           <DashboardKpiCards analytics={h.analytics} />
 
           {/* Segmented Tab Switcher */}
@@ -116,13 +123,6 @@ export default function Dashboard({ user, token, darkMode }) {
               <div className="space-y-6">
                 <DashboardTrendChart analytics={h.analytics} darkMode={darkMode} />
                 <DashboardSlaHeatmap analytics={h.analytics} />
-                <DashboardPerformancePanel
-                  timeframedLeaderboard={h.timeframedLeaderboard}
-                  perfLoading={h.perfLoading}
-                  selectedMonth={h.selectedMonth} setSelectedMonth={h.setSelectedMonth}
-                  selectedYear={h.selectedYear} setSelectedYear={h.setSelectedYear}
-                  darkMode={darkMode}
-                />
               </div>
             )}
           </div>
