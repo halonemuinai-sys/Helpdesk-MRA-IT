@@ -1,26 +1,51 @@
 import React, { useState } from 'react';
-import { User, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { Layers, Calendar, User, Clock, ArrowRight } from 'lucide-react';
 
 const MONTHS_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
   'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
 ];
 
+const CATEGORIES = ['Hardware', 'Software', 'Network', 'Access'];
+
+const BAR_STYLES = {
+  OPEN: 'bg-blue-500/15 hover:bg-blue-500/25 border-blue-500/20 text-blue-600 dark:text-blue-400',
+  IN_PROGRESS: 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/20 text-amber-600 dark:text-amber-400',
+  PENDING: 'bg-purple-500/15 hover:bg-purple-500/25 border-purple-500/20 text-purple-600 dark:text-purple-400',
+  RESOLVED: 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+  CLOSED: 'bg-slate-500/15 hover:bg-slate-500/25 border-slate-500/20 text-slate-500 dark:text-slate-400'
+};
+
+const STATUS_LABELS = {
+  OPEN: 'Baru (Open)',
+  IN_PROGRESS: 'Dikerjakan (In Progress)',
+  PENDING: 'Pending',
+  RESOLVED: 'Selesai (Resolved)',
+  CLOSED: 'Ditutup (Closed)'
+};
+
 export default function JournalAgentGantt({ tickets }) {
   const [hoveredTicket, setHoveredTicket] = useState(null);
   const currentYear = new Date().getFullYear();
 
-  // 1. Group tickets by agent
-  const agentGroups = {};
-  tickets.forEach(t => {
-    const agentName = t.assignedTo?.name || 'Belum Ditugaskan';
-    if (!agentGroups[agentName]) {
-      agentGroups[agentName] = [];
-    }
-    agentGroups[agentName].push(t);
-  });
+  // 1. Group tickets by category
+  const categoryGroups = {
+    Hardware: [],
+    Software: [],
+    Network: [],
+    Access: []
+  };
 
-  const getMonthName = (monthIdx) => MONTHS_SHORT[monthIdx] || '';
+  tickets.forEach(t => {
+    const cat = t.category || 'Hardware';
+    if (categoryGroups[cat] !== undefined) {
+      categoryGroups[cat].push(t);
+    } else {
+      // Fallback for custom category names
+      if (!categoryGroups[cat]) categoryGroups[cat] = [];
+      categoryGroups[cat].push(t);
+    }
+  });
 
   const handleMouseEnter = (e, ticket) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -33,6 +58,7 @@ export default function JournalAgentGantt({ tickets }) {
       title: ticket.title,
       requester: ticket.requester?.name || '-',
       company: ticket.company?.name || '-',
+      agent: ticket.assignedTo?.name || 'Belum Ditugaskan',
       status: ticket.status,
       start: start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
       end: ticket.resolvedAt ? end.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Sedang Aktif'
@@ -41,123 +67,144 @@ export default function JournalAgentGantt({ tickets }) {
 
   return (
     <div className="glass-panel rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800/80 shadow-sm relative overflow-visible">
-      {/* Title */}
-      <div className="flex items-center justify-between gap-3 mb-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h3 className="text-xs font-bold text-slate-700 dark:text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-rose-500" />
-            Gantt Chart Aktivitas Kerja Agen IT
+            <Layers className="w-4 h-4 text-rose-500" />
+            Gantt Chart Manajemen Isu Tiket IT
           </h3>
           <p className="text-[10px] text-gray-405 dark:text-slate-500 font-semibold mt-0.5">
-            Rentang waktu pengerjaan tiket aktif dan selesai per agen (Januari - Desember {currentYear})
+            Jadwal pengerjaan tiket aktif berdasarkan Kategori Sistem & Layanan (Januari - Desember {currentYear})
           </p>
+        </div>
+        
+        {/* Legends */}
+        <div className="flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-wider">
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-blue-500/20 border border-blue-500/20" /> {STATUS_LABELS.OPEN}</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-amber-500/20 border border-amber-500/20" /> {STATUS_LABELS.IN_PROGRESS}</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-purple-500/20 border border-purple-500/20" /> {STATUS_LABELS.PENDING}</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-emerald-500/20 border border-emerald-500/20" /> {STATUS_LABELS.RESOLVED}</span>
         </div>
       </div>
 
       {/* Gantt Grid Container */}
       <div className="w-full overflow-x-auto custom-scroll pb-2">
-        <div className="min-w-[850px] space-y-4">
-          {/* Header row: Agent column label + 12 Month columns */}
-          <div className="grid grid-cols-12 gap-2 items-center text-center pb-2 border-b border-slate-100 dark:border-slate-800/50">
-            {/* Agent Column (Takes 2 cols span) */}
-            <div className="col-span-2 text-left text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider pl-2">
-              Agen IT
-            </div>
-            {/* 10 columns left inside the 12-grid, wait. If Agent takes 2 cols, we have 10 cols left. But we need 12 months! */}
-            {/* Let's design a custom grid or use flexbox. A 14-column grid is perfect: 2 columns for Agent, 12 columns for months! */}
+        <div className="min-w-[900px] space-y-6 relative">
+          
+          {/* Month Header Grid (15 columns: 3 for Task, 12 for Months) */}
+          <div className="grid grid-cols-15 gap-2 items-center text-center font-mono text-[9px] font-black text-gray-405 dark:text-slate-550 border-b border-slate-100 dark:border-slate-800/40 pb-2">
+            <div className="col-span-3 text-left pl-2 font-sans text-[9px] uppercase tracking-wider text-gray-400 dark:text-slate-500">Isu & Penanggung Jawab</div>
+            {MONTHS_SHORT.map((m, idx) => (
+              <div key={idx} className="border-l border-slate-100/30 dark:border-slate-850/30 pt-0.5">
+                {m}
+              </div>
+            ))}
           </div>
 
-          {/* 14-Column Grid Layout */}
-          <div className="space-y-4 relative">
-            {/* Month Header */}
-            <div className="grid grid-cols-14 gap-2 items-center text-center font-mono text-[9px] font-black text-gray-400 dark:text-slate-500">
-              <div className="col-span-2 text-left pl-2 font-sans text-[9px] uppercase tracking-wider">Daftar Petugas</div>
-              {MONTHS_SHORT.map((m, idx) => (
-                <div key={idx} className="border-l border-slate-100/50 dark:border-slate-850/50 pt-1">
-                  {m}
+          {/* Render by Category */}
+          {Object.keys(categoryGroups).map(catName => {
+            const catTickets = categoryGroups[catName];
+            if (catTickets.length === 0) return null;
+
+            return (
+              <div key={catName} className="space-y-2">
+                {/* Category Header Separator */}
+                <div className="flex items-center gap-2 py-1 px-2 bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-slate-200/10">
+                  <span className="w-1.5 h-3.5 bg-rose-500 rounded-full" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">
+                    Kategori: {catName}
+                  </span>
+                  <span className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1">
+                    ({catTickets.length} Pekerjaan)
+                  </span>
                 </div>
-              ))}
-            </div>
 
-            {/* Swimlanes per agent */}
-            {Object.keys(agentGroups).map(agentName => {
-              const agentTickets = agentGroups[agentName];
-              return (
-                <div key={agentName} className="grid grid-cols-14 gap-2 items-start py-2 border-b border-slate-50 dark:border-slate-900/40 last:border-0">
-                  {/* Agent Profile Block (Col 1-2) */}
-                  <div className="col-span-2 flex items-start gap-2 pr-2 mt-1">
-                    <div className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg">
-                      <User className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="truncate">
-                      <p className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate leading-tight" title={agentName}>
-                        {agentName}
-                      </p>
-                      <p className="text-[9px] text-rose-500 font-extrabold mt-0.5 uppercase tracking-wider">
-                        {agentTickets.length} Tiket
-                      </p>
-                    </div>
-                  </div>
+                {/* Sub-rows for each ticket (project tasks) */}
+                <div className="space-y-1">
+                  {catTickets.map(ticket => {
+                    const start = new Date(ticket.createdAt).getMonth();
+                    const end = ticket.resolvedAt ? new Date(ticket.resolvedAt).getMonth() : new Date().getMonth();
+                    
+                    // coordinate columns (3 columns offset, so months start from col 4 to 15)
+                    const startCol = start + 4;
+                    const endCol = end + 5; // exclusive span end
 
-                  {/* Months Gantt Tracks (Col 3-14) */}
-                  <div className="col-span-12 relative min-h-[40px] pt-1">
-                    {/* Underlying Grid lines */}
-                    <div className="absolute inset-0 grid grid-cols-12 pointer-events-none">
-                      {[...Array(12)].map((_, idx) => (
-                        <div key={idx} className="border-l border-slate-100/30 dark:border-slate-850/20 h-full first:border-0" />
-                      ))}
-                    </div>
+                    const barClass = BAR_STYLES[ticket.status] || BAR_STYLES.OPEN;
+                    const agentName = ticket.assignedTo?.name || 'Belum Ditugaskan';
 
-                    {/* Staged Tickets Bars inside swimlane */}
-                    <div className="space-y-1.5 relative z-10">
-                      {agentTickets.map(ticket => {
-                        const start = new Date(ticket.createdAt).getMonth();
-                        const end = ticket.resolvedAt ? new Date(ticket.resolvedAt).getMonth() : new Date().getMonth();
+                    return (
+                      <div key={ticket.id} className="grid grid-cols-15 gap-2 items-center py-1.5 border-b border-slate-50/20 dark:border-slate-900/10 hover:bg-slate-50/10 dark:hover:bg-slate-900/10 rounded-xl transition duration-150">
                         
-                        // We construct column coordinates
-                        // gridColumnStart needs 1-based index (1 to 12)
-                        const startCol = start + 1;
-                        const endCol = end + 2; // Span ends exclusive
+                        {/* Task Information (Col 1-3) */}
+                        <div className="col-span-3 pl-2 flex flex-col justify-center min-w-0 pr-2">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate leading-tight" title={ticket.title}>
+                            {ticket.title}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 max-w-[100px] truncate`} title={agentName}>
+                              👤 {agentName}
+                            </span>
+                            <span className="text-[8px] font-bold text-gray-400 dark:text-slate-500 truncate max-w-[80px]">
+                              {ticket.company?.name || '-'}
+                            </span>
+                          </div>
+                        </div>
 
-                        return (
+                        {/* Month Tracks (Col 4-15) */}
+                        <div className="col-span-12 relative min-h-[26px] flex items-center">
+                          {/* Grid Background lines */}
+                          <div className="absolute inset-0 grid grid-cols-12 pointer-events-none">
+                            {[...Array(12)].map((_, idx) => (
+                              <div key={idx} className="border-l border-slate-100/30 dark:border-slate-850/20 h-full first:border-0" />
+                            ))}
+                          </div>
+
+                          {/* Horizontal Gantt timeline task bar */}
                           <div
-                            key={ticket.id}
                             style={{
                               gridColumnStart: startCol,
                               gridColumnEnd: endCol
                             }}
                             onMouseEnter={(e) => handleMouseEnter(e, ticket)}
                             onMouseLeave={() => setHoveredTicket(null)}
-                            className={`grid bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/15 text-[9px] px-2 py-1 rounded-xl text-rose-600 dark:text-rose-455 font-bold truncate transition duration-150 cursor-crosshair`}
+                            className={`w-full border rounded-xl py-1 px-2.5 font-sans font-black text-[9px] truncate transition duration-150 cursor-crosshair flex items-center gap-1 shadow-sm ${barClass}`}
                           >
-                            {ticket.title}
+                            <span className="truncate">{ticket.title}</span>
+                            <ArrowRight className="w-2.5 h-2.5 shrink-0 opacity-50" />
+                            <span className="shrink-0 text-[8px] font-extrabold opacity-75">
+                              {MONTHS_SHORT[start]} - {ticket.resolvedAt ? MONTHS_SHORT[end] : 'Aktif'}
+                            </span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+
+                        </div>
+
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+
+              </div>
+            );
+          })}
 
         </div>
       </div>
 
-      {/* Styled inline layout classes for 14-grid column system */}
+      {/* Styled inline layout classes for 15-grid column system */}
       <style>{`
-        .grid-cols-14 {
-          grid-template-columns: repeat(14, minmax(0, 1fr));
+        .grid-cols-15 {
+          grid-template-columns: repeat(15, minmax(0, 1fr));
         }
       `}</style>
 
       {/* Hover Tooltip Card */}
       {hoveredTicket && (
         <div
-          className="absolute z-50 pointer-events-none bg-slate-900/95 dark:bg-slate-950/98 text-white p-3 rounded-2xl border border-slate-800 shadow-xl text-xs space-y-1.5 animate-scale-up min-w-[180px]"
+          className="absolute z-50 pointer-events-none bg-slate-900/95 dark:bg-slate-950/98 text-white p-3 rounded-2xl border border-slate-800 shadow-xl text-xs space-y-1.5 animate-scale-up min-w-[200px]"
           style={{
-            left: `${hoveredTicket.x - 90}px`,
-            top: `${hoveredTicket.y - 120}px`
+            left: `${hoveredTicket.x - 100}px`,
+            top: `${hoveredTicket.y - 130}px`
           }}
         >
           <div className="border-b border-slate-800 pb-1.5">
@@ -166,15 +213,19 @@ export default function JournalAgentGantt({ tickets }) {
           <div className="space-y-1 text-[11px] font-semibold">
             <div className="flex justify-between gap-3">
               <span className="text-slate-400">Pemohon:</span>
-              <span className="font-bold text-right truncate max-w-[100px]">{hoveredTicket.requester}</span>
+              <span className="font-bold text-right truncate max-w-[110px]">{hoveredTicket.requester}</span>
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-slate-400">Entitas:</span>
-              <span className="font-bold text-right truncate max-w-[100px]">{hoveredTicket.company}</span>
+              <span className="font-bold text-right truncate max-w-[110px]">{hoveredTicket.company}</span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-slate-400">Petugas IT:</span>
+              <span className="font-bold text-right text-emerald-450 truncate max-w-[110px]">{hoveredTicket.agent}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Durasi:</span>
-              <span className="font-bold text-emerald-450">{hoveredTicket.start} - {hoveredTicket.end}</span>
+              <span className="text-slate-400">Rentang Waktu:</span>
+              <span className="font-bold text-amber-450">{hoveredTicket.start} - {hoveredTicket.end}</span>
             </div>
           </div>
         </div>
