@@ -7,7 +7,7 @@ import { MONTHS, YEARS, getSlaColor, buildSelectStyles } from './constants';
 const yearOptions = YEARS.map(y => ({ value: y, label: y }));
 
 export default function DashboardPerformancePanel({
-  timeframedLeaderboard, perfLoading,
+  timeframedLeaderboard, prevMonthLeaderboard = [], perfLoading,
   selectedMonth, setSelectedMonth,
   selectedYear, setSelectedYear,
   darkMode,
@@ -16,6 +16,9 @@ export default function DashboardPerformancePanel({
 
   const totalResolved = timeframedLeaderboard.reduce((acc, a) => acc + a.metrics.resolvedTickets, 0);
   const totalAssigned = timeframedLeaderboard.reduce((acc, a) => acc + (a.metrics.totalTickets || a.metrics.resolvedTickets), 0);
+  const prevTotal = prevMonthLeaderboard.reduce((acc, a) => acc + (a.metrics.totalTickets || a.metrics.resolvedTickets), 0);
+  const curTotal = totalAssigned > 0 ? totalAssigned : totalResolved;
+  const diffPercent = prevTotal > 0 ? Math.round(((curTotal - prevTotal) / prevTotal) * 100) : 0;
   const totalSlaMet = timeframedLeaderboard.reduce((acc, a) => acc + a.metrics.slaMet, 0);
   const teamComplianceRate = totalResolved > 0 ? Math.round((totalSlaMet / totalResolved) * 100) : 100;
 
@@ -97,9 +100,15 @@ export default function DashboardPerformancePanel({
                 {totalAssigned > 0 ? totalAssigned : totalResolved} <span className="text-xs font-bold text-gray-400">Tiket</span>
               </h4>
             </div>
-            <p className="text-[10px] text-gray-500 mt-4 font-medium flex items-center gap-1.5">
-              <Ticket className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110 text-purple-500" />
-              Seluruh tiket ditangani
+            <p className="text-[10px] mt-4 font-extrabold flex items-center gap-1.5">
+              {diffPercent > 0 ? (
+                <span className="text-emerald-500">↑ {diffPercent}%</span>
+              ) : diffPercent < 0 ? (
+                <span className="text-rose-500">↓ {Math.abs(diffPercent)}%</span>
+              ) : (
+                <span className="text-gray-400">— 0%</span>
+              )}
+              <span className="text-gray-400 font-semibold">vs bulan lalu ({prevTotal} tiket)</span>
             </p>
           </div>
 

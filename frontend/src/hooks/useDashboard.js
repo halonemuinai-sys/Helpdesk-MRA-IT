@@ -20,6 +20,7 @@ export default function useDashboard({ user, token }) {
   const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1));
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
   const [timeframedLeaderboard, setTimeframedLeaderboard] = useState([]);
+  const [prevMonthLeaderboard, setPrevMonthLeaderboard] = useState([]);
   const [perfLoading, setPerfLoading] = useState(false);
 
   const headers = { 'Authorization': `Bearer ${token}` };
@@ -39,6 +40,21 @@ export default function useDashboard({ user, token }) {
       }
       const res = await fetch(`${API_URL}/performance?startDate=${startDate}&endDate=${endDate}`, { headers });
       if (res.ok) setTimeframedLeaderboard(await res.json());
+
+      // Fetch previous month for comparison
+      let prevStart, prevEnd;
+      if (selectedMonth === 'ALL') {
+        prevStart = new Date(yearNum - 1, 0, 1).toISOString();
+        prevEnd = new Date(yearNum - 1, 11, 31, 23, 59, 59, 999).toISOString();
+      } else {
+        const prevMonthIdx = parseInt(selectedMonth) - 2;
+        const prevYear = prevMonthIdx < 0 ? yearNum - 1 : yearNum;
+        const prevMIdx = prevMonthIdx < 0 ? 11 : prevMonthIdx;
+        prevStart = new Date(prevYear, prevMIdx, 1).toISOString();
+        prevEnd = new Date(prevYear, prevMIdx + 1, 0, 23, 59, 59, 999).toISOString();
+      }
+      const prevRes = await fetch(`${API_URL}/performance?startDate=${prevStart}&endDate=${prevEnd}`, { headers });
+      if (prevRes.ok) setPrevMonthLeaderboard(await prevRes.json());
     } catch (err) {
       console.error('Failed to load performance metrics:', err);
     } finally {
@@ -128,6 +144,6 @@ export default function useDashboard({ user, token }) {
     showPerformanceReminder, setShowPerformanceReminder,
     selectedMonth, setSelectedMonth,
     selectedYear, setSelectedYear,
-    timeframedLeaderboard, perfLoading,
+    timeframedLeaderboard, prevMonthLeaderboard, perfLoading,
   };
 }

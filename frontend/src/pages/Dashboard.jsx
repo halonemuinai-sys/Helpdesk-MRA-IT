@@ -71,6 +71,7 @@ export default function Dashboard({ user, token, darkMode }) {
         <div className="space-y-6">
           <DashboardPerformancePanel
             timeframedLeaderboard={h.timeframedLeaderboard}
+            prevMonthLeaderboard={h.prevMonthLeaderboard}
             perfLoading={h.perfLoading}
             selectedMonth={h.selectedMonth} setSelectedMonth={h.setSelectedMonth}
             selectedYear={h.selectedYear} setSelectedYear={h.setSelectedYear}
