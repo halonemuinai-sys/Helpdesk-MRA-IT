@@ -67,6 +67,7 @@ export default function Dashboard({ user, token, darkMode }) {
         </div>
       )}
 
+      {h.analytics && (
         <div className="space-y-6">
           <DashboardPerformancePanel
             timeframedLeaderboard={h.timeframedLeaderboard}
