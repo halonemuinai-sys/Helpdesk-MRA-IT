@@ -1,6 +1,6 @@
 import React from 'react';
 import Select from 'react-select';
-import { Award, Clock, Building2, Activity } from 'lucide-react';
+import { Award, Clock, Building2, Activity, Ticket } from 'lucide-react';
 import ReactLoader from '../ReactLoader';
 import { MONTHS, YEARS, getSlaColor, buildSelectStyles } from './constants';
 
@@ -15,6 +15,7 @@ export default function DashboardPerformancePanel({
   const selectStyles = buildSelectStyles(darkMode);
 
   const totalResolved = timeframedLeaderboard.reduce((acc, a) => acc + a.metrics.resolvedTickets, 0);
+  const totalAssigned = timeframedLeaderboard.reduce((acc, a) => acc + (a.metrics.totalTickets || a.metrics.resolvedTickets), 0);
   const totalSlaMet = timeframedLeaderboard.reduce((acc, a) => acc + a.metrics.slaMet, 0);
   const teamComplianceRate = totalResolved > 0 ? Math.round((totalSlaMet / totalResolved) * 100) : 100;
 
@@ -87,9 +88,22 @@ export default function DashboardPerformancePanel({
           No performance data recorded for this period.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
 
           <div className="group stagger-1 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
+            <div>
+              <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Total Tiket Bulan Ini</p>
+              <h4 className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-2 transition-transform duration-300 group-hover:translate-x-1">
+                {totalAssigned > 0 ? totalAssigned : totalResolved} <span className="text-xs font-bold text-gray-400">Tiket</span>
+              </h4>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-4 font-medium flex items-center gap-1.5">
+              <Ticket className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110 text-purple-500" />
+              Seluruh tiket ditangani
+            </p>
+          </div>
+
+          <div className="group stagger-2 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
             <div>
               <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Team SLA Compliance</p>
               <h4 className={`text-2xl font-black mt-2 transition-transform duration-300 group-hover:translate-x-1 ${getSlaColor(teamComplianceRate)}`}>
@@ -107,7 +121,7 @@ export default function DashboardPerformancePanel({
             </div>
           </div>
 
-          <div className="group stagger-2 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
+          <div className="group stagger-3 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
             <div>
               <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Avg Team Response</p>
               <h4 className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-2 transition-transform duration-300 group-hover:translate-x-1">
@@ -120,7 +134,7 @@ export default function DashboardPerformancePanel({
             </p>
           </div>
 
-          <div className="group stagger-3 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
+          <div className="group stagger-4 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
             <div>
               <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Avg Team Resolution</p>
               <h4 className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-2 transition-transform duration-300 group-hover:translate-x-1">
@@ -133,7 +147,7 @@ export default function DashboardPerformancePanel({
             </p>
           </div>
 
-          <div className="group stagger-4 p-5 bg-gradient-to-br from-brand-50/50 to-brand-100/20 dark:from-brand-950/20 dark:to-brand-900/10 border border-brand-200/35 dark:border-brand-900/30 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
+          <div className="group stagger-5 p-5 bg-gradient-to-br from-brand-50/50 to-brand-100/20 dark:from-brand-950/20 dark:to-brand-900/10 border border-brand-200/35 dark:border-brand-900/30 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
             <div>
               <p className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest flex items-center gap-1.5">
                 <span className="inline-block animate-float text-sm">🏆</span>
