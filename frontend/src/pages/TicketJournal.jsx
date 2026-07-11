@@ -32,6 +32,7 @@ export default function TicketJournal({ token, user }) {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [activeTab, setActiveTab] = useState('feed');
+  const [visibleCount, setVisibleCount] = useState(10);
 
   const headers = { 'Authorization': `Bearer ${token}` };
 
@@ -43,6 +44,7 @@ export default function TicketJournal({ token, user }) {
     try {
       setLoading(true);
       setError(null);
+      setVisibleCount(10);
 
       // 1. Fetch tickets with filters
       let queryStr = `?search=${encodeURIComponent(searchQuery)}`;
@@ -260,7 +262,7 @@ export default function TicketJournal({ token, user }) {
 
               {/* Chronological Journal Stream */}
               <div className="lg:col-span-3 space-y-6">
-                {tickets.map(ticket => {
+                {tickets.slice(0, visibleCount).map(ticket => {
                   const badge = STATUS_BADGES[ticket.status] || STATUS_BADGES.OPEN;
                   const prioClass = PRIORITY_BADGES[ticket.priority] || 'bg-slate-100 text-slate-600';
                   return (
@@ -338,6 +340,17 @@ export default function TicketJournal({ token, user }) {
                     </div>
                   );
                 })}
+                
+                {tickets.length > visibleCount && (
+                  <div className="flex justify-center pt-2">
+                    <button
+                      onClick={() => setVisibleCount(prev => prev + 10)}
+                      className="px-6 py-3 bg-white/85 dark:bg-slate-900/85 hover:bg-rose-500/10 active:scale-95 text-rose-500 font-black text-[10px] uppercase tracking-wider rounded-2xl border border-slate-200/50 dark:border-slate-800/80 shadow-sm transition-all duration-150"
+                    >
+                      Muat Lebih Banyak (+10 Tiket)
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
