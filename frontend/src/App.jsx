@@ -26,6 +26,7 @@ import TicketJournal from './pages/TicketJournal';
 import Approvals from './pages/Approvals';
 import AuditTrail from './pages/AuditTrail';
 import SetupCompany from './pages/SetupCompany';
+import PublicTicketForm from './pages/PublicTicketForm';
 
 function ProtectedRoute({ user, allowedRoles, children }) {
   if (!user) {
@@ -296,6 +297,9 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Public Self-Service Portal — no auth required */}
+            <Route path="/request" element={<PublicTicketForm />} />
 
             {/* Unauthenticated Route */}
             <Route
