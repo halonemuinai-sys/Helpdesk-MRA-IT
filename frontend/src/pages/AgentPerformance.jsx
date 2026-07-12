@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Award, 
-  AlertTriangle, 
-  Trophy, 
-  Clock, 
-  CheckCircle2, 
-  TrendingUp, 
-  Sparkles, 
+import {
+  Award,
+  AlertTriangle,
+  Trophy,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
+  Sparkles,
   Building2,
   Search,
   ChevronDown,
   ChevronUp,
   Zap,
-  TrendingDown
+  TrendingDown,
+  Mail,
+  Loader2
 } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 import Select from 'react-select';
@@ -115,8 +117,9 @@ export default function AgentPerformance({ user, token, darkMode }) {
 
   // Interactive controls state
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('totalAssigned'); // totalAssigned, complianceRate, avgResponseMin, avgResolutionHour
+  const [sortBy, setSortBy] = useState('totalAssigned');
   const [expandedAgentId, setExpandedAgentId] = useState(null);
+  const [sendingReport, setSendingReport] = useState(false);
 
   const MONTHS = [
     { value: 'ALL', label: 'All Months' },
@@ -252,6 +255,27 @@ export default function AgentPerformance({ user, token, darkMode }) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendReport = async () => {
+    if (sendingReport || leaderboard.length === 0) return;
+    const monthLabel = MONTHS.find(m => m.value === selectedMonth)?.label || 'All Months';
+    const periodLabel = selectedMonth === 'ALL' ? `All Months ${selectedYear}` : `${monthLabel} ${selectedYear}`;
+    setSendingReport(true);
+    try {
+      const res = await fetch(`${API_URL}/performance/send-report`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leaderboard, periodLabel }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send report.');
+      alert(`✅ ${data.message}`);
+    } catch (err) {
+      alert(`❌ ${err.message}`);
+    } finally {
+      setSendingReport(false);
     }
   };
 
@@ -407,6 +431,21 @@ export default function AgentPerformance({ user, token, darkMode }) {
               menuPortalTarget={document.body}
             />
           </div>
+
+          {/* Send Report Button */}
+          <button
+            type="button"
+            onClick={handleSendReport}
+            disabled={sendingReport || leaderboard.length === 0}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-transparent hover:from-cyan-400 hover:to-blue-500 hover:shadow-md hover:shadow-cyan-500/20 active:scale-95"
+          >
+            {sendingReport ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Mail className="w-3.5 h-3.5" />
+            )}
+            {sendingReport ? 'Sending...' : 'Send Report'}
+          </button>
         </div>
       </div>
 

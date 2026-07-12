@@ -410,6 +410,7 @@ async function sendTicketClosedToAgentEmail(ticket) {
 
 module.exports = {
   transporter,
+  sendMail,
   sendTicketCreatedEmail,
   sendTicketStatusChangedEmail,
   sendTicketAssignedEmail,
