@@ -52,8 +52,29 @@ export default function PublicTicketForm() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const fuzzyMatch = (text, query) => {
+    const t = text.toLowerCase();
+    const q = query.toLowerCase().trim();
+    if (!q) return true;
+    if (t.includes(q)) return true;
+    // match each word in query, allowing 1 char typo per word (length > 3)
+    return q.split(/\s+/).filter(Boolean).every(word => {
+      if (t.includes(word)) return true;
+      if (word.length <= 3) return false;
+      for (let i = 0; i <= t.length - word.length; i++) {
+        let diff = 0;
+        for (let j = 0; j < word.length; j++) {
+          if (t[i + j] !== word[j]) diff++;
+          if (diff > 1) break;
+        }
+        if (diff <= 1) return true;
+      }
+      return false;
+    });
+  };
+
   const filteredCompanies = companySearch.trim()
-    ? companies.filter(c => c.toLowerCase().includes(companySearch.toLowerCase()))
+    ? companies.filter(c => fuzzyMatch(c, companySearch))
     : companies;
 
   const selectCompany = (name) => {
