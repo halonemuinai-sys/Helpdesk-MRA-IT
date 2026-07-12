@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -21,6 +22,8 @@ const getDateRange = (filter) => {
 };
 
 export default function useTicketsSummary({ user, token }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [tickets, setTickets] = useState([]);
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +50,17 @@ export default function useTicketsSummary({ user, token }) {
     fetchTickets();
     if (user.role !== 'USER') fetchAgents();
   }, [statusFilter, priorityFilter, monthFilter, limit]);
+
+  // Consume URL params from notification links
+  useEffect(() => {
+    const openId = searchParams.get('open');
+    const slaParam = searchParams.get('sla');
+    if (openId || slaParam) {
+      if (openId) setSelectedTicketId(openId);
+      if (slaParam === 'breached') setSlaFilter(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   useEffect(() => {
     setSelectedTicketIds([]);

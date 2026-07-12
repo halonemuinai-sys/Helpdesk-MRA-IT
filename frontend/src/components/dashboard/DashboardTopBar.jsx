@@ -84,17 +84,22 @@ export default function DashboardTopBar({ recentUrgentTickets, myOverdueTicketsC
 
             <div className="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800/50">
               {myOverdueTicketsCount > 0 && (
-                <div className="px-4 py-3 flex items-start gap-3 hover:bg-red-50/50 dark:hover:bg-red-950/10 transition">
+                <Link
+                  to="/tickets?sla=breached"
+                  onClick={() => setShowNotifDropdown(false)}
+                  className="px-4 py-3 flex items-start gap-3 hover:bg-red-50/50 dark:hover:bg-red-950/10 transition"
+                >
                   <div className="p-1.5 rounded-lg bg-red-500/10 mt-0.5 shrink-0">
                     <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-red-600 dark:text-red-400">Tiket Overdue</p>
                     <p className="text-[10px] text-gray-500 dark:text-slate-400 font-medium mt-0.5">
                       Anda memiliki <span className="font-extrabold text-red-500">{myOverdueTicketsCount}</span> tiket yang melewati batas waktu SLA.
                     </p>
                   </div>
-                </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
+                </Link>
               )}
 
               {expiringSoon.items.slice(0, 5).map(item => (
@@ -131,14 +136,14 @@ export default function DashboardTopBar({ recentUrgentTickets, myOverdueTicketsC
                 recentUrgentTickets.map(ticket => (
                   <Link
                     key={ticket.id}
-                    to={`/tickets/${ticket.id}`}
+                    to={`/tickets?open=${ticket.id}`}
                     onClick={() => setShowNotifDropdown(false)}
                     className="px-4 py-3 flex items-start gap-3 hover:bg-amber-50/50 dark:hover:bg-amber-950/10 transition"
                   >
                     <div className="p-1.5 rounded-lg bg-amber-500/10 mt-0.5 shrink-0">
                       <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-gray-800 dark:text-slate-200 truncate">{ticket.title}</p>
                       <p className="text-[10px] text-gray-500 dark:text-slate-400 font-medium mt-0.5">
                         <span className={`font-extrabold ${ticket.priority === 'CRITICAL' ? 'text-red-500' : 'text-amber-500'}`}>{ticket.priority}</span>
@@ -146,6 +151,7 @@ export default function DashboardTopBar({ recentUrgentTickets, myOverdueTicketsC
                         {ticket.company?.name ? ` · ${ticket.company.name}` : ''}
                       </p>
                     </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
                   </Link>
                 ))
               ) : (
