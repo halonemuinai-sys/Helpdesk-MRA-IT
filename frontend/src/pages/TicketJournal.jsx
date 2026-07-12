@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Search, Building2, User, Clock, CheckCircle2, AlertTriangle, AlertCircle, Calendar } from 'lucide-react';
+import { BookOpen, Search, Building2, User, Clock, CheckCircle2, AlertTriangle, AlertCircle, Calendar, MessageSquare } from 'lucide-react';
 import ReactLoader from '../components/ReactLoader';
 import JournalAgentGantt from '../components/dashboard/JournalAgentGantt';
 
@@ -89,6 +89,12 @@ export default function TicketJournal({ token, user }) {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     fetchInitialData();
+  };
+
+  const extractComment = (details) => {
+    if (!details) return null;
+    const match = details.match(/Catatan:\s*"(.+?)"/s);
+    return match ? match[1] : null;
   };
 
   const formatDate = (dateStr) => {
@@ -300,6 +306,35 @@ export default function TicketJournal({ token, user }) {
                           {ticket.description}
                         </p>
                       </div>
+
+                      {/* IT Agent Comments from Audit Log */}
+                      {(() => {
+                        const comments = (ticket.auditLogs || [])
+                          .map(log => ({ comment: extractComment(log.details), by: log.performedBy, at: log.createdAt }))
+                          .filter(c => c.comment);
+                        if (comments.length === 0) return null;
+                        return (
+                          <div className="mb-4 space-y-2">
+                            <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                              <MessageSquare className="w-3 h-3" />
+                              Catatan IT ({comments.length})
+                            </h4>
+                            {comments.map((c, i) => (
+                              <div key={i} className="flex gap-2.5">
+                                <div className="w-5 h-5 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                                  <MessageSquare className="w-2.5 h-2.5 text-brand-500" />
+                                </div>
+                                <div className="flex-1 bg-brand-50/60 dark:bg-brand-950/10 border border-brand-200/30 dark:border-brand-900/20 rounded-xl px-3 py-2">
+                                  <p className="text-xs text-gray-700 dark:text-slate-300 leading-relaxed">{c.comment}</p>
+                                  <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 mt-1">
+                                    {c.by} · {formatDate(c.at)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
 
                       {/* Footer (Requester & Agent Details) */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold border-t border-slate-100 dark:border-slate-800/50 pt-4">

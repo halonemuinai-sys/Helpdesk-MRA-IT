@@ -107,7 +107,8 @@ router.get('/', verifyToken, async (req, res, next) => {
           select: { id: true, name: true, email: true }
         },
         auditLogs: {
-          select: { action: true }
+          select: { action: true, details: true, performedBy: true, createdAt: true },
+          orderBy: { createdAt: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' }
