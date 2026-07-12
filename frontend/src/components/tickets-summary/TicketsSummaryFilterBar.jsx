@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, Clock, Grid, Circle, PauseCircle, CheckCircle2, XCircle, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Search, Filter, Clock, Grid, Circle, PauseCircle, CheckCircle2, XCircle, ChevronDown, AlertTriangle, MoonStar } from 'lucide-react';
 
 const ACTIVE_STATUSES = [
   { label: 'All Active', value: 'ALL_ACTIVE', icon: Grid },
@@ -20,6 +20,7 @@ export default function TicketsSummaryFilterBar({
   searchQuery, setSearchQuery,
   monthFilter, onMonthChange,
   slaFilter, onSlaFilterToggle,
+  offHoursFilter, onOffHoursFilterToggle,
   onSearch,
 }) {
   const statuses = activeTab === 'ACTIVE' ? ACTIVE_STATUSES : HISTORY_STATUSES;
@@ -95,6 +96,20 @@ export default function TicketsSummaryFilterBar({
           <AlertTriangle className={`w-3.5 h-3.5 ${slaFilter ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'}`} />
           SLA Breached
           {slaFilter && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={onOffHoursFilterToggle}
+          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 whitespace-nowrap shadow-sm ${
+            offHoursFilter
+              ? 'bg-violet-50 text-violet-600 border-violet-300 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-900/50'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-violet-200 dark:hover:border-violet-900/50 hover:text-violet-500 dark:hover:text-violet-400'
+          }`}
+        >
+          <MoonStar className={`w-3.5 h-3.5 ${offHoursFilter ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
+          Luar Jam Kerja
+          {offHoursFilter && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />}
         </button>
 
         <form

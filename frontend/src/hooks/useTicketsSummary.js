@@ -37,6 +37,7 @@ export default function useTicketsSummary({ user, token }) {
 
   const [monthFilter, setMonthFilter] = useState('ALL');
   const [slaFilter, setSlaFilter] = useState(false);
+  const [offHoursFilter, setOffHoursFilter] = useState(false);
   const [limit, setLimit] = useState(100);
   const [hasMore, setHasMore] = useState(false);
 
@@ -333,6 +334,15 @@ export default function useTicketsSummary({ user, token }) {
   const handleMonthChange = (val) => { setMonthFilter(val); setLimit(100); };
   const handlePriorityChange = (val) => { setPriorityFilter(val); setLimit(100); };
   const handleSlaFilterToggle = () => setSlaFilter(v => !v);
+  const handleOffHoursFilterToggle = () => setOffHoursFilter(v => !v);
+
+  const isOutsideBusinessHours = (dateStr) => {
+    const d = new Date(dateStr);
+    const day = d.getDay();
+    if (day === 0 || day === 6) return true;
+    const totalMin = d.getHours() * 60 + d.getMinutes();
+    return totalMin < 9 * 60 || totalMin >= 17 * 60;
+  };
   const handleSearch = () => { setLimit(100); fetchTickets(); };
   const handleLoadMore = () => setLimit(prev => prev + 100);
 
@@ -351,6 +361,7 @@ export default function useTicketsSummary({ user, token }) {
     if (statusFilter === 'ALL_ACTIVE' && !['OPEN', 'IN_PROGRESS', 'PENDING'].includes(t.status)) return false;
     if (statusFilter === 'ALL_HISTORY' && !['RESOLVED', 'CLOSED'].includes(t.status)) return false;
     if (slaFilter && !isTicketSlaBreached(t)) return false;
+    if (offHoursFilter && !isOutsideBusinessHours(t.createdAt)) return false;
     return true;
   });
 
@@ -399,6 +410,8 @@ export default function useTicketsSummary({ user, token }) {
     handleMonthChange,
     handlePriorityChange,
     handleSlaFilterToggle,
+    offHoursFilter,
+    handleOffHoursFilterToggle,
     handleSearch,
   };
 }
