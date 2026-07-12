@@ -457,6 +457,7 @@ export default function TicketDetailsModal({
   handleSlaOverride,
   handleUpdateRespondedAt,
   handleTicketPriorityChange,
+  handleTicketMetaChange,
 }) {
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
@@ -606,6 +607,71 @@ export default function TicketDetailsModal({
     );
   };
 
+  const CATEGORIES = ['Hardware', 'Software', 'Network', 'Access', 'ERP'];
+  const SOURCES = ['Walk-in', 'Email', 'Phone Call', 'Instant Messaging (WhatsApp/Telegram)', 'Direct Instruction', 'On-site Visit', 'System Alert', 'Self-Service Portal'];
+
+  const InlineDropdown = ({ ticketId, field, current, options, label }) => {
+    const [open, setOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const ref = React.useRef(null);
+
+    useEffect(() => {
+      const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const select = async (val) => {
+      if (val === current || saving) return;
+      setSaving(true);
+      setOpen(false);
+      await handleTicketMetaChange(ticketId, { [field]: val });
+      setSaving(false);
+    };
+
+    const canEdit = user?.role === 'ADMIN' || user?.role === 'AGENT';
+
+    const display = saving ? '...' : (current || '-');
+
+    if (!canEdit) {
+      return (
+        <span className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg font-medium border border-gray-200/50 dark:border-slate-700/50">
+          {label}: {display}
+        </span>
+      );
+    }
+
+    return (
+      <div ref={ref} className="relative inline-block">
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          title={`Klik untuk ubah ${label.toLowerCase()}`}
+          className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 px-2.5 py-1 rounded-lg font-medium border border-gray-200/50 dark:border-slate-700/50 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          {label}: <span className="font-bold text-gray-700 dark:text-slate-200">{display}</span>
+          <svg className="w-2.5 h-2.5 opacity-50 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden min-w-max max-w-xs">
+            {options.map(opt => (
+              <button
+                key={opt} type="button" onClick={() => select(opt)}
+                className={`w-full text-left px-3.5 py-2 text-[11px] font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-gray-800 dark:text-slate-200 flex items-center justify-between gap-4 ${opt === current ? 'opacity-40 cursor-default pointer-events-none' : ''}`}
+              >
+                {opt}
+                {opt === current && <span className="text-[9px] text-gray-400">aktif</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const getStatusBadge = (status) => {
     const classes = {
       OPEN: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/30',
@@ -659,12 +725,25 @@ export default function TicketDetailsModal({
                 <div className="flex items-center gap-2 flex-wrap">
                   {getStatusBadge(ticketDetails.status)}
                   <PriorityDropdown ticketId={ticketDetails.id} current={ticketDetails.priority} />
-                  <span className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg font-medium border border-gray-200/50 dark:border-slate-700/50">
-                    Category: {ticketDetails.category} {ticketDetails.subCategory && ticketDetails.subCategory !== '-' ? `(${ticketDetails.subCategory})` : ''}
-                  </span>
-                  <span className="text-xs text-brand-600 bg-brand-50 dark:bg-brand-950/20 dark:text-brand-400 px-2.5 py-1 rounded-lg font-bold border border-brand-200/10 dark:border-brand-900/10">
-                    Source: {ticketDetails.source || 'Walk-in'}
-                  </span>
+                  <InlineDropdown
+                    ticketId={ticketDetails.id}
+                    field="category"
+                    current={ticketDetails.category}
+                    options={CATEGORIES}
+                    label="Category"
+                  />
+                  {ticketDetails.subCategory && ticketDetails.subCategory !== '-' && (
+                    <span className="text-xs text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-gray-200/50 dark:border-slate-700/50">
+                      ({ticketDetails.subCategory})
+                    </span>
+                  )}
+                  <InlineDropdown
+                    ticketId={ticketDetails.id}
+                    field="source"
+                    current={ticketDetails.source || 'Walk-in'}
+                    options={SOURCES}
+                    label="Source"
+                  />
                 </div>
 
                 <EmployeeInfoCard requester={ticketDetails.requester} company={ticketDetails.company} />

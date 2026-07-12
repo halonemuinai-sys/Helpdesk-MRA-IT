@@ -229,6 +229,19 @@ export default function useTicketsSummary({ user, token }) {
     } catch (err) { alert(err.message); }
   };
 
+  const handleTicketMetaChange = async (ticketId, fields) => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/meta`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(fields),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to update ticket.'); }
+      fetchTickets();
+      if (selectedTicketId === ticketId) fetchTicketDetails(ticketId);
+    } catch (err) { alert(err.message); }
+  };
+
   const handleTicketPriorityChange = async (ticketId, newPriority) => {
     try {
       const res = await fetch(`${API_URL}/tickets/${ticketId}/priority`, {
@@ -379,6 +392,7 @@ export default function useTicketsSummary({ user, token }) {
     handleSlaOverride,
     handleUpdateRespondedAt,
     handleTicketPriorityChange,
+    handleTicketMetaChange,
     handleDeleteTicket,
     handleLoadMore,
     switchTab,

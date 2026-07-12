@@ -902,6 +902,61 @@ router.patch('/:id/priority', verifyToken, async (req, res, next) => {
   }
 });
 
+// PATCH /api/tickets/:id/meta
+router.patch('/:id/meta', verifyToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { category, subCategory, source } = req.body;
+    const { role, name: currentUserName } = req.user;
+
+    if (role === 'USER') return res.status(403).json({ error: 'Access forbidden.' });
+
+    const ticket = await prisma.ticket.findUnique({ where: { id } });
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found.' });
+
+    const updateData = {};
+    const auditDetails = [];
+
+    const validCategories = ['Hardware', 'Software', 'Network', 'Access', 'ERP'];
+    if (category !== undefined) {
+      if (!validCategories.includes(category)) return res.status(400).json({ error: 'Invalid category.' });
+      updateData.category = category;
+      if (category !== ticket.category) auditDetails.push(`Category: ${ticket.category} → ${category}`);
+    }
+    if (subCategory !== undefined) {
+      updateData.subCategory = subCategory;
+      if (subCategory !== ticket.subCategory) auditDetails.push(`Sub-Category: ${ticket.subCategory || '-'} → ${subCategory}`);
+    }
+
+    const validSources = ['Walk-in', 'Email', 'Phone Call', 'Instant Messaging (WhatsApp/Telegram)', 'Direct Instruction', 'On-site Visit', 'System Alert', 'Self-Service Portal'];
+    if (source !== undefined) {
+      if (!validSources.includes(source)) return res.status(400).json({ error: 'Invalid source.' });
+      updateData.source = source;
+      if (source !== ticket.source) auditDetails.push(`Source: ${ticket.source || '-'} → ${source}`);
+    }
+
+    if (Object.keys(updateData).length === 0) return res.status(400).json({ error: 'No fields to update.' });
+
+    const updated = await prisma.ticket.update({
+      where: { id },
+      data: {
+        ...updateData,
+        auditLogs: {
+          create: {
+            action: 'TICKET_UPDATED',
+            details: `${auditDetails.join(', ')} — diubah oleh ${currentUserName}.`,
+            performedBy: currentUserName,
+          }
+        }
+      }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH /api/tickets/:id/sla-override
 // Manually override SLA breach status (ADMIN only)
 router.patch('/:id/sla-override', verifyToken, checkRole(['ADMIN']), async (req, res, next) => {
