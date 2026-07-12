@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Monitor, Wifi, Key, Printer, Smartphone, HelpCircle, Code,
   User, Mail, Building2, ChevronRight, ChevronLeft,
-  CheckCircle2, Loader2, AlertCircle, Headphones, Send
+  CheckCircle2, Loader2, AlertCircle, Headphones, Send, Search, X
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -26,11 +26,44 @@ export default function PublicTicketForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
+  const [companySearch, setCompanySearch] = useState('');
+  const [companyOpen, setCompanyOpen] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  const companyRef = useRef(null);
+
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  const step1Valid = name.trim() && email.trim() && company.trim();
+  useEffect(() => {
+    fetch(`${API_URL}/companies/public`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setCompanies(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (companyRef.current && !companyRef.current.contains(e.target)) {
+        setCompanyOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filteredCompanies = companySearch.trim()
+    ? companies.filter(c => c.toLowerCase().includes(companySearch.toLowerCase()))
+    : companies;
+
+  const selectCompany = (name) => {
+    setCompany(name);
+    setCompanySearch(name);
+    setCompanyOpen(false);
+  };
+
+  const effectiveCompany = company || companySearch;
+  const step1Valid = name.trim() && email.trim() && effectiveCompany.trim();
   const step2Valid = category && title.trim() && description.trim();
 
   const handleNext = () => {
@@ -52,7 +85,7 @@ export default function PublicTicketForm() {
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),
-          company: company.trim(),
+          company: (company || companySearch).trim(),
           category,
           title: title.trim(),
           description: description.trim(),
@@ -149,17 +182,52 @@ export default function PublicTicketForm() {
                   />
                 </label>
 
-                <label className="flex items-center gap-3 px-4 py-3.5">
-                  <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-                  <input
-                    type="text"
-                    placeholder="Perusahaan / unit kerja"
-                    value={company}
-                    onChange={e => setCompany(e.target.value)}
-                    className="flex-1 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
-                    autoComplete="organization"
-                  />
-                </label>
+                <div className="relative" ref={companyRef}>
+                  <div className="flex items-center gap-3 px-4 py-3.5">
+                    <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Cari perusahaan / unit kerja..."
+                      value={companySearch}
+                      onChange={e => { setCompanySearch(e.target.value); setCompany(''); setCompanyOpen(true); }}
+                      onFocus={() => setCompanyOpen(true)}
+                      className="flex-1 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+                      autoComplete="off"
+                    />
+                    {companySearch ? (
+                      <button type="button" onClick={() => { setCompanySearch(''); setCompany(''); setCompanyOpen(true); }}>
+                        <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                      </button>
+                    ) : (
+                      <Search className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                    )}
+                  </div>
+
+                  {companyOpen && filteredCompanies.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-b-2xl shadow-xl max-h-52 overflow-y-auto">
+                      {filteredCompanies.map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onMouseDown={() => selectCompany(c)}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                            company === c
+                              ? 'bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-300 font-bold'
+                              : 'text-gray-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {companyOpen && companySearch.trim() && filteredCompanies.length === 0 && (
+                    <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-b-2xl shadow-xl px-4 py-3 text-xs text-slate-400">
+                      Tidak ditemukan. Ketik nama lengkap perusahaan kamu.
+                    </div>
+                  )}
+                </div>
 
               </div>
 
@@ -314,7 +382,7 @@ export default function PublicTicketForm() {
 
               <button
                 type="button"
-                onClick={() => { setStep(1); setName(''); setEmail(''); setCompany(''); setCategory(''); setTitle(''); setDescription(''); setTicketId(''); setError(''); }}
+                onClick={() => { setStep(1); setName(''); setEmail(''); setCompany(''); setCompanySearch(''); setCategory(''); setTitle(''); setDescription(''); setTicketId(''); setError(''); }}
                 className="w-full py-3.5 rounded-2xl text-sm font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all"
               >
                 Kirim Laporan Lain
