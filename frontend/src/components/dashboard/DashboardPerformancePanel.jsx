@@ -48,6 +48,7 @@ export default function DashboardPerformancePanel({
   const topAgent = timeframedLeaderboard.length > 0 && timeframedLeaderboard[0].metrics.resolvedTickets > 0 ? timeframedLeaderboard[0] : null;
 
   const [resolutionRulesOpen, setResolutionRulesOpen] = useState(false);
+  const [responseRulesOpen, setResponseRulesOpen] = useState(false);
 
   return (
     <div className="bg-gradient-to-br from-white/90 to-slate-50/50 dark:from-slate-900/70 dark:to-slate-950/20 backdrop-blur-xl p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-[0_8px_30px_rgb(0,0,0,0.015)] animate-scale-up relative z-20">
@@ -133,9 +134,16 @@ export default function DashboardPerformancePanel({
             </div>
           </div>
 
-          <div className="group stagger-3 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-all duration-300">
+          <div
+            className="group stagger-3 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] hover:border-cyan-300/40 dark:hover:border-cyan-800/40 transition-all duration-300 cursor-pointer select-none"
+            onClick={() => setResponseRulesOpen(true)}
+            title="Klik untuk lihat rules & metric"
+          >
             <div>
-              <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Avg Team Response</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-gray-450 dark:text-slate-400 uppercase tracking-wider">Avg Team Response</p>
+                <Info className="w-3.5 h-3.5 text-gray-300 dark:text-slate-600 group-hover:text-cyan-400 transition-colors duration-200" />
+              </div>
               <h4 className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-2 transition-transform duration-300 group-hover:translate-x-1">
                 {avgTeamResponse > 0 ? `${avgTeamResponse} min` : '0 min'}
               </h4>
@@ -145,6 +153,102 @@ export default function DashboardPerformancePanel({
               Speed to first response
             </p>
           </div>
+
+          {/* Response Rules Popup Modal */}
+          {responseRulesOpen && createPortal(
+            <div
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+              onClick={() => setResponseRulesOpen(false)}
+            >
+              <div className="absolute inset-0 bg-black/25 dark:bg-black/50 backdrop-blur-sm" />
+              <div
+                className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-sm overflow-hidden"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-cyan-500" />
+                    <span className="font-extrabold text-sm text-gray-800 dark:text-slate-100">Avg Team Response</span>
+                  </div>
+                  <button
+                    onClick={() => setResponseRulesOpen(false)}
+                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="px-5 py-4 space-y-4 text-[11px]">
+
+                  {/* Formula */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Gauge className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
+                      <span className="font-extrabold text-[10px] uppercase tracking-wider text-cyan-600 dark:text-cyan-400">Formula</span>
+                    </div>
+                    <p className="text-gray-500 dark:text-slate-400 leading-relaxed">
+                      Rata-rata waktu dari tiket dibuat hingga pertama kali direspons oleh agent (field <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">respondedAt</span> diisi).
+                    </p>
+                    <div className="mt-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg font-mono text-[10px] text-gray-500 dark:text-slate-400">
+                      avg( respondedAt − createdAt )
+                    </div>
+                  </div>
+
+                  {/* Benchmarks */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <BarChart2 className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
+                      <span className="font-extrabold text-[10px] uppercase tracking-wider text-cyan-600 dark:text-cyan-400">Target Benchmark</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {[
+                        { label: '≤ 15 menit', desc: 'Excellent — Speed Racer', dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' },
+                        { label: '15 – 60 menit', desc: 'Good', dot: 'bg-amber-400', text: 'text-amber-600 dark:text-amber-400' },
+                        { label: '1 – 4 jam', desc: 'Needs Improvement', dot: 'bg-orange-500', text: 'text-orange-600 dark:text-orange-400' },
+                        { label: '> 4 jam', desc: 'Critical', dot: 'bg-red-500', text: 'text-red-600 dark:text-red-400' },
+                      ].map(b => (
+                        <div key={b.label} className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${b.dot}`} />
+                          <span className={`font-bold w-24 shrink-0 ${b.text}`}>{b.label}</span>
+                          <span className="text-gray-400 dark:text-slate-500">{b.desc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SLA Response Limits */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Timer className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
+                      <span className="font-extrabold text-[10px] uppercase tracking-wider text-cyan-600 dark:text-cyan-400">SLA Response Limit per Prioritas</span>
+                    </div>
+                    <div className="rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+                      {[
+                        { priority: 'CRITICAL', limit: '15 menit', bg: 'bg-red-50 dark:bg-red-950/20', color: 'text-red-600 dark:text-red-400' },
+                        { priority: 'HIGH', limit: '1 jam', bg: 'bg-orange-50 dark:bg-orange-950/20', color: 'text-orange-600 dark:text-orange-400' },
+                        { priority: 'MEDIUM', limit: '4 jam', bg: 'bg-amber-50 dark:bg-amber-950/20', color: 'text-amber-600 dark:text-amber-400' },
+                        { priority: 'LOW', limit: '8 jam', bg: 'bg-slate-50 dark:bg-slate-800/40', color: 'text-slate-500 dark:text-slate-400' },
+                      ].map((s, i, arr) => (
+                        <div key={s.priority} className={`flex justify-between items-center px-3 py-2 ${s.bg} ${i < arr.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
+                          <span className={`font-extrabold ${s.color}`}>{s.priority}</span>
+                          <span className="text-gray-500 dark:text-slate-400 font-medium">{s.limit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* KPI Weight */}
+                  <div className="flex items-center justify-between px-3 py-2.5 bg-cyan-50 dark:bg-cyan-950/20 rounded-xl border border-cyan-100 dark:border-cyan-900/40">
+                    <span className="text-gray-500 dark:text-slate-400 font-medium">Bobot KPI Score</span>
+                    <span className="font-extrabold text-cyan-600 dark:text-cyan-400">Response SLA = 25%</span>
+                  </div>
+
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
 
           <div
             className="group stagger-4 p-5 bg-white dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/40 rounded-2xl flex flex-col justify-between shadow-sm hover:scale-[1.01] hover:border-indigo-300/40 dark:hover:border-indigo-800/40 transition-all duration-300 cursor-pointer select-none"
