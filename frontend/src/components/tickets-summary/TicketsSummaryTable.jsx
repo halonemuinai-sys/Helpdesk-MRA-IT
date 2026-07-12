@@ -131,6 +131,24 @@ export default function TicketsSummaryTable({
 
   return (
     <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden shadow-sm">
+      <style>{`
+        @keyframes night-glow {
+          0%, 100% { box-shadow: 0 0 0 0 transparent; }
+          50% { box-shadow: 0 0 7px 2px rgba(96,165,250,0.45); }
+        }
+        @keyframes moon-twinkle {
+          0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+          40% { transform: scale(0.8) rotate(18deg); opacity: 0.55; }
+          60% { transform: scale(1.15) rotate(-8deg); opacity: 0.9; }
+        }
+        .luar-jam-badge {
+          animation: night-glow 2.4s ease-in-out infinite;
+        }
+        .luar-jam-icon {
+          animation: moon-twinkle 2.4s ease-in-out infinite;
+          display: inline-block;
+        }
+      `}</style>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -191,8 +209,8 @@ export default function TicketsSummaryTable({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-gray-800 dark:text-slate-200 truncate">{ticket.title}</span>
                     {offHours && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/10 text-blue-900 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-900/20 dark:border-blue-800/30 shrink-0">
-                        <MoonStar className="w-2.5 h-2.5" />
+                      <span className="luar-jam-badge inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/10 text-blue-900 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-900/20 dark:border-blue-800/30 shrink-0">
+                        <MoonStar className="luar-jam-icon w-2.5 h-2.5" />
                         Luar Jam
                       </span>
                     )}
