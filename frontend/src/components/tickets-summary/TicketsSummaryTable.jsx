@@ -1,7 +1,15 @@
 import React from 'react';
-import { Clock, Pause, AlertTriangle, CheckCircle2, ChevronRight, Trash2 } from 'lucide-react';
+import { Clock, Pause, AlertTriangle, CheckCircle2, ChevronRight, Trash2, MoonStar } from 'lucide-react';
 import ReactLoader from '../ReactLoader';
 import TicketsSummaryEmptyState from './TicketsSummaryEmptyState';
+
+const isOutsideBusinessHours = (dateStr) => {
+  const d = new Date(dateStr);
+  const day = d.getDay(); // 0=Sun, 6=Sat
+  if (day === 0 || day === 6) return true;
+  const totalMin = d.getHours() * 60 + d.getMinutes();
+  return totalMin < 9 * 60 || totalMin >= 17 * 60;
+};
 
 const renderSlaStatus = (ticket, currentTime) => {
   const isBypassed = ticket.auditLogs?.some(log => log.action === 'SLA_OVERRIDDEN');
@@ -149,10 +157,13 @@ export default function TicketsSummaryTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-slate-800/50 text-sm">
-            {displayTickets.map(ticket => (
+            {displayTickets.map(ticket => {
+              const offHours = isOutsideBusinessHours(ticket.createdAt);
+              return (
               <tr
                 key={ticket.id}
                 className="hover:bg-gray-50/30 dark:hover:bg-slate-900/10 cursor-pointer transition-colors"
+                style={offHours ? { boxShadow: 'inset 4px 0 0 0 #7c3aed' } : undefined}
                 onClick={() => setSelectedTicketId(ticket.id)}
               >
                 {user.role === 'ADMIN' && (
@@ -177,7 +188,15 @@ export default function TicketsSummaryTable({
                 )}
 
                 <td className="py-4 px-6 max-w-xs">
-                  <div className="font-semibold text-gray-800 dark:text-slate-200 truncate">{ticket.title}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-gray-800 dark:text-slate-200 truncate">{ticket.title}</span>
+                    {offHours && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-50 text-violet-600 dark:bg-violet-950/30 dark:text-violet-400 border border-violet-200/50 dark:border-violet-800/30 shrink-0">
+                        <MoonStar className="w-2.5 h-2.5" />
+                        Luar Jam
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 flex items-center gap-2">
                     <span>ID: {ticket.id.startsWith('MRA-') ? ticket.id : ticket.id.substring(0, 8)}</span>
                     <span>•</span>
@@ -238,7 +257,8 @@ export default function TicketsSummaryTable({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
