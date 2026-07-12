@@ -156,6 +156,25 @@ router.get('/', verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/assets/:id
+router.get('/:id', verifyToken, async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') return res.status(403).json({ error: 'Access denied.' });
+    const asset = await prisma.asset.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: { select: { id: true, name: true, department: true } },
+        company: { select: { id: true, name: true, location: true } },
+        companyMaster: { select: { id: true, name: true } }
+      }
+    });
+    if (!asset) return res.status(404).json({ error: 'Asset not found.' });
+    res.json(asset);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/assets
 // Creates a new asset record
 router.post('/', verifyToken, async (req, res, next) => {

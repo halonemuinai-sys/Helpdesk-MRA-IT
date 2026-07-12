@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { API_URL } from '../components/assets/constants';
 
 export default function useAssets({ token, user }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const formatNumberForInput = (value) => {
     if (value === undefined || value === null || value === '') return '';
     const raw = value.toString().replace(/\D/g, '');
@@ -88,6 +90,16 @@ export default function useAssets({ token, user }) {
 
   useEffect(() => {
     fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    const openId = searchParams.get('open');
+    if (!openId) return;
+    setSearchParams({}, { replace: true });
+    fetch(`${API_URL}/assets/${openId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(asset => { if (asset) { setViewingAsset(asset); setIsViewDrawerOpen(true); } })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {

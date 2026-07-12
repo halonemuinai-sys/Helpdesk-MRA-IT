@@ -105,7 +105,7 @@ export default function DashboardTopBar({ recentUrgentTickets, myOverdueTicketsC
               {expiringSoon.items.slice(0, 5).map(item => (
                 <Link
                   key={`${item.type}-${item.id}`}
-                  to={item.type === 'ASSET' ? '/assets' : '/subscriptions'}
+                  to={item.type === 'ASSET' ? `/assets?open=${item.id}` : '/subscriptions'}
                   onClick={() => setShowNotifDropdown(false)}
                   className={`px-4 py-3 flex items-start gap-3 transition ${item.isExpired ? 'hover:bg-red-50/50 dark:hover:bg-red-950/10' : 'hover:bg-amber-50/50 dark:hover:bg-amber-950/10'}`}
                 >
