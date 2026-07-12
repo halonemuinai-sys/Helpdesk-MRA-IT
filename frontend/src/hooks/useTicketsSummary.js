@@ -70,7 +70,7 @@ export default function useTicketsSummary({ user, token }) {
         query += `&status=${statusFilter}`;
       }
       if (priorityFilter) query += `&priority=${priorityFilter}`;
-      if (activeTab === 'HISTORY' && monthFilter !== 'ALL') {
+      if (monthFilter !== 'ALL') {
         const { startDate, endDate } = getDateRange(monthFilter);
         if (startDate) query += `&startDate=${startDate}`;
         if (endDate) query += `&endDate=${endDate}`;
