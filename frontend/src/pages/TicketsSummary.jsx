@@ -82,6 +82,7 @@ export default function TicketsSummary({ user, token }) {
           handleAssignAgent={h.handleAssignAgent}
           handleSlaOverride={h.handleSlaOverride}
           handleUpdateRespondedAt={h.handleUpdateRespondedAt}
+          handleTicketPriorityChange={h.handleTicketPriorityChange}
         />
       )}
     </div>

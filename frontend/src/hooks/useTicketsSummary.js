@@ -229,6 +229,19 @@ export default function useTicketsSummary({ user, token }) {
     } catch (err) { alert(err.message); }
   };
 
+  const handleTicketPriorityChange = async (ticketId, newPriority) => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/priority`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ priority: newPriority }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to update priority.'); }
+      fetchTickets();
+      if (selectedTicketId === ticketId) fetchTicketDetails(ticketId);
+    } catch (err) { alert(err.message); }
+  };
+
   const handleDeleteTicket = async (ticketId) => {
     const isDark = document.documentElement.classList.contains('dark');
     const popupClass = {
@@ -365,6 +378,7 @@ export default function useTicketsSummary({ user, token }) {
     handleAssignAgent,
     handleSlaOverride,
     handleUpdateRespondedAt,
+    handleTicketPriorityChange,
     handleDeleteTicket,
     handleLoadMore,
     switchTab,

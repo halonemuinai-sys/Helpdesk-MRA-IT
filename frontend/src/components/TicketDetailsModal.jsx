@@ -445,17 +445,18 @@ const AuditLogList = React.memo(({ auditLogs }) => {
 });
 
 // Komponen Utama Modal
-export default function TicketDetailsModal({ 
-  user, 
-  token, 
-  ticketDetails, 
-  detailsLoading, 
-  agents, 
-  onClose, 
-  handleStatusChange, 
-  handleAssignAgent, 
+export default function TicketDetailsModal({
+  user,
+  token,
+  ticketDetails,
+  detailsLoading,
+  agents,
+  onClose,
+  handleStatusChange,
+  handleAssignAgent,
   handleSlaOverride,
-  handleUpdateRespondedAt
+  handleUpdateRespondedAt,
+  handleTicketPriorityChange,
 }) {
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
@@ -537,17 +538,71 @@ export default function TicketDetailsModal({
     }
   };
 
-  const getPriorityBadge = (prio) => {
-    const classes = {
-      CRITICAL: 'bg-rose-700 text-white shadow-rose-700/20 border border-rose-500 animate-pulse',
-      HIGH: 'bg-red-500 text-white shadow-red-500/10',
-      MEDIUM: 'bg-amber-500 text-white shadow-amber-500/10',
-      LOW: 'bg-emerald-500 text-white shadow-emerald-500/10'
+  const PRIORITY_STYLES = {
+    CRITICAL: 'bg-rose-700 text-white border-rose-500 animate-pulse',
+    HIGH:     'bg-red-500 text-white border-red-400',
+    MEDIUM:   'bg-amber-500 text-white border-amber-400',
+    LOW:      'bg-emerald-500 text-white border-emerald-400',
+  };
+
+  const getPriorityBadge = (prio) => (
+    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow-sm border ${PRIORITY_STYLES[prio] || 'bg-gray-500 text-white border-gray-400'}`}>
+      {prio}
+    </span>
+  );
+
+  const PriorityDropdown = ({ ticketId, current }) => {
+    const [open, setOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const ref = React.useRef(null);
+
+    useEffect(() => {
+      const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const select = async (p) => {
+      if (p === current || saving) return;
+      setSaving(true);
+      setOpen(false);
+      await handleTicketPriorityChange(ticketId, p);
+      setSaving(false);
     };
+
+    const canEdit = user?.role === 'ADMIN' || user?.role === 'AGENT';
+
+    if (!canEdit) return getPriorityBadge(current);
+
     return (
-      <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow-sm ${classes[prio] || 'bg-gray-500'}`}>
-        {prio}
-      </span>
+      <div ref={ref} className="relative inline-block">
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          title="Klik untuk ubah priority"
+          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow-sm border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${PRIORITY_STYLES[current] || 'bg-gray-500 text-white border-gray-400'}`}
+        >
+          {saving ? '...' : current}
+          <svg className="w-2.5 h-2.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden min-w-[110px]">
+            {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map(p => (
+              <button
+                key={p} type="button" onClick={() => select(p)}
+                className={`w-full text-left px-3 py-2 text-[11px] font-bold flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${p === current ? 'opacity-40 cursor-default pointer-events-none' : ''}`}
+              >
+                <span className={`w-2 h-2 rounded-full ${p === 'CRITICAL' ? 'bg-rose-600' : p === 'HIGH' ? 'bg-red-500' : p === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                <span className="text-gray-800 dark:text-slate-200">{p}</span>
+                {p === current && <span className="ml-auto text-gray-400 text-[9px]">aktif</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -603,7 +658,7 @@ export default function TicketDetailsModal({
                 
                 <div className="flex items-center gap-2 flex-wrap">
                   {getStatusBadge(ticketDetails.status)}
-                  {getPriorityBadge(ticketDetails.priority)}
+                  <PriorityDropdown ticketId={ticketDetails.id} current={ticketDetails.priority} />
                   <span className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg font-medium border border-gray-200/50 dark:border-slate-700/50">
                     Category: {ticketDetails.category} {ticketDetails.subCategory && ticketDetails.subCategory !== '-' ? `(${ticketDetails.subCategory})` : ''}
                   </span>

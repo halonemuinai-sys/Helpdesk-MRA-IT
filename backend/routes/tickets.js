@@ -862,6 +862,46 @@ router.delete('/:id', verifyToken, async (req, res, next) => {
   }
 });
 
+// PATCH /api/tickets/:id/priority
+router.patch('/:id/priority', verifyToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { priority } = req.body;
+    const { role, name: currentUserName } = req.user;
+
+    if (role === 'USER') {
+      return res.status(403).json({ error: 'Access forbidden.' });
+    }
+
+    const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+    const newPriority = (priority || '').toUpperCase();
+    if (!validPriorities.includes(newPriority)) {
+      return res.status(400).json({ error: 'Invalid priority value.' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id } });
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found.' });
+
+    const updated = await prisma.ticket.update({
+      where: { id },
+      data: {
+        priority: newPriority,
+        auditLogs: {
+          create: {
+            action: 'PRIORITY_CHANGED',
+            details: `Priority diubah dari ${ticket.priority} ke ${newPriority} oleh ${currentUserName}.`,
+            performedBy: currentUserName,
+          }
+        }
+      }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH /api/tickets/:id/sla-override
 // Manually override SLA breach status (ADMIN only)
 router.patch('/:id/sla-override', verifyToken, checkRole(['ADMIN']), async (req, res, next) => {
