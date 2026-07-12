@@ -28,6 +28,8 @@ export default function TicketsSummary({ user, token }) {
           setSearchQuery={h.setSearchQuery}
           monthFilter={h.monthFilter}
           onMonthChange={h.handleMonthChange}
+          slaFilter={h.slaFilter}
+          onSlaFilterToggle={h.handleSlaFilterToggle}
           onSearch={h.handleSearch}
         />
 

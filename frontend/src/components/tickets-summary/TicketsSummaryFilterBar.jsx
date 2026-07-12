@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, Clock, Grid, Circle, PauseCircle, CheckCircle2, XCircle, ChevronDown } from 'lucide-react';
+import { Search, Filter, Clock, Grid, Circle, PauseCircle, CheckCircle2, XCircle, ChevronDown, AlertTriangle } from 'lucide-react';
 
 const ACTIVE_STATUSES = [
   { label: 'All Active', value: 'ALL_ACTIVE', icon: Grid },
@@ -19,6 +19,7 @@ export default function TicketsSummaryFilterBar({
   priorityFilter, onPriorityChange,
   searchQuery, setSearchQuery,
   monthFilter, onMonthChange,
+  slaFilter, onSlaFilterToggle,
   onSearch,
 }) {
   const statuses = activeTab === 'ACTIVE' ? ACTIVE_STATUSES : HISTORY_STATUSES;
@@ -81,6 +82,20 @@ export default function TicketsSummaryFilterBar({
           </select>
           <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 pointer-events-none group-hover:text-emerald-500 transition-colors" />
         </div>
+
+        <button
+          type="button"
+          onClick={onSlaFilterToggle}
+          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 whitespace-nowrap shadow-sm ${
+            slaFilter
+              ? 'bg-red-50 text-red-600 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/50 shadow-red-100 dark:shadow-red-950/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-red-200 dark:hover:border-red-900/50 hover:text-red-500 dark:hover:text-red-400'
+          }`}
+        >
+          <AlertTriangle className={`w-3.5 h-3.5 ${slaFilter ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'}`} />
+          SLA Breached
+          {slaFilter && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+        </button>
 
         <form
           onSubmit={(e) => { e.preventDefault(); onSearch(); }}

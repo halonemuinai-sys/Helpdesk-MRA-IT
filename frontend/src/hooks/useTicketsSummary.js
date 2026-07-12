@@ -33,6 +33,7 @@ export default function useTicketsSummary({ user, token }) {
   const [selectedTicketIds, setSelectedTicketIds] = useState([]);
 
   const [monthFilter, setMonthFilter] = useState('ALL');
+  const [slaFilter, setSlaFilter] = useState(false);
   const [limit, setLimit] = useState(100);
   const [hasMore, setHasMore] = useState(false);
 
@@ -286,16 +287,30 @@ export default function useTicketsSummary({ user, token }) {
     setStatusFilter(tab === 'ACTIVE' ? 'ALL_ACTIVE' : 'ALL_HISTORY');
     setLimit(100);
     setMonthFilter('ALL');
+    setSlaFilter(false);
   };
 
   const handleMonthChange = (val) => { setMonthFilter(val); setLimit(100); };
   const handlePriorityChange = (val) => { setPriorityFilter(val); setLimit(100); };
+  const handleSlaFilterToggle = () => setSlaFilter(v => !v);
   const handleSearch = () => { setLimit(100); fetchTickets(); };
   const handleLoadMore = () => setLimit(prev => prev + 100);
 
+  const isTicketSlaBreached = (ticket) => {
+    if (ticket.auditLogs?.some(log => log.action === 'SLA_OVERRIDDEN')) return false;
+    if (['RESOLVED', 'CLOSED'].includes(ticket.status)) return !!ticket.isSlaBreached;
+    const limitTime = new Date(ticket.slaResolutionLimit).getTime();
+    let activeLimitTime = limitTime + (ticket.totalPausedMs || 0);
+    if (ticket.status === 'PENDING' && ticket.lastPausedAt) {
+      activeLimitTime += currentTime.getTime() - new Date(ticket.lastPausedAt).getTime();
+    }
+    return currentTime.getTime() > activeLimitTime;
+  };
+
   const displayTickets = tickets.filter(t => {
-    if (statusFilter === 'ALL_ACTIVE') return ['OPEN', 'IN_PROGRESS', 'PENDING'].includes(t.status);
-    if (statusFilter === 'ALL_HISTORY') return ['RESOLVED', 'CLOSED'].includes(t.status);
+    if (statusFilter === 'ALL_ACTIVE' && !['OPEN', 'IN_PROGRESS', 'PENDING'].includes(t.status)) return false;
+    if (statusFilter === 'ALL_HISTORY' && !['RESOLVED', 'CLOSED'].includes(t.status)) return false;
+    if (slaFilter && !isTicketSlaBreached(t)) return false;
     return true;
   });
 
@@ -322,6 +337,7 @@ export default function useTicketsSummary({ user, token }) {
     searchQuery, setSearchQuery,
     selectedTicketIds, setSelectedTicketIds,
     monthFilter,
+    slaFilter,
     hasMore,
     selectedTicketId, setSelectedTicketId,
     ticketDetails, detailsLoading,
@@ -340,6 +356,7 @@ export default function useTicketsSummary({ user, token }) {
     switchTab,
     handleMonthChange,
     handlePriorityChange,
+    handleSlaFilterToggle,
     handleSearch,
   };
 }
