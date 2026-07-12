@@ -163,7 +163,7 @@ export default function TicketsSummaryTable({
               <tr
                 key={ticket.id}
                 className="hover:bg-gray-50/30 dark:hover:bg-slate-900/10 cursor-pointer transition-colors"
-                style={offHours ? { boxShadow: 'inset 4px 0 0 0 #7c3aed' } : undefined}
+                style={offHours ? { boxShadow: 'inset 4px 0 0 0 #1e3a8a' } : undefined}
                 onClick={() => setSelectedTicketId(ticket.id)}
               >
                 {user.role === 'ADMIN' && (
@@ -191,7 +191,7 @@ export default function TicketsSummaryTable({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-gray-800 dark:text-slate-200 truncate">{ticket.title}</span>
                     {offHours && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-50 text-violet-600 dark:bg-violet-950/30 dark:text-violet-400 border border-violet-200/50 dark:border-violet-800/30 shrink-0">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/10 text-blue-900 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-900/20 dark:border-blue-800/30 shrink-0">
                         <MoonStar className="w-2.5 h-2.5" />
                         Luar Jam
                       </span>

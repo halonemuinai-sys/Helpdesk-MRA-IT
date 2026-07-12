@@ -103,13 +103,13 @@ export default function TicketsSummaryFilterBar({
           onClick={onOffHoursFilterToggle}
           className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 whitespace-nowrap shadow-sm ${
             offHoursFilter
-              ? 'bg-violet-50 text-violet-600 border-violet-300 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-900/50'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-violet-200 dark:hover:border-violet-900/50 hover:text-violet-500 dark:hover:text-violet-400'
+              ? 'bg-blue-950 text-blue-200 border-blue-800 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/70'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-blue-900 dark:hover:border-blue-900/50 hover:text-blue-900 dark:hover:text-blue-400'
           }`}
         >
-          <MoonStar className={`w-3.5 h-3.5 ${offHoursFilter ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
+          <MoonStar className={`w-3.5 h-3.5 ${offHoursFilter ? 'text-blue-300' : 'text-slate-400 dark:text-slate-500'}`} />
           Luar Jam Kerja
-          {offHoursFilter && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />}
+          {offHoursFilter && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse" />}
         </button>
 
         <form
