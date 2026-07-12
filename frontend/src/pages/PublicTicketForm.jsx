@@ -2,20 +2,30 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Monitor, Wifi, Key, Printer, Smartphone, HelpCircle, Code,
   User, Mail, Building2, ChevronRight, ChevronLeft,
-  CheckCircle2, Loader2, AlertCircle, Headphones, Send, Search, X
+  CheckCircle2, Loader2, AlertCircle, Send, Search, X
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const CATEGORIES = [
-  { value: 'Hardware', label: 'Hardware', icon: Monitor, desc: 'Laptop, PC, mouse, keyboard, monitor' },
-  { value: 'Software', label: 'Software / Aplikasi', icon: Code, desc: 'Error aplikasi, install, lisensi' },
-  { value: 'Network', label: 'Network / Internet', icon: Wifi, desc: 'Koneksi internet, WiFi, VPN' },
-  { value: 'Access', label: 'Akses & Password', icon: Key, desc: 'Login, reset password, hak akses' },
-  { value: 'Printer', label: 'Printer / Scanner', icon: Printer, desc: 'Masalah cetak, scan, fotokopi' },
-  { value: 'Phone', label: 'HP / Telepon', icon: Smartphone, desc: 'Smartphone, ekstensi, PABX' },
-  { value: 'Lainnya', label: 'Lainnya', icon: HelpCircle, desc: 'Kendala IT yang tidak ada di atas' },
+  { value: 'Hardware',  label: 'Hardware',          icon: Monitor,    desc: 'Laptop, PC, mouse, keyboard',  iconBg: 'bg-blue-50',    iconColor: 'text-blue-500'   },
+  { value: 'Software',  label: 'Software / Aplikasi',icon: Code,       desc: 'Error aplikasi, install',       iconBg: 'bg-violet-50',  iconColor: 'text-violet-500' },
+  { value: 'Network',   label: 'Network / Internet', icon: Wifi,       desc: 'Koneksi internet, WiFi, VPN',   iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500'},
+  { value: 'Access',    label: 'Akses & Password',   icon: Key,        desc: 'Login, reset password',         iconBg: 'bg-amber-50',   iconColor: 'text-amber-500'  },
+  { value: 'Printer',   label: 'Printer / Scanner',  icon: Printer,    desc: 'Masalah cetak, scan',           iconBg: 'bg-sky-50',     iconColor: 'text-sky-500'    },
+  { value: 'Phone',     label: 'HP / Telepon',       icon: Smartphone, desc: 'Smartphone, ekstensi',          iconBg: 'bg-rose-50',    iconColor: 'text-rose-500'   },
+  { value: 'Lainnya',   label: 'Lainnya',            icon: HelpCircle, desc: 'Kendala IT lainnya',            iconBg: 'bg-slate-50',   iconColor: 'text-slate-400'  },
 ];
+
+// ── Reusable Input Row ────────────────────────────────────────────────────────
+function InputRow({ icon: Icon, children, last }) {
+  return (
+    <div className={`flex items-center gap-3.5 px-5 py-4 ${!last ? 'border-b border-gray-100' : ''}`}>
+      <Icon className="w-4 h-4 text-gray-400 shrink-0" />
+      {children}
+    </div>
+  );
+}
 
 export default function PublicTicketForm() {
   const [step, setStep] = useState(1);
@@ -44,9 +54,8 @@ export default function PublicTicketForm() {
 
   useEffect(() => {
     const handler = (e) => {
-      if (companyRef.current && !companyRef.current.contains(e.target)) {
+      if (companyRef.current && !companyRef.current.contains(e.target))
         setCompanyOpen(false);
-      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -57,7 +66,6 @@ export default function PublicTicketForm() {
     const q = query.toLowerCase().trim();
     if (!q) return true;
     if (t.includes(q)) return true;
-    // match each word in query, allowing 1 char typo per word (length > 3)
     return q.split(/\s+/).filter(Boolean).every(word => {
       if (t.includes(word)) return true;
       if (word.length <= 3) return false;
@@ -77,23 +85,14 @@ export default function PublicTicketForm() {
     ? companies.filter(c => fuzzyMatch(c, companySearch))
     : companies;
 
-  const selectCompany = (name) => {
-    setCompany(name);
-    setCompanySearch(name);
-    setCompanyOpen(false);
-  };
+  const selectCompany = (val) => { setCompany(val); setCompanySearch(val); setCompanyOpen(false); };
 
   const effectiveCompany = company || companySearch;
   const step1Valid = name.trim() && email.trim() && effectiveCompany.trim();
   const step2Valid = category && title.trim() && description.trim();
 
-  const handleNext = () => {
-    if (step === 1 && step1Valid) setStep(2);
-  };
-
-  const handleBack = () => {
-    if (step === 2) setStep(1);
-  };
+  const handleNext = () => { if (step1Valid) setStep(2); };
+  const handleBack = () => setStep(1);
 
   const handleSubmit = async () => {
     if (!step2Valid) return;
@@ -104,14 +103,10 @@ export default function PublicTicketForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          company: (company || companySearch).trim(),
-          category,
-          title: title.trim(),
-          description: description.trim(),
-          priority: 'LOW',
-          source: 'Self-Service Portal',
+          name: name.trim(), email: email.trim().toLowerCase(),
+          company: effectiveCompany.trim(), category,
+          title: title.trim(), description: description.trim(),
+          priority: 'LOW', source: 'Self-Service Portal',
         }),
       });
       const data = await res.json();
@@ -125,116 +120,121 @@ export default function PublicTicketForm() {
     }
   };
 
+  const resetForm = () => {
+    setStep(1); setName(''); setEmail(''); setCompany(''); setCompanySearch('');
+    setCategory(''); setTitle(''); setDescription(''); setTicketId(''); setError('');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 flex flex-col">
+    <div className="min-h-screen bg-[#f4f6f9] flex flex-col items-center justify-start py-8 px-4">
 
-      {/* Top Bar */}
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center gap-3 shadow-sm">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
-          <Headphones className="w-4 h-4 text-white" />
+      {/* Logo & Brand */}
+      <div className="flex flex-col items-center gap-3 mb-6">
+        <img
+          src="/mra-logo.png"
+          alt="MRA"
+          className="h-12 object-contain"
+          onError={e => { e.target.style.display = 'none'; }}
+        />
+        <div className="text-center">
+          <p className="text-xs font-semibold text-slate-400 tracking-widest uppercase">IT Helpdesk · Self-Service Portal</p>
         </div>
-        <div>
-          <p className="text-xs font-extrabold text-gray-800 dark:text-slate-100 leading-none">IT MRA Helpdesk</p>
-          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">Self-Service Portal</p>
-        </div>
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-start px-4 py-6">
-        <div className="w-full max-w-md">
+      {/* Card */}
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-slate-200/60 overflow-hidden">
 
-          {/* Step Indicator */}
-          {step < 3 && (
-            <div className="flex items-center gap-2 mb-6">
-              {[1, 2].map((s) => (
-                <React.Fragment key={s}>
-                  <div className={`flex items-center gap-1.5 ${step === s ? 'text-cyan-600 dark:text-cyan-400' : step > s ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold border-2 transition-all ${
-                      step === s
-                        ? 'bg-cyan-500 border-cyan-500 text-white'
-                        : step > s
-                        ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400'
-                    }`}>
-                      {step > s ? '✓' : s}
+        {/* Card Top Bar — step indicator */}
+        {step < 3 && (
+          <div className="px-6 pt-6 pb-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              {['Identitas', 'Masalah'].map((label, idx) => {
+                const s = idx + 1;
+                const done = step > s;
+                const active = step === s;
+                return (
+                  <React.Fragment key={s}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black transition-all ${
+                        done    ? 'bg-emerald-500 text-white' :
+                        active  ? 'bg-slate-900 text-white' :
+                                  'bg-gray-100 text-gray-400'
+                      }`}>
+                        {done ? '✓' : s}
+                      </div>
+                      <span className={`text-xs font-semibold ${active ? 'text-slate-800' : done ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {label}
+                      </span>
                     </div>
-                    <span className="text-xs font-bold hidden sm:inline">
-                      {s === 1 ? 'Identitas' : 'Masalah'}
-                    </span>
-                  </div>
-                  {s < 2 && <div className={`flex-1 h-0.5 rounded-full ${step > s ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'}`} />}
-                </React.Fragment>
-              ))}
+                    {s < 2 && (
+                      <div className={`flex-1 h-px ${done ? 'bg-emerald-300' : 'bg-gray-200'}`} />
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </div>
-          )}
+          </div>
+        )}
+
+        <div className="px-6 py-6">
 
           {/* ── Step 1: Identity ── */}
           {step === 1 && (
-            <div className="space-y-5 animate-fade-in">
+            <div className="space-y-5">
               <div>
-                <h1 className="text-xl font-extrabold text-gray-800 dark:text-slate-100">Halo! Ada kendala IT?</h1>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Isi data diri kamu dulu ya, biar kami bisa bantu.</p>
+                <h1 className="text-xl font-bold text-slate-900">Ada kendala IT?</h1>
+                <p className="text-sm text-slate-400 mt-1">Isi data diri kamu terlebih dahulu.</p>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
-
-                <label className="flex items-center gap-3 px-4 py-3.5">
-                  <User className="w-4 h-4 text-slate-400 shrink-0" />
+              {/* Input Card */}
+              <div className="rounded-2xl border border-gray-100 overflow-visible shadow-sm">
+                <InputRow icon={User}>
                   <input
-                    type="text"
-                    placeholder="Nama lengkap"
-                    value={name}
+                    type="text" placeholder="Nama lengkap" value={name}
                     onChange={e => setName(e.target.value)}
-                    className="flex-1 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
                     autoComplete="name"
+                    className="flex-1 text-sm text-slate-800 placeholder-gray-300 focus:outline-none bg-transparent"
                   />
-                </label>
+                </InputRow>
 
-                <label className="flex items-center gap-3 px-4 py-3.5">
-                  <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                <InputRow icon={Mail}>
                   <input
-                    type="email"
-                    placeholder="Email kantor"
-                    value={email}
+                    type="email" placeholder="Email kantor" value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="flex-1 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
-                    autoComplete="email"
-                    inputMode="email"
+                    autoComplete="email" inputMode="email"
+                    className="flex-1 text-sm text-slate-800 placeholder-gray-300 focus:outline-none bg-transparent"
                   />
-                </label>
+                </InputRow>
 
-                <div className="relative" ref={companyRef}>
-                  <div className="flex items-center gap-3 px-4 py-3.5">
-                    <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                {/* Company Searchable */}
+                <div ref={companyRef} className="relative">
+                  <InputRow icon={Building2} last>
                     <input
-                      type="text"
-                      placeholder="Cari perusahaan / unit kerja..."
+                      type="text" placeholder="Cari perusahaan / unit kerja..."
                       value={companySearch}
                       onChange={e => { setCompanySearch(e.target.value); setCompany(''); setCompanyOpen(true); }}
                       onFocus={() => setCompanyOpen(true)}
-                      className="flex-1 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
                       autoComplete="off"
+                      className="flex-1 text-sm text-slate-800 placeholder-gray-300 focus:outline-none bg-transparent"
                     />
                     {companySearch ? (
                       <button type="button" onClick={() => { setCompanySearch(''); setCompany(''); setCompanyOpen(true); }}>
-                        <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                        <X className="w-3.5 h-3.5 text-gray-300 hover:text-gray-500 transition-colors" />
                       </button>
                     ) : (
-                      <Search className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                      <Search className="w-3.5 h-3.5 text-gray-300 shrink-0" />
                     )}
-                  </div>
+                  </InputRow>
 
                   {companyOpen && filteredCompanies.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-b-2xl shadow-xl max-h-52 overflow-y-auto">
+                    <div className="absolute left-0 right-0 top-full z-50 mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-52 overflow-y-auto">
                       {filteredCompanies.map(c => (
                         <button
-                          key={c}
-                          type="button"
-                          onMouseDown={() => selectCompany(c)}
-                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                          key={c} type="button" onMouseDown={() => selectCompany(c)}
+                          className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${
                             company === c
-                              ? 'bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-300 font-bold'
-                              : 'text-gray-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                              ? 'bg-slate-900 text-white font-semibold'
+                              : 'text-slate-700 hover:bg-gray-50'
                           }`}
                         >
                           {c}
@@ -244,57 +244,53 @@ export default function PublicTicketForm() {
                   )}
 
                   {companyOpen && companySearch.trim() && filteredCompanies.length === 0 && (
-                    <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-b-2xl shadow-xl px-4 py-3 text-xs text-slate-400">
-                      Tidak ditemukan. Ketik nama lengkap perusahaan kamu.
+                    <div className="absolute left-0 right-0 top-full z-50 mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl px-5 py-3 text-xs text-gray-400">
+                      Tidak ditemukan. Ketik nama lengkap perusahaan.
                     </div>
                   )}
                 </div>
-
               </div>
 
               <button
-                type="button"
-                onClick={handleNext}
-                disabled={!step1Valid}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-500 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none"
+                type="button" onClick={handleNext} disabled={!step1Valid}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-700 active:scale-[0.98] transition-all disabled:opacity-30 disabled:pointer-events-none shadow-sm"
               >
-                Lanjut
-                <ChevronRight className="w-4 h-4" />
+                Lanjut <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
 
           {/* ── Step 2: Problem ── */}
           {step === 2 && (
-            <div className="space-y-5 animate-fade-in">
+            <div className="space-y-5">
               <div>
-                <h1 className="text-xl font-extrabold text-gray-800 dark:text-slate-100">Ceritakan masalahnya</h1>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Pilih kategori dan jelaskan kendalamu.</p>
+                <h1 className="text-xl font-bold text-slate-900">Ceritakan masalahnya</h1>
+                <p className="text-sm text-slate-400 mt-1">Pilih kategori dan jelaskan kendala kamu.</p>
               </div>
 
               {/* Category Grid */}
               <div>
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">Jenis Masalah</p>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Jenis Masalah</p>
                 <div className="grid grid-cols-2 gap-2">
                   {CATEGORIES.map(cat => {
                     const Icon = cat.icon;
                     const active = category === cat.value;
                     return (
                       <button
-                        key={cat.value}
-                        type="button"
-                        onClick={() => setCategory(cat.value)}
-                        className={`flex flex-col items-start gap-1.5 p-3 rounded-2xl border text-left transition-all active:scale-[0.97] ${
+                        key={cat.value} type="button" onClick={() => setCategory(cat.value)}
+                        className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all active:scale-[0.97] ${
                           active
-                            ? 'bg-cyan-50 dark:bg-cyan-950/30 border-cyan-400 dark:border-cyan-600 ring-1 ring-cyan-400/30'
-                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-cyan-300 dark:hover:border-cyan-700'
+                            ? 'border-slate-900 bg-slate-900 shadow-sm'
+                            : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'
                         }`}
                       >
-                        <Icon className={`w-5 h-5 ${active ? 'text-cyan-500' : 'text-slate-400'}`} />
-                        <span className={`text-xs font-bold leading-tight ${active ? 'text-cyan-700 dark:text-cyan-300' : 'text-gray-700 dark:text-slate-200'}`}>
-                          {cat.label}
-                        </span>
-                        <span className="text-[10px] text-slate-400 leading-tight">{cat.desc}</span>
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white/10' : cat.iconBg}`}>
+                          <Icon className={`w-4 h-4 ${active ? 'text-white' : cat.iconColor}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`text-xs font-semibold leading-tight truncate ${active ? 'text-white' : 'text-slate-700'}`}>{cat.label}</p>
+                          <p className={`text-[10px] leading-tight mt-0.5 truncate ${active ? 'text-slate-300' : 'text-gray-400'}`}>{cat.desc}</p>
+                        </div>
                       </button>
                     );
                   })}
@@ -302,61 +298,48 @@ export default function PublicTicketForm() {
               </div>
 
               {/* Title + Description */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
-                <label className="flex items-center gap-3 px-4 py-3.5">
-                  <span className="text-xs font-bold text-slate-400 shrink-0 w-12">Judul</span>
+              <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Judul Masalah</p>
                   <input
-                    type="text"
-                    placeholder="Ringkasan singkat masalahmu"
-                    value={title}
-                    onChange={e => setTitle(e.target.value)}
-                    className="flex-1 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+                    type="text" placeholder="Ringkasan singkat masalah kamu..."
+                    value={title} onChange={e => setTitle(e.target.value)}
+                    className="w-full text-sm text-slate-800 placeholder-gray-300 focus:outline-none bg-transparent"
                   />
-                </label>
-                <label className="flex flex-col gap-2 px-4 py-3.5">
-                  <span className="text-xs font-bold text-slate-400">Detail masalah</span>
+                </div>
+                <div className="px-5 py-4">
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Detail Masalah</p>
                   <textarea
-                    placeholder="Jelaskan secara lengkap: apa yang terjadi, sejak kapan, sudah dicoba apa saja..."
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
+                    placeholder="Jelaskan apa yang terjadi, sejak kapan, dan sudah dicoba apa saja..."
+                    value={description} onChange={e => setDescription(e.target.value)}
                     rows={4}
-                    className="bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none resize-none leading-relaxed"
+                    className="w-full text-sm text-slate-800 placeholder-gray-300 focus:outline-none bg-transparent resize-none leading-relaxed"
                   />
-                </label>
+                </div>
               </div>
 
               {error && (
-                <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl text-sm text-red-600 dark:text-red-400">
-                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span>{error}</span>
+                <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl">
+                  <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+                  <span className="text-sm text-red-500">{error}</span>
                 </div>
               )}
 
-              <div className="flex gap-3">
+              <div className="flex gap-2.5">
                 <button
-                  type="button"
-                  onClick={handleBack}
-                  className="flex items-center gap-1.5 px-4 py-3.5 rounded-2xl text-sm font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all"
+                  type="button" onClick={handleBack}
+                  className="flex items-center gap-1.5 px-4 py-3.5 rounded-2xl text-sm font-semibold border border-gray-200 bg-white text-slate-600 hover:bg-gray-50 active:scale-[0.98] transition-all"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  Kembali
                 </button>
                 <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!step2Valid || submitting}
-                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-500 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none"
+                  type="button" onClick={handleSubmit} disabled={!step2Valid || submitting}
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-700 active:scale-[0.98] transition-all disabled:opacity-30 disabled:pointer-events-none shadow-sm"
                 >
                   {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Mengirim...
-                    </>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Mengirim...</>
                   ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Kirim Laporan
-                    </>
+                    <><Send className="w-4 h-4" /> Kirim Laporan</>
                   )}
                 </button>
               </div>
@@ -365,58 +348,59 @@ export default function PublicTicketForm() {
 
           {/* ── Step 3: Success ── */}
           {step === 3 && (
-            <div className="text-center space-y-6 animate-fade-in pt-4">
+            <div className="text-center space-y-5 py-2">
               <div className="flex justify-center">
-                <div className="w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                 </div>
               </div>
 
               <div>
-                <h1 className="text-xl font-extrabold text-gray-800 dark:text-slate-100">Laporan Terkirim!</h1>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">
-                  Terima kasih {name.split(' ')[0]}, laporanmu sudah kami terima.
+                <h1 className="text-xl font-bold text-slate-900">Laporan Terkirim!</h1>
+                <p className="text-sm text-slate-400 mt-1.5">
+                  Terima kasih <span className="font-semibold text-slate-600">{name.split(' ')[0]}</span>, laporanmu sudah kami terima.
                 </p>
               </div>
 
               {ticketId && (
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-5">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Nomor Tiket</p>
-                  <p className="text-2xl font-black text-cyan-600 dark:text-cyan-400 tracking-tight font-mono">{ticketId}</p>
-                  <p className="text-xs text-slate-400 mt-2">Simpan nomor ini untuk follow-up</p>
+                <div className="bg-slate-50 rounded-2xl px-6 py-5 border border-gray-100">
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Nomor Tiket</p>
+                  <p className="text-2xl font-bold text-slate-900 tracking-wide font-mono">{ticketId}</p>
+                  <p className="text-xs text-gray-400 mt-1.5">Simpan nomor ini untuk follow-up</p>
                 </div>
               )}
 
-              <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 px-5 py-4 text-left space-y-2.5">
-                <p className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Selanjutnya</p>
+              <div className="text-left rounded-2xl border border-gray-100 divide-y divide-gray-100 overflow-hidden">
                 {[
-                  'Konfirmasi akan dikirim ke email kamu',
-                  'Tim IT akan menghubungi kamu segera',
-                  'Pantau status lewat nomor tiket di atas',
-                ].map((txt, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <div className="w-5 h-5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">{i + 1}</div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{txt}</p>
+                  { n: 1, txt: 'Email konfirmasi dikirim ke ' + email },
+                  { n: 2, txt: 'Tim IT akan segera menghubungi kamu' },
+                  { n: 3, txt: 'Gunakan nomor tiket di atas untuk follow-up' },
+                ].map(({ n, txt }) => (
+                  <div key={n} className="flex items-start gap-3.5 px-5 py-3.5">
+                    <div className="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">{n}</div>
+                    <p className="text-xs text-slate-500 leading-relaxed">{txt}</p>
                   </div>
                 ))}
               </div>
 
               <button
-                type="button"
-                onClick={() => { setStep(1); setName(''); setEmail(''); setCompany(''); setCompanySearch(''); setCategory(''); setTitle(''); setDescription(''); setTicketId(''); setError(''); }}
-                className="w-full py-3.5 rounded-2xl text-sm font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all"
+                type="button" onClick={resetForm}
+                className="w-full py-3.5 rounded-2xl text-sm font-semibold border border-gray-200 text-slate-600 hover:bg-gray-50 active:scale-[0.98] transition-all"
               >
                 Kirim Laporan Lain
               </button>
             </div>
           )}
 
-          {/* Footer */}
-          <p className="text-center text-[10px] text-slate-400 dark:text-slate-600 mt-8">
-            IT MRA Helpdesk · Wisma MRA Lt.6 · Working hours Mon–Fri 9am–5pm
-          </p>
-
         </div>
+
+        {/* Card Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center">
+          <p className="text-[11px] text-gray-400">
+            IT MRA Helpdesk &nbsp;·&nbsp; Wisma MRA Lt.6 &nbsp;·&nbsp; Mon–Fri 09.00–17.00 WIB
+          </p>
+        </div>
+
       </div>
     </div>
   );
