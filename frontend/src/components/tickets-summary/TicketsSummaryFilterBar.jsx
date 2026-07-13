@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, Clock, Grid, Circle, PauseCircle, CheckCircle2, XCircle, ChevronDown, AlertTriangle, MoonStar } from 'lucide-react';
+import { Search, Filter, Clock, Grid, Circle, PauseCircle, CheckCircle2, XCircle, ChevronDown, AlertTriangle, MoonStar, User } from 'lucide-react';
 
 const ACTIVE_STATUSES = [
   { label: 'All Active', value: 'ALL_ACTIVE', icon: Grid },
@@ -21,6 +21,7 @@ export default function TicketsSummaryFilterBar({
   monthFilter, onMonthChange,
   slaFilter, onSlaFilterToggle,
   offHoursFilter, onOffHoursFilterToggle,
+  agentFilter, setAgentFilter, agents = [],
   onSearch,
 }) {
   const statuses = activeTab === 'ACTIVE' ? ACTIVE_STATUSES : HISTORY_STATUSES;
@@ -80,6 +81,21 @@ export default function TicketsSummaryFilterBar({
             <option value="MEDIUM">MEDIUM</option>
             <option value="HIGH">HIGH</option>
             <option value="CRITICAL">CRITICAL</option>
+          </select>
+          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 pointer-events-none group-hover:text-emerald-500 transition-colors" />
+        </div>
+
+        <div className="relative flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 rounded-xl shadow-sm pr-9 group hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200">
+          <User className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors shrink-0" />
+          <select
+            value={agentFilter}
+            onChange={(e) => setAgentFilter(e.target.value)}
+            className="appearance-none bg-transparent text-xs font-bold text-slate-705 dark:text-slate-200 focus:outline-none cursor-pointer w-full"
+          >
+            <option value="">All Agents</option>
+            {agents.map(agent => (
+              <option key={agent.id} value={agent.id}>{agent.name}</option>
+            ))}
           </select>
           <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 pointer-events-none group-hover:text-emerald-500 transition-colors" />
         </div>

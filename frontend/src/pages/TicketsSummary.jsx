@@ -32,6 +32,9 @@ export default function TicketsSummary({ user, token }) {
           onSlaFilterToggle={h.handleSlaFilterToggle}
           offHoursFilter={h.offHoursFilter}
           onOffHoursFilterToggle={h.handleOffHoursFilterToggle}
+          agentFilter={h.agentFilter}
+          setAgentFilter={h.setAgentFilter}
+          agents={h.agents}
           onSearch={h.handleSearch}
         />
 

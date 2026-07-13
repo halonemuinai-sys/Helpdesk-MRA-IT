@@ -38,6 +38,7 @@ export default function useTicketsSummary({ user, token }) {
   const [monthFilter, setMonthFilter] = useState('ALL');
   const [slaFilter, setSlaFilter] = useState(false);
   const [offHoursFilter, setOffHoursFilter] = useState(false);
+  const [agentFilter, setAgentFilter] = useState('');
   const [limit, setLimit] = useState(100);
   const [hasMore, setHasMore] = useState(false);
 
@@ -362,6 +363,7 @@ export default function useTicketsSummary({ user, token }) {
     if (statusFilter === 'ALL_HISTORY' && !['RESOLVED', 'CLOSED'].includes(t.status)) return false;
     if (slaFilter && !isTicketSlaBreached(t)) return false;
     if (offHoursFilter && !isOutsideBusinessHours(t.createdAt)) return false;
+    if (agentFilter && t.assignedToId !== agentFilter) return false;
     return true;
   });
 
@@ -386,10 +388,11 @@ export default function useTicketsSummary({ user, token }) {
     activeTab,
     priorityFilter,
     searchQuery, setSearchQuery,
-    selectedTicketIds, setSelectedTicketIds,
-    monthFilter,
-    slaFilter,
-    hasMore,
+    selectedTicketIds, showPerformanceReminder, setShowPerformanceReminder,
+    selectedMonth, setSelectedMonth,
+    selectedYear, setSelectedYear,
+    timeframedLeaderboard, perfLoading,
+    agentFilter, setAgentFilter,
     selectedTicketId, setSelectedTicketId,
     ticketDetails, detailsLoading,
     currentTime,
