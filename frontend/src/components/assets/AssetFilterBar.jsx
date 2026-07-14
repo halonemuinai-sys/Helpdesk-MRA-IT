@@ -157,6 +157,7 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
 const CATEGORY_OPTIONS = [
   { value: 'LAPTOP', label: 'Laptop / PC' },
   { value: 'SMARTPHONE', label: 'Smartphone' },
+  { value: 'PRINTER', label: 'Printer' },
 ];
 
 export default function AssetFilterBar({

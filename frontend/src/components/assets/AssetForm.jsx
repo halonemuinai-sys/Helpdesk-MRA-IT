@@ -106,7 +106,12 @@ export default function AssetForm({
                     <button type="button"
                       onClick={() => { setFormDeviceCategory('SMARTPHONE'); setFormOs('iOS 17'); setFormOffice('None'); }}
                       className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition ${formDeviceCategory === 'SMARTPHONE' ? 'bg-slate-700 dark:bg-slate-600 text-white' : 'bg-white dark:bg-slate-955/40 border border-gray-200 dark:border-slate-800 text-gray-600 dark:text-slate-350 hover:bg-slate-50/80 dark:hover:bg-slate-850/50'}`}>
-                      Smartphone / Mobile
+                      Smartphone
+                    </button>
+                    <button type="button"
+                      onClick={() => { setFormDeviceCategory('PRINTER'); setFormOs('Printer OS'); setFormOffice('None'); }}
+                      className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition ${formDeviceCategory === 'PRINTER' ? 'bg-slate-700 dark:bg-slate-600 text-white' : 'bg-white dark:bg-slate-955/40 border border-gray-200 dark:border-slate-800 text-gray-600 dark:text-slate-350 hover:bg-slate-50/80 dark:hover:bg-slate-850/50'}`}>
+                      Printer
                     </button>
                   </div>
                 </div>
@@ -150,72 +155,79 @@ export default function AssetForm({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tipe Processor</label>
-                      <input type="text" value={formProcessor} onChange={(e) => setFormProcessor(e.target.value)}
-                        placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. Intel Core i5 / Apple M3' : 'e.g. A16 Bionic / Snapdragon'}
-                        list="processor-options"
-                        className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
-                      <datalist id="processor-options">
-                        {formDeviceCategory === 'LAPTOP' ? (
-                          <><option value="Intel Core i5" /><option value="Intel Core i7" /><option value="Intel Core i3" /><option value="Apple M1" /><option value="Apple M2" /><option value="Apple M3" /><option value="AMD Ryzen 5" /><option value="AMD Ryzen 7" /></>
-                        ) : (
-                          <><option value="A17 Pro" /><option value="A16 Bionic" /><option value="A15 Bionic" /><option value="Snapdragon 8 Gen 2" /><option value="Snapdragon 7 Gen 1" /><option value="MediaTek Dimensity 9200" /></>
-                        )}
-                      </datalist>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Sistem Operasi (OS)</label>
-                      <input type="text" value={formOs} onChange={(e) => setFormOs(e.target.value)}
-                        placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. Windows 11 Pro / macOS' : 'e.g. iOS 17 / Android 14'}
-                        list="os-options"
-                        className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
-                      <datalist id="os-options">
-                        {formDeviceCategory === 'LAPTOP' ? (
-                          <><option value="Windows 11 Pro" /><option value="Windows 10 Pro" /><option value="macOS Sonoma" /><option value="macOS Ventura" /><option value="macOS Big Sur" /><option value="macOS Catalina" /><option value="macOS" /><option value="Linux" /><option value="Linux Ubuntu" /></>
-                        ) : (
-                          <><option value="iOS 17" /><option value="iOS 16" /><option value="Android 14" /><option value="Android 13" /></>
-                        )}
-                      </datalist>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Kapasitas RAM</label>
-                      <input type="text" value={formRam} onChange={(e) => setFormRam(e.target.value)}
-                        placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. 8GB / 16GB DDR4' : 'e.g. 6GB / 8GB RAM'}
-                        list="ram-options"
-                        className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
-                      <datalist id="ram-options">
-                        <option value="8GB" /><option value="16GB" /><option value="32GB" /><option value="4GB" /><option value="6GB" /><option value="12GB" />
-                      </datalist>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Penyimpanan (Storage)</label>
-                      <input type="text" value={formStorage} onChange={(e) => setFormStorage(e.target.value)}
-                        placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. 256GB SSD / 512GB NVMe' : 'e.g. 128GB / 256GB NVMe'}
-                        list="storage-options"
-                        className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
-                      <datalist id="storage-options">
-                        {formDeviceCategory === 'LAPTOP' ? (
-                          <><option value="256GB SSD" /><option value="512GB SSD" /><option value="512GB NVMe" /><option value="1TB SSD" /><option value="1TB NVMe" /></>
-                        ) : (
-                          <><option value="128GB" /><option value="256GB" /><option value="512GB" /><option value="64GB" /></>
-                        )}
-                      </datalist>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3.5">
-                    {formDeviceCategory === 'LAPTOP' && (
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Lisensi MS Office</label>
-                        <input type="text" value={formOffice} onChange={(e) => setFormOffice(e.target.value)} placeholder="e.g. Office 2021 H&B / None"
-                          className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
+                  {formDeviceCategory !== 'PRINTER' ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Tipe Processor</label>
+                          <input type="text" value={formProcessor} onChange={(e) => setFormProcessor(e.target.value)}
+                            placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. Intel Core i5 / Apple M3' : 'e.g. A16 Bionic / Snapdragon'}
+                            list="processor-options"
+                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
+                          <datalist id="processor-options">
+                            {formDeviceCategory === 'LAPTOP' ? (
+                              <><option value="Intel Core i5" /><option value="Intel Core i7" /><option value="Intel Core i3" /><option value="Apple M1" /><option value="Apple M2" /><option value="Apple M3" /><option value="AMD Ryzen 5" /><option value="AMD Ryzen 7" /></>
+                            ) : (
+                              <><option value="A17 Pro" /><option value="A16 Bionic" /><option value="A15 Bionic" /><option value="Snapdragon 8 Gen 2" /><option value="Snapdragon 7 Gen 1" /><option value="MediaTek Dimensity 9200" /></>
+                            )}
+                          </datalist>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Sistem Operasi (OS)</label>
+                          <input type="text" value={formOs} onChange={(e) => setFormOs(e.target.value)}
+                            placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. Windows 11 Pro / macOS' : 'e.g. iOS 17 / Android 14'}
+                            list="os-options"
+                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
+                          <datalist id="os-options">
+                            {formDeviceCategory === 'LAPTOP' ? (
+                              <><option value="Windows 11 Pro" /><option value="Windows 10 Pro" /><option value="macOS Sonoma" /><option value="macOS Ventura" /><option value="macOS Big Sur" /><option value="macOS Catalina" /><option value="macOS" /><option value="Linux" /><option value="Linux Ubuntu" /></>
+                            ) : (
+                              <><option value="iOS 17" /><option value="iOS 16" /><option value="Android 14" /><option value="Android 13" /></>
+                            )}
+                          </datalist>
+                        </div>
                       </div>
-                    )}
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Kapasitas RAM</label>
+                          <input type="text" value={formRam} onChange={(e) => setFormRam(e.target.value)}
+                            placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. 8GB / 16GB DDR4' : 'e.g. 6GB / 8GB RAM'}
+                            list="ram-options"
+                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
+                          <datalist id="ram-options">
+                            <option value="8GB" /><option value="16GB" /><option value="32GB" /><option value="4GB" /><option value="6GB" /><option value="12GB" />
+                          </datalist>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Penyimpanan (Storage)</label>
+                          <input type="text" value={formStorage} onChange={(e) => setFormStorage(e.target.value)}
+                            placeholder={formDeviceCategory === 'LAPTOP' ? 'e.g. 256GB SSD / 512GB NVMe' : 'e.g. 128GB / 256GB NVMe'}
+                            list="storage-options"
+                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
+                          <datalist id="storage-options">
+                            {formDeviceCategory === 'LAPTOP' ? (
+                              <><option value="256GB SSD" /><option value="512GB SSD" /><option value="512GB NVMe" /><option value="1TB SSD" /><option value="1TB NVMe" /></>
+                            ) : (
+                              <><option value="128GB" /><option value="256GB" /><option value="512GB" /><option value="64GB" /></>
+                            )}
+                          </datalist>
+                        </div>
+                      </div>
+
+                      {formDeviceCategory === 'LAPTOP' && (
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Lisensi MS Office</label>
+                          <input type="text" value={formOffice} onChange={(e) => setFormOffice(e.target.value)} placeholder="e.g. Office 2021 H&B / None"
+                            className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="p-3 bg-gray-50 dark:bg-slate-900/35 border border-gray-150 dark:border-slate-800/60 rounded-xl text-center text-gray-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                      Spesifikasi OS, RAM, & Storage tidak diperlukan untuk perangkat Printer
+                    </div>
+                  )}
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Catatan Tambahan (Hardware Spec/SN)</label>
                       <textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Tulis SN, tipe layar, charger, atau kelengkapan fisik di sini..." rows="3"
@@ -235,12 +247,12 @@ export default function AssetForm({
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider">
                         {formOwnershipType === 'RENTAL'
-                          ? (formDeviceCategory === 'LAPTOP' ? 'Device Ref Number (LP)*' : 'IMEI / Serial Number*')
+                          ? (formDeviceCategory === 'LAPTOP' ? 'Device Ref Number (LP)*' : (formDeviceCategory === 'PRINTER' ? 'Printer Ref (PRN)*' : 'IMEI / Serial Number*'))
                           : 'Serial Number (SN)'}
                       </label>
                       <input type="text" value={formDeviceRef} onChange={(e) => setFormDeviceRef(e.target.value)}
-                        placeholder={formOwnershipType === 'RENTAL' ? (formDeviceCategory === 'LAPTOP' ? 'e.g. LP10682' : 'e.g. IMEI / Serial') : 'e.g. SN12345678 (Opsional)'}
-                        className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition font-mono"
+                        placeholder={formOwnershipType === 'RENTAL' ? (formDeviceCategory === 'LAPTOP' ? 'e.g. LP10682' : (formDeviceCategory === 'PRINTER' ? 'e.g. PRN-001' : 'e.g. IMEI / Serial')) : 'e.g. SN12345678 (Opsional)'}
+                        className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition font-mono"
                         required={formOwnershipType === 'RENTAL'} />
                       {formOwnershipType === 'RENTAL' && (
                         <p className="text-[9px] text-gray-400 dark:text-slate-500 italic">Nilai ini otomatis dipakai sebagai Tag Aset & kode sync ke GA — pastikan tidak ada spasi/penulisan ganda.</p>

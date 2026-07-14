@@ -3,6 +3,26 @@ import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { API_URL } from '../components/assets/constants';
 
+const isSmartphone = (asset) => {
+  const brand = (asset.brand || '').toLowerCase();
+  const model = (asset.model || '').toLowerCase();
+  const os = (asset.os || '').toLowerCase();
+  const ram = (asset.ram || '').toLowerCase();
+  return (brand === 'apple' && model.includes('iphone')) ||
+         os.includes('ios') || os.includes('android') ||
+         brand === 'samsung' || brand === 'oppo' || brand === 'vivo' ||
+         brand === 'xiaomi' || brand === 'realme' || brand === 'infinix' ||
+         brand === 'iqoo' || parseInt(ram, 10) === 4;
+};
+
+const isPrinter = (asset) => {
+  const brand = (asset.brand || '').toLowerCase();
+  const model = (asset.model || '').toLowerCase();
+  const os = (asset.os || '').toLowerCase();
+  const deviceRef = (asset.deviceRef || '').toLowerCase();
+  return os === 'printer os' || deviceRef.startsWith('prn') || model.includes('printer') || brand.includes('epson') || brand.includes('canon') || brand.includes('fuji') || brand.includes('brother') || brand.includes('hp laserjet') || brand.includes('smart tank');
+};
+
 export default function useAssets({ token, user }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const formatNumberForInput = (value) => {
@@ -246,10 +266,13 @@ export default function useAssets({ token, user }) {
     setIsUserDropdownOpen(false);
     setFormCompanyId(asset.companyId || '');
     setFormCompanyMasterId(asset.companyMasterId || '');
-    const isPhone = (asset.brand && asset.brand.toLowerCase() === 'apple' && asset.model && asset.model.toLowerCase().includes('iphone')) ||
-                    (asset.os && asset.os.toLowerCase().includes('ios')) ||
-                    (asset.ram && parseInt(asset.ram, 10) === 4);
-    setFormDeviceCategory(isPhone ? 'SMARTPHONE' : 'LAPTOP');
+    if (isPrinter(asset)) {
+      setFormDeviceCategory('PRINTER');
+    } else if (isSmartphone(asset)) {
+      setFormDeviceCategory('SMARTPHONE');
+    } else {
+      setFormDeviceCategory('LAPTOP');
+    }
     setFormOwnershipType(asset.ownershipType || 'RENTAL');
     setFormError(null);
     setIsModalOpen(true);
@@ -310,6 +333,11 @@ export default function useAssets({ token, user }) {
     let finalAssetTag = formAssetTag;
     let finalRentalStart = formRentalStart;
     let finalRentalEnd = formRentalEnd;
+    let finalDeviceRef = formDeviceRef ? formDeviceRef.trim() : null;
+
+    if (formDeviceCategory === 'PRINTER' && finalDeviceRef && !finalDeviceRef.toUpperCase().startsWith('PRN')) {
+      finalDeviceRef = 'PRN-' + finalDeviceRef;
+    }
 
     if (formOwnershipType === 'OWNED') {
       if (!formAssetTag || !formBrand || !formModel || !formRentalStart || formRentalCost === '') {
@@ -319,12 +347,12 @@ export default function useAssets({ token, user }) {
       }
       finalRentalEnd = formRentalStart;
     } else {
-      if (!formDeviceRef || !formBrand || !formModel || formRentalCost === '' || !formRentalStart || !formRentalEnd) {
+      if (!finalDeviceRef || !formBrand || !formModel || formRentalCost === '' || !formRentalStart || !formRentalEnd) {
         setFormError('Kolom bertanda bintang (*) wajib diisi.');
         setSubmitting(false);
         return;
       }
-      finalAssetTag = formDeviceRef.trim();
+      finalAssetTag = finalDeviceRef;
       if (new Date(formRentalStart) > new Date(formRentalEnd)) {
         setFormError('Tanggal Sewa Berakhir harus setelah Tanggal Sewa Dimulai.');
         setSubmitting(false);
@@ -336,11 +364,13 @@ export default function useAssets({ token, user }) {
       const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
       const payload = {
         assetTag: finalAssetTag.trim(),
-        deviceRef: formDeviceRef ? formDeviceRef.trim() : null,
+        deviceRef: finalDeviceRef,
         vendorRef: formOwnershipType === 'RENTAL' ? (formVendorRef || null) : 'Milik Sendiri',
         brand: formBrand, model: formModel,
-        processor: formProcessor || null, ram: formRam || null, storage: formStorage || null,
-        os: formOs || null,
+        processor: formDeviceCategory === 'PRINTER' ? 'None' : (formProcessor || null),
+        ram: formDeviceCategory === 'PRINTER' ? 'None' : (formRam || null),
+        storage: formDeviceCategory === 'PRINTER' ? 'None' : (formStorage || null),
+        os: formDeviceCategory === 'PRINTER' ? 'Printer OS' : (formOs || null),
         office: formDeviceCategory === 'LAPTOP' ? (formOffice || null) : 'None',
         ownershipType: formOwnershipType, status: formStatus,
         rentalCost: parseFloat(formRentalCost.toString().replace(/\./g, '')) || 0,
@@ -429,19 +459,7 @@ export default function useAssets({ token, user }) {
     return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   };
 
-  // ── Computed ───────────────────────────────────────────────────────────────
-
-  const isSmartphone = (asset) => {
-    const brand = (asset.brand || '').toLowerCase();
-    const model = (asset.model || '').toLowerCase();
-    const os = (asset.os || '').toLowerCase();
-    const ram = (asset.ram || '').toLowerCase();
-    return (brand === 'apple' && model.includes('iphone')) ||
-           os.includes('ios') || os.includes('android') ||
-           brand === 'samsung' || brand === 'oppo' || brand === 'vivo' ||
-           brand === 'xiaomi' || brand === 'realme' || brand === 'infinix' ||
-           brand === 'iqoo' || parseInt(ram, 10) === 4;
-  };
+    // ── Computed ───────────────────────────────────────────────────────────────
 
   const filteredAssets = assets.filter(asset => {
     const q = searchQuery.toLowerCase();
@@ -456,7 +474,10 @@ export default function useAssets({ token, user }) {
       (asset.notes && asset.notes.toLowerCase().includes(q));
     const matchesStatus = selectedStatus === '' || asset.status === selectedStatus;
     const matchesMaster = selectedCompanyMasterId === '' || asset.companyMasterId === parseInt(selectedCompanyMasterId);
-    const matchesCategory = selectedCategory === '' || (selectedCategory === 'SMARTPHONE' ? isSmartphone(asset) : !isSmartphone(asset));
+    const matchesCategory = selectedCategory === '' || 
+      (selectedCategory === 'SMARTPHONE' && isSmartphone(asset)) ||
+      (selectedCategory === 'PRINTER' && isPrinter(asset)) ||
+      (selectedCategory === 'LAPTOP' && !isSmartphone(asset) && !isPrinter(asset));
     return matchesSearch && matchesStatus && matchesMaster && matchesCategory;
   });
 
