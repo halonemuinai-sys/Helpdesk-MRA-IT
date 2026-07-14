@@ -14,6 +14,7 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const btnRef = useRef(null);
   const searchRef = useRef(null);
+  const dropRef = useRef(null);
 
   const reposition = () => {
     if (!btnRef.current) return;
@@ -46,7 +47,7 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (btnRef.current?.contains(e.target)) return;
+      if (btnRef.current?.contains(e.target) || dropRef.current?.contains(e.target)) return;
       setOpen(false);
     };
     document.addEventListener('mousedown', handler);
@@ -86,6 +87,7 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
 
       {open && createPortal(
         <div
+          ref={dropRef}
           style={{ position: 'absolute', top: pos.top, left: pos.left, width: pos.width, zIndex: 9999 }}
           className="asset-drop-anim bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-2xl shadow-black/12 dark:shadow-black/60 overflow-hidden"
         >
