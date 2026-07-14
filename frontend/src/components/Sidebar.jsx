@@ -115,7 +115,7 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
         },
         {
           label: 'Asset Management',
-          path: '/assets',
+          path: '/devices',
           icon: Laptop,
           roles: ['AGENT', 'ADMIN']
         },

@@ -226,7 +226,7 @@ export default function App() {
               }
             />
             <Route
-              path="/assets"
+              path="/devices"
               element={
                 <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
                   <Assets user={user} token={token} />
