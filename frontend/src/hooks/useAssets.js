@@ -110,6 +110,7 @@ export default function useAssets({ token, user }) {
 
   useEffect(() => {
     fetchInitialData();
+    fetchAssets('', { silent: false });
   }, []);
 
   useEffect(() => {
@@ -193,6 +194,12 @@ export default function useAssets({ token, user }) {
       setAssetsLoaded(true);
     }
   };
+
+  useEffect(() => {
+    if (assetsLoaded) {
+      fetchAssets(searchQuery, { silent: true });
+    }
+  }, [selectedCategory, selectedStatus, selectedCompanyMasterId]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 

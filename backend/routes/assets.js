@@ -135,13 +135,23 @@ router.get('/', verifyToken, async (req, res, next) => {
              parseInt(ram, 10) === 4;
     };
 
+    const isPrinter = (asset) => {
+      const brand = (asset.brand || '').toLowerCase();
+      const model = (asset.model || '').toLowerCase();
+      const os = (asset.os || '').toLowerCase();
+      const deviceRef = (asset.deviceRef || '').toLowerCase();
+      return os === 'printer os' || deviceRef.startsWith('prn') || model.includes('printer') || brand.includes('epson') || brand.includes('canon') || brand.includes('fuji') || brand.includes('brother') || brand.includes('hp laserjet') || brand.includes('smart tank');
+    };
+
     let filteredAssets = allMatchingAssets;
     if (category) {
       const upperCategory = category.toUpperCase();
       if (upperCategory === 'LAPTOP') {
-        filteredAssets = allMatchingAssets.filter(a => !isSmartphone(a));
+        filteredAssets = allMatchingAssets.filter(a => !isSmartphone(a) && !isPrinter(a));
       } else if (upperCategory === 'SMARTPHONE') {
         filteredAssets = allMatchingAssets.filter(a => isSmartphone(a));
+      } else if (upperCategory === 'PRINTER') {
+        filteredAssets = allMatchingAssets.filter(a => isPrinter(a));
       }
     }
 
