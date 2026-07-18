@@ -11,7 +11,7 @@ git pull origin main
 echo "=== [2/4] Build frontend ==="
 cd "$APP_DIR/frontend"
 npm install --prefer-offline
-npm run build
+VITE_API_URL=/api npm run build
 
 echo "=== [3/4] Install backend dependencies ==="
 cd "$APP_DIR/backend"
