@@ -10,6 +10,44 @@ const {
 
 const router = express.Router();
 
+// Server-Sent Events (SSE) Clients list for real-time ticket updates
+let sseClients = [];
+
+// Helper to broadcast ticket events to all connected SSE clients
+function broadcastTicketEvent(action, ticket) {
+  const data = JSON.stringify({ action, ticket });
+  sseClients.forEach(client => {
+    try {
+      client.res.write(`data: ${data}\n\n`);
+    } catch (err) {
+      console.error("Error writing to SSE client:", err.message);
+    }
+  });
+}
+
+// GET /api/tickets/events
+// Endpoint for Server-Sent Events (SSE) to sync tickets in real-time
+router.get('/events', verifyToken, (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Handle CORS for SSE streams
+
+  // Send initial keep-alive ping
+  res.write(': ping\n\n');
+
+  const clientId = Date.now();
+  const newClient = {
+    id: clientId,
+    res
+  };
+  sseClients.push(newClient);
+
+  req.on('close', () => {
+    sseClients = sseClients.filter(client => client.id !== clientId);
+  });
+});
+
 // Helper to generate sequential thread-safe Ticket IDs (e.g. MRA-00001, MRA-00002)
 async function generateNextTicketId() {
   await prisma.$executeRawUnsafe(`CREATE SEQUENCE IF NOT EXISTS ticket_seq START 1`);
@@ -349,6 +387,9 @@ router.post('/bulk-close', verifyToken, async (req, res, next) => {
       // Send email notification to agent (non-blocking)
       sendTicketClosedToAgentEmail(updatedTicket);
       
+      // Broadcast status change real-time event
+      broadcastTicketEvent('TICKET_STATUS_CHANGED', updatedTicket);
+      
       closedTickets.push(updatedTicket);
     }
 
@@ -492,6 +533,9 @@ router.post('/', verifyToken, async (req, res, next) => {
     // Send email notification to requester (non-blocking)
     sendTicketCreatedEmail(ticket);
 
+    // Broadcast ticket creation event
+    broadcastTicketEvent('TICKET_CREATED', ticket);
+
     res.status(201).json(ticket);
   } catch (err) {
     next(err);
@@ -603,6 +647,9 @@ router.patch('/:id/status', verifyToken, async (req, res, next) => {
       }
     }
 
+    // Broadcast status change event
+    broadcastTicketEvent('TICKET_STATUS_CHANGED', updatedTicket);
+
     res.json(updatedTicket);
   } catch (err) {
     next(err);
@@ -679,6 +726,9 @@ router.patch('/:id/assign', verifyToken, async (req, res, next) => {
 
     // Send email notification to IT Agent (non-blocking)
     sendTicketAssignedEmail(ticket, agent);
+
+    // Broadcast assignment event
+    broadcastTicketEvent('TICKET_ASSIGNED', ticket);
 
     res.json(ticket);
   } catch (err) {
@@ -823,6 +873,9 @@ router.post('/public', async (req, res, next) => {
     // Send email notification to requester (non-blocking)
     sendTicketCreatedEmail(ticket);
 
+    // Broadcast ticket creation event
+    broadcastTicketEvent('TICKET_CREATED', ticket);
+
     res.status(201).json({
       message: 'Tiket berhasil dibuat melalui Google Form.',
       ticketId: ticket.id,
@@ -856,6 +909,9 @@ router.delete('/:id', verifyToken, async (req, res, next) => {
       prisma.auditLog.deleteMany({ where: { ticketId: id } }),
       prisma.ticket.delete({ where: { id } })
     ]);
+
+    // Broadcast deletion event
+    broadcastTicketEvent('TICKET_DELETED', { id });
 
     res.json({ message: `Ticket ${id} has been deleted successfully.` });
   } catch (err) {
@@ -896,6 +952,9 @@ router.patch('/:id/priority', verifyToken, async (req, res, next) => {
         }
       }
     });
+
+    // Broadcast priority change event
+    broadcastTicketEvent('TICKET_PRIORITY_CHANGED', updated);
 
     res.json(updated);
   } catch (err) {
@@ -952,6 +1011,9 @@ router.patch('/:id/meta', verifyToken, async (req, res, next) => {
       }
     });
 
+    // Broadcast ticket metadata update event
+    broadcastTicketEvent('TICKET_UPDATED', updated);
+
     res.json(updated);
   } catch (err) {
     next(err);
@@ -1002,6 +1064,9 @@ router.patch('/:id/sla-override', verifyToken, checkRole(['ADMIN']), async (req,
         }
       }
     });
+
+    // Broadcast ticket SLA override event
+    broadcastTicketEvent('TICKET_UPDATED', updatedTicket);
 
     res.json(updatedTicket);
   } catch (err) {
@@ -1076,6 +1141,9 @@ router.patch('/:id/responded-at', verifyToken, checkRole(['ADMIN']), async (req,
         }
       }
     });
+
+    // Broadcast ticket first response update event
+    broadcastTicketEvent('TICKET_UPDATED', updatedTicket);
 
     res.json(updatedTicket);
   } catch (err) {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, AlertTriangle } from 'lucide-react';
 import useAssets from '../hooks/useAssets';
 import AssetKpiStats from '../components/assets/AssetKpiStats';
@@ -7,6 +7,7 @@ import AssetTable from '../components/assets/AssetTable';
 import AssetForm from '../components/assets/AssetForm';
 import AssetBastModal from '../components/assets/AssetBastModal';
 import AssetDetailDrawer from '../components/assets/AssetDetailDrawer';
+import RentalMonitoringWidget from '../components/assets/RentalMonitoringWidget';
 
 export default function Assets({ user, token }) {
   const {
@@ -70,6 +71,7 @@ export default function Assets({ user, token }) {
     // formatters
     formatRupiah, formatDateYYMMDD, formatIndonesianDate, formatNumberForInput,
   } = useAssets({ token, user });
+  const [activeTab, setActiveTab] = useState('list');
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
@@ -102,34 +104,69 @@ export default function Assets({ user, token }) {
 
       <AssetKpiStats kpiStats={kpiStats} formatRupiah={formatRupiah} />
 
-      <AssetFilterBar
-        searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-        selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
-        selectedCompanyMasterId={selectedCompanyMasterId} setSelectedCompanyMasterId={setSelectedCompanyMasterId}
-        selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus}
-        companyMasters={companyMasters}
-        loading={loading}
-        handleResetFilters={handleResetFilters}
-        handleRefreshData={handleRefreshData}
-      />
+      {/* Tab Switcher */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800/80 gap-6">
+        <button
+          onClick={() => setActiveTab('list')}
+          className={`pb-3 text-xs font-black font-outfit border-b-2 transition duration-150 ${
+            activeTab === 'list'
+              ? 'border-rose-500 text-rose-500 dark:text-rose-455'
+              : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-350'
+          }`}
+        >
+          Daftar Aset
+        </button>
+        <button
+          onClick={() => setActiveTab('monitoring')}
+          className={`pb-3 text-xs font-black font-outfit border-b-2 transition duration-150 ${
+            activeTab === 'monitoring'
+              ? 'border-rose-500 text-rose-500 dark:text-rose-455'
+              : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-350'
+          }`}
+        >
+          Monitoring Sewa
+        </button>
+      </div>
 
-      <AssetTable
-        sortedAssets={sortedAssets}
-        filteredAssets={filteredAssets}
-        assets={assets}
-        loading={loading}
-        assetsLoaded={assetsLoaded}
-        handleSort={handleSort}
-        sortConfig={sortConfig}
-        handleOpenViewDrawer={handleOpenViewDrawer}
-        handleOpenBastModal={handleOpenBastModal}
-        handleOpenEditModal={handleOpenEditModal}
-        handleDelete={handleDelete}
-        formatRupiah={formatRupiah}
-        formatDateYYMMDD={formatDateYYMMDD}
-        isSmartphone={isSmartphone}
-        user={user}
-      />
+      {activeTab === 'list' ? (
+        <>
+          <AssetFilterBar
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+            selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
+            selectedCompanyMasterId={selectedCompanyMasterId} setSelectedCompanyMasterId={setSelectedCompanyMasterId}
+            selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus}
+            companyMasters={companyMasters}
+            loading={loading}
+            handleResetFilters={handleResetFilters}
+            handleRefreshData={handleRefreshData}
+          />
+
+          <AssetTable
+            sortedAssets={sortedAssets}
+            filteredAssets={filteredAssets}
+            assets={assets}
+            loading={loading}
+            assetsLoaded={assetsLoaded}
+            handleSort={handleSort}
+            sortConfig={sortConfig}
+            handleOpenViewDrawer={handleOpenViewDrawer}
+            handleOpenBastModal={handleOpenBastModal}
+            handleOpenEditModal={handleOpenEditModal}
+            handleDelete={handleDelete}
+            formatRupiah={formatRupiah}
+            formatDateYYMMDD={formatDateYYMMDD}
+            isSmartphone={isSmartphone}
+            user={user}
+          />
+        </>
+      ) : (
+        <RentalMonitoringWidget 
+          assets={assets} 
+          formatRupiah={formatRupiah}
+          onEditAsset={handleOpenEditModal}
+          onOpenBast={handleOpenBastModal}
+        />
+      )}
 
       <AssetForm
         isModalOpen={isModalOpen}
