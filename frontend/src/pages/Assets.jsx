@@ -8,6 +8,7 @@ import AssetForm from '../components/assets/AssetForm';
 import AssetBastModal from '../components/assets/AssetBastModal';
 import AssetDetailDrawer from '../components/assets/AssetDetailDrawer';
 import RentalMonitoringWidget from '../components/assets/RentalMonitoringWidget';
+import CompanyBreakdownWidget from '../components/assets/CompanyBreakdownWidget';
 
 export default function Assets({ user, token }) {
   const {
@@ -126,9 +127,19 @@ export default function Assets({ user, token }) {
         >
           Monitoring Sewa
         </button>
+        <button
+          onClick={() => setActiveTab('companyBreakdown')}
+          className={`pb-3 text-xs font-black font-outfit border-b-2 transition duration-150 ${
+            activeTab === 'companyBreakdown'
+              ? 'border-rose-500 text-rose-500 dark:text-rose-455'
+              : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-350'
+          }`}
+        >
+          Breakdown Perusahaan
+        </button>
       </div>
 
-      {activeTab === 'list' ? (
+      {activeTab === 'list' && (
         <>
           <AssetFilterBar
             searchQuery={searchQuery} setSearchQuery={setSearchQuery}
@@ -159,12 +170,22 @@ export default function Assets({ user, token }) {
             user={user}
           />
         </>
-      ) : (
+      )}
+
+      {activeTab === 'monitoring' && (
         <RentalMonitoringWidget 
           assets={assets} 
           formatRupiah={formatRupiah}
           onEditAsset={handleOpenEditModal}
           onOpenBast={handleOpenBastModal}
+        />
+      )}
+
+      {activeTab === 'companyBreakdown' && (
+        <CompanyBreakdownWidget
+          assets={assets}
+          companyMasters={companyMasters}
+          formatRupiah={formatRupiah}
         />
       )}
 
