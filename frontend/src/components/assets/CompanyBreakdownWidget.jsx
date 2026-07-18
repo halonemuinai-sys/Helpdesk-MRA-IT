@@ -23,7 +23,7 @@ export default function CompanyBreakdownWidget({ assets, companyMasters, formatR
     return {
       id: master.id,
       name: master.name,
-      code: master.code || 'N/A',
+      sector: master.sector || 'N/A',
       totalCount,
       assignedCount,
       idleCount,
@@ -47,7 +47,7 @@ export default function CompanyBreakdownWidget({ assets, companyMasters, formatR
     breakdownData.push({
       id: 'unassigned',
       name: 'Perusahaan Belum Ditentukan',
-      code: 'N/A',
+      sector: 'N/A',
       totalCount,
       assignedCount,
       idleCount,
@@ -130,7 +130,7 @@ export default function CompanyBreakdownWidget({ assets, companyMasters, formatR
                         {row.name}
                       </span>
                       <span className="text-[9px] text-gray-400 dark:text-slate-550 font-extrabold uppercase mt-0.5 tracking-wide">
-                        Kode: {row.code}
+                        Sektor: {row.sector}
                       </span>
                     </div>
                   </td>
