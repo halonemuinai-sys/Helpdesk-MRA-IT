@@ -20,8 +20,25 @@ export default function SlaMonitor({ token }) {
   // Filters & State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
   const [activeTab, setActiveTab] = useState('all_breached'); // all_breached, response_breached, resolution_breached
   
+  const MONTH_NAMES = [
+    { value: '0', label: 'Januari' },
+    { value: '1', label: 'Februari' },
+    { value: '2', label: 'Maret' },
+    { value: '3', label: 'April' },
+    { value: '4', label: 'Mei' },
+    { value: '5', label: 'Juni' },
+    { value: '6', label: 'Juli' },
+    { value: '7', label: 'Agustus' },
+    { value: '8', label: 'September' },
+    { value: '9', label: 'Oktober' },
+    { value: '10', label: 'November' },
+    { value: '11', label: 'Desember' }
+  ];
+
   const headers = { 'Authorization': `Bearer ${token}` };
   const now = new Date();
 
@@ -90,8 +107,19 @@ export default function SlaMonitor({ token }) {
     };
   });
 
+  // Filter berdasarkan bulan dan tahun terlebih dahulu sebelum menghitung KPI
+  const dateFilteredTickets = processedTickets.filter(t => {
+    const ticketDate = new Date(t.createdAt);
+    const matchesMonth = selectedMonth ? ticketDate.getMonth() === parseInt(selectedMonth) : true;
+    const matchesYear = selectedYear ? ticketDate.getFullYear() === parseInt(selectedYear) : true;
+    return matchesMonth && matchesYear;
+  });
+
+  // Ekstrak tahun unik secara dinamis dari seluruh tiket
+  const uniqueYears = Array.from(new Set(tickets.map(t => new Date(t.createdAt).getFullYear()))).sort((a, b) => b - a);
+
   // Filter berdasarkan Tab aktif
-  const tabFiltered = processedTickets.filter(t => {
+  const tabFiltered = dateFilteredTickets.filter(t => {
     if (activeTab === 'all_breached') return t.isAnyBreached;
     if (activeTab === 'response_breached') return t.response.isBreached;
     if (activeTab === 'resolution_breached') return t.resolution.isBreached;
@@ -112,10 +140,10 @@ export default function SlaMonitor({ token }) {
   });
 
   // Hitung Metrik Utama (Dashboard Atas)
-  const totalBreached = processedTickets.filter(t => t.isAnyBreached).length;
-  const totalResponseBreached = processedTickets.filter(t => t.response.isBreached).length;
-  const totalResolutionBreached = processedTickets.filter(t => t.resolution.isBreached).length;
-  const totalBothBreached = processedTickets.filter(t => t.response.isBreached && t.resolution.isBreached).length;
+  const totalBreached = dateFilteredTickets.filter(t => t.isAnyBreached).length;
+  const totalResponseBreached = dateFilteredTickets.filter(t => t.response.isBreached).length;
+  const totalResolutionBreached = dateFilteredTickets.filter(t => t.resolution.isBreached).length;
+  const totalBothBreached = dateFilteredTickets.filter(t => t.response.isBreached && t.resolution.isBreached).length;
 
   if (loading) {
     return <ReactLoader text="Memuat analisis SLA tiket..." />;
@@ -248,7 +276,7 @@ export default function SlaMonitor({ token }) {
         </div>
 
         {/* Input Pencarian & Dropdown Status */}
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex flex-col xl:flex-row items-center gap-4">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-gray-400" />
             <input
@@ -259,18 +287,42 @@ export default function SlaMonitor({ token }) {
               className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950 text-xs font-medium focus:outline-none focus:border-rose-500 dark:focus:border-rose-500 transition"
             />
           </div>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="w-full sm:w-48 px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950 text-xs font-medium focus:outline-none focus:border-rose-500 transition"
-          >
-            <option value="">Semua Status</option>
-            <option value="OPEN">Open</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="PENDING">Pending</option>
-            <option value="RESOLVED">Resolved</option>
-            <option value="CLOSED">Closed</option>
-          </select>
+          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="flex-1 sm:flex-initial sm:w-36 px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950 text-xs font-medium focus:outline-none focus:border-rose-500 transition"
+            >
+              <option value="">Semua Status</option>
+              <option value="OPEN">Open</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="PENDING">Pending</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+            
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="flex-1 sm:flex-initial sm:w-36 px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950 text-xs font-medium focus:outline-none focus:border-rose-500 transition"
+            >
+              <option value="">Semua Bulan</option>
+              {MONTH_NAMES.map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="flex-1 sm:flex-initial sm:w-32 px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950 text-xs font-medium focus:outline-none focus:border-rose-500 transition"
+            >
+              <option value="">Semua Tahun</option>
+              {uniqueYears.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Tabel Data Tiket */}
