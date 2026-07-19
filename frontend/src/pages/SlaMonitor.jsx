@@ -12,10 +12,11 @@ const STATUS_BADGES = {
   CLOSED: { label: 'Closed', color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' }
 };
 
-export default function SlaMonitor({ token }) {
+export default function SlaMonitor({ token, user }) {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [processingId, setProcessingId] = useState(null);
   
   // Filters & State
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,6 +59,47 @@ export default function SlaMonitor({ token }) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClaimTicket = async (ticketId) => {
+    if (!user || !user.id) return;
+    try {
+      setProcessingId(ticketId);
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/assign`, {
+        method: 'PATCH',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ agentId: user.id })
+      });
+      if (!res.ok) throw new Error('Gagal mengklaim tiket.');
+      await fetchTickets();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleEscalateTicket = async (ticketId) => {
+    try {
+      setProcessingId(ticketId);
+      const res = await fetch(`${API_URL}/tickets/${ticketId}/priority`, {
+        method: 'PATCH',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ priority: 'CRITICAL' })
+      });
+      if (!res.ok) throw new Error('Gagal mengeskalasi prioritas tiket.');
+      await fetchTickets();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -343,6 +385,7 @@ export default function SlaMonitor({ token }) {
                   <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Waktu Respon</th>
                   <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Waktu Penyelesaian</th>
                   <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Status</th>
+                  <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center pr-6">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
@@ -428,6 +471,49 @@ export default function SlaMonitor({ token }) {
                         <span className={`inline-block text-[10.5px] font-black px-2.5 py-1 border rounded-lg uppercase tracking-wide font-outfit ${badge.color}`}>
                           {badge.label}
                         </span>
+                      </td>
+
+                      {/* Aksi */}
+                      <td className="p-4 pr-6 text-center">
+                        {['RESOLVED', 'CLOSED'].includes(t.status) ? (
+                          <span className="text-[10px] text-gray-400 dark:text-slate-500 font-bold italic">Selesai</span>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2">
+                            {processingId === t.id ? (
+                              <span className="text-[10px] text-rose-500 font-bold animate-pulse">Memproses...</span>
+                            ) : (
+                              <>
+                                {!t.assignedToId && (
+                                  <button
+                                    onClick={() => handleClaimTicket(t.id)}
+                                    className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition duration-150 shadow-sm"
+                                    title="Ambil / Tangani tiket ini"
+                                  >
+                                    Ambil
+                                  </button>
+                                )}
+                                
+                                {t.priority !== 'CRITICAL' && (
+                                  <button
+                                    onClick={() => handleEscalateTicket(t.id)}
+                                    className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition duration-150 shadow-sm"
+                                    title="Eskalasi Prioritas ke CRITICAL"
+                                  >
+                                    Eskalasi
+                                  </button>
+                                )}
+
+                                <a
+                                  href={`mailto:${t.requester.email}?subject=IT Helpdesk SLA Alert: ${t.id} - ${encodeURIComponent(t.title)}&body=Halo ${t.requester.name},%0D%0A%0D%0AKami ingin mengonfirmasi mengenai tiket laporan Anda dengan subjek "${encodeURIComponent(t.title)}" yang saat ini sedang dalam penanganan kami.`}
+                                  className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-850 rounded-lg transition duration-150"
+                                  title="Hubungi Pemohon lewat Email"
+                                >
+                                  Hubungi
+                                </a>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
