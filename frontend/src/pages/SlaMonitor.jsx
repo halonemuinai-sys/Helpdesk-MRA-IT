@@ -367,8 +367,8 @@ export default function SlaMonitor({ token, user }) {
           </div>
         </div>
 
-        {/* Tabel Data Tiket */}
-        <div className="overflow-x-auto">
+        {/* Tabel/Daftar Tiket Bermasalah */}
+        <div>
           {finalFiltered.length === 0 ? (
             <div className="py-16 text-center">
               <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
@@ -376,118 +376,237 @@ export default function SlaMonitor({ token, user }) {
               <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">Seluruh tiket memenuhi standar SLA respon & penyelesaian.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 dark:bg-slate-850/40 border-b border-slate-100 dark:border-slate-800/40">
-                  <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider pl-6">ID & Judul Tiket</th>
-                  <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Pemohon / Cabang</th>
-                  <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Agen IT</th>
-                  <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Waktu Respon</th>
-                  <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Waktu Penyelesaian</th>
-                  <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Status</th>
-                  <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center pr-6">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+            <>
+              {/* DESKTOP VIEW: Tabel Lebar */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 dark:bg-slate-850/40 border-b border-slate-100 dark:border-slate-800/40">
+                      <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider pl-6">ID & Judul Tiket</th>
+                      <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Pemohon / Cabang</th>
+                      <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Agen IT</th>
+                      <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Waktu Respon</th>
+                      <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Waktu Penyelesaian</th>
+                      <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Status</th>
+                      <th className="p-4 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center pr-6">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                    {finalFiltered.map(t => {
+                      const badge = STATUS_BADGES[t.status] || { label: t.status, color: 'bg-slate-100 text-slate-600' };
+                      return (
+                        <tr key={t.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-850/20 transition duration-150">
+                          {/* ID & Judul */}
+                          <td className="p-4 pl-6">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black text-rose-500 dark:text-rose-455 font-outfit uppercase tracking-wider">
+                                {t.id.slice(0, 8)}...
+                              </span>
+                              <span className="text-xs font-bold text-gray-800 dark:text-slate-200 mt-0.5 line-clamp-1 max-w-xs">
+                                {t.title}
+                              </span>
+                              <span className="text-[9px] text-gray-400 dark:text-slate-500 font-medium mt-0.5">
+                                Dibuat: {new Date(t.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Pemohon & Cabang */}
+                          <td className="p-4">
+                            <div className="flex flex-col text-xs font-semibold">
+                              <span className="text-gray-800 dark:text-slate-350">{t.requester.name}</span>
+                              <span className="text-[9.5px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
+                                <Building2 className="w-3 h-3 text-slate-400" />
+                                {t.company.name} ({t.company.location})
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Agen IT */}
+                          <td className="p-4">
+                            {t.assignedTo ? (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-300 font-semibold">
+                                <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-850 flex items-center justify-center text-[10px] font-black text-rose-500">
+                                  {t.assignedTo.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span>{t.assignedTo.name}</span>
+                              </div>
+                            ) : (
+                              <span className="text-[10.5px] text-slate-400 dark:text-slate-550 font-bold italic">Belum Di-assign</span>
+                            )}
+                          </td>
+
+                          {/* Waktu Respon */}
+                          <td className="p-4 text-center">
+                            <div className="flex flex-col items-center">
+                              <span className={`text-xs font-extrabold font-outfit ${t.response.isBreached ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                {t.response.minutes} Menit
+                              </span>
+                              {t.response.isBreached ? (
+                                <span className="text-[9px] text-rose-500/80 font-medium mt-0.5 bg-rose-50 dark:bg-rose-950/20 px-1.5 py-0.5 rounded">
+                                  Terlambat {t.response.excessMinutes}m
+                                </span>
+                              ) : (
+                                <span className="text-[8.5px] text-gray-400 dark:text-slate-500 font-medium mt-0.5">Sesuai SLA</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Waktu Penyelesaian */}
+                          <td className="p-4 text-center">
+                            <div className="flex flex-col items-center">
+                              <span className={`text-xs font-extrabold font-outfit ${t.resolution.isBreached ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                {t.resolution.days} Hari
+                              </span>
+                              {t.resolution.isBreached ? (
+                                <span className="text-[9px] text-rose-500/80 font-medium mt-0.5 bg-rose-50 dark:bg-rose-950/20 px-1.5 py-0.5 rounded">
+                                  Terlambat {t.resolution.excessDays}d
+                                </span>
+                              ) : (
+                                <span className="text-[8.5px] text-gray-400 dark:text-slate-500 font-medium mt-0.5">Sesuai SLA</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Status */}
+                          <td className="p-4 text-center">
+                            <span className={`inline-block text-[10.5px] font-black px-2.5 py-1 border rounded-lg uppercase tracking-wide font-outfit ${badge.color}`}>
+                              {badge.label}
+                            </span>
+                          </td>
+
+                          {/* Aksi */}
+                          <td className="p-4 pr-6 text-center">
+                            {['RESOLVED', 'CLOSED'].includes(t.status) ? (
+                              <span className="text-[10px] text-gray-400 dark:text-slate-500 font-bold italic">Selesai</span>
+                            ) : (
+                              <div className="flex items-center justify-center gap-2">
+                                {processingId === t.id ? (
+                                  <span className="text-[10px] text-rose-500 font-bold animate-pulse">Memproses...</span>
+                                ) : (
+                                  <>
+                                    {!t.assignedToId && (
+                                      <button
+                                        onClick={() => handleClaimTicket(t.id)}
+                                        className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition duration-150 shadow-sm"
+                                        title="Ambil / Tangani tiket ini"
+                                      >
+                                        Ambil
+                                      </button>
+                                    )}
+                                    
+                                    {t.priority !== 'CRITICAL' && (
+                                      <button
+                                        onClick={() => handleEscalateTicket(t.id)}
+                                        className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition duration-150 shadow-sm"
+                                        title="Eskalasi Prioritas ke CRITICAL"
+                                      >
+                                        Eskalasi
+                                      </button>
+                                    )}
+
+                                    <a
+                                      href={`mailto:${t.requester.email}?subject=IT Helpdesk SLA Alert: ${t.id} - ${encodeURIComponent(t.title)}&body=Halo ${t.requester.name},%0D%0A%0D%0AKami ingin mengonfirmasi mengenai tiket laporan Anda dengan subjek "${encodeURIComponent(t.title)}" yang saat ini sedang dalam penanganan kami.`}
+                                      className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-850 rounded-lg transition duration-150"
+                                      title="Hubungi Pemohon lewat Email"
+                                    >
+                                      Hubungi
+                                    </a>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* MOBILE VIEW: Grid Daftar Kartu */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
                 {finalFiltered.map(t => {
                   const badge = STATUS_BADGES[t.status] || { label: t.status, color: 'bg-slate-100 text-slate-600' };
-                  
                   return (
-                    <tr key={t.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-850/20 transition duration-150">
-                      {/* ID & Judul */}
-                      <td className="p-4 pl-6">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-rose-500 dark:text-rose-455 font-outfit uppercase tracking-wider">
-                            {t.id.slice(0, 8)}...
-                          </span>
-                          <span className="text-xs font-bold text-gray-800 dark:text-slate-200 mt-0.5 line-clamp-1 max-w-xs">
-                            {t.title}
-                          </span>
-                          <span className="text-[9px] text-gray-400 dark:text-slate-500 font-medium mt-0.5">
-                            Dibuat: {new Date(t.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Pemohon & Cabang */}
-                      <td className="p-4">
-                        <div className="flex flex-col text-xs font-semibold">
-                          <span className="text-gray-800 dark:text-slate-350">{t.requester.name}</span>
-                          <span className="text-[9.5px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
-                            <Building2 className="w-3 h-3 text-slate-400" />
-                            {t.company.name} ({t.company.location})
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Agen IT */}
-                      <td className="p-4">
-                        {t.assignedTo ? (
-                          <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-300 font-semibold">
-                            <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-850 flex items-center justify-center text-[10px] font-black text-rose-500">
-                              {t.assignedTo.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span>{t.assignedTo.name}</span>
-                          </div>
-                        ) : (
-                          <span className="text-[10.5px] text-slate-400 dark:text-slate-550 font-bold italic">Belum Di-assign</span>
-                        )}
-                      </td>
-
-                      {/* Waktu Respon */}
-                      <td className="p-4 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className={`text-xs font-extrabold font-outfit ${t.response.isBreached ? 'text-rose-500' : 'text-emerald-500'}`}>
-                            {t.response.minutes} Menit
-                          </span>
-                          {t.response.isBreached ? (
-                            <span className="text-[9px] text-rose-500/80 font-medium mt-0.5 bg-rose-50 dark:bg-rose-950/20 px-1.5 py-0.5 rounded">
-                              Terlambat {t.response.excessMinutes}m
-                            </span>
-                          ) : (
-                            <span className="text-[8.5px] text-gray-400 dark:text-slate-500 font-medium mt-0.5">Sesuai SLA</span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Waktu Penyelesaian */}
-                      <td className="p-4 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className={`text-xs font-extrabold font-outfit ${t.resolution.isBreached ? 'text-rose-500' : 'text-emerald-500'}`}>
-                            {t.resolution.days} Hari
-                          </span>
-                          {t.resolution.isBreached ? (
-                            <span className="text-[9px] text-rose-500/80 font-medium mt-0.5 bg-rose-50 dark:bg-rose-950/20 px-1.5 py-0.5 rounded">
-                              Terlambat {t.resolution.excessDays}d
-                            </span>
-                          ) : (
-                            <span className="text-[8.5px] text-gray-400 dark:text-slate-500 font-medium mt-0.5">Sesuai SLA</span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td className="p-4 text-center">
-                        <span className={`inline-block text-[10.5px] font-black px-2.5 py-1 border rounded-lg uppercase tracking-wide font-outfit ${badge.color}`}>
+                    <div key={t.id} className="bg-slate-55/60 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-5 space-y-4 shadow-sm animate-fade-in">
+                      {/* Kartu Header */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-rose-500 dark:text-rose-455 font-outfit uppercase tracking-wider">
+                          ID: {t.id.slice(0, 8)}...
+                        </span>
+                        <span className={`inline-block text-[9.5px] font-black px-2 py-0.5 border rounded-md uppercase tracking-wide font-outfit ${badge.color}`}>
                           {badge.label}
                         </span>
-                      </td>
+                      </div>
 
-                      {/* Aksi */}
-                      <td className="p-4 pr-6 text-center">
+                      {/* Judul Tiket */}
+                      <div className="text-xs font-bold text-gray-800 dark:text-slate-200 leading-relaxed">
+                        {t.title}
+                      </div>
+
+                      {/* Detail Data & Waktu */}
+                      <div className="text-[11px] space-y-2 border-t border-slate-100 dark:border-slate-800/40 pt-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400 dark:text-slate-500 font-bold">Pemohon:</span>
+                          <span className="font-extrabold text-gray-700 dark:text-slate-350">{t.requester.name}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400 dark:text-slate-500 font-bold">Cabang:</span>
+                          <span className="font-extrabold text-gray-700 dark:text-slate-350 truncate max-w-[170px]">{t.company.name}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400 dark:text-slate-500 font-bold">Agen IT:</span>
+                          <span className="font-extrabold text-gray-700 dark:text-slate-350">
+                            {t.assignedTo ? t.assignedTo.name : 'Belum Di-assign'}
+                          </span>
+                        </div>
+                        
+                        {/* Waktu Respon & SLA */}
+                        <div className="flex items-center justify-between border-t border-slate-50 dark:border-slate-800/20 pt-2">
+                          <span className="text-gray-400 dark:text-slate-500 font-bold">Waktu Respon:</span>
+                          <div className="flex flex-col items-end">
+                            <span className={`font-black font-outfit ${t.response.isBreached ? 'text-rose-500' : 'text-emerald-500'}`}>
+                              {t.response.minutes} Menit
+                            </span>
+                            {t.response.isBreached && (
+                              <span className="text-[9px] text-rose-500/80 font-bold mt-0.5 bg-rose-50 dark:bg-rose-950/20 px-1.5 py-0.5 rounded">
+                                Terlambat {t.response.excessMinutes}m
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Waktu Penyelesaian & SLA */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400 dark:text-slate-500 font-bold">Waktu Selesai:</span>
+                          <div className="flex flex-col items-end">
+                            <span className={`font-black font-outfit ${t.resolution.isBreached ? 'text-rose-500' : 'text-emerald-500'}`}>
+                              {t.resolution.days} Hari
+                            </span>
+                            {t.resolution.isBreached && (
+                              <span className="text-[9px] text-rose-500/80 font-bold mt-0.5 bg-rose-50 dark:bg-rose-950/20 px-1.5 py-0.5 rounded">
+                                Terlambat {t.resolution.excessDays}d
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tombol Aksi Cepat (Mobile) */}
+                      <div className="border-t border-slate-100 dark:border-slate-800/40 pt-3 flex justify-end gap-2.5">
                         {['RESOLVED', 'CLOSED'].includes(t.status) ? (
-                          <span className="text-[10px] text-gray-400 dark:text-slate-500 font-bold italic">Selesai</span>
+                          <span className="text-[11.5px] text-gray-400 dark:text-slate-550 font-bold italic">Selesai</span>
                         ) : (
-                          <div className="flex items-center justify-center gap-2">
+                          <>
                             {processingId === t.id ? (
-                              <span className="text-[10px] text-rose-500 font-bold animate-pulse">Memproses...</span>
+                              <span className="text-xs text-rose-500 font-black animate-pulse">Memproses...</span>
                             ) : (
                               <>
                                 {!t.assignedToId && (
                                   <button
                                     onClick={() => handleClaimTicket(t.id)}
-                                    className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition duration-150 shadow-sm"
-                                    title="Ambil / Tangani tiket ini"
+                                    className="px-3.5 py-1.5 text-[10.5px] font-black uppercase text-white bg-blue-500 hover:bg-blue-600 rounded-xl shadow-sm"
                                   >
                                     Ambil
                                   </button>
@@ -496,8 +615,7 @@ export default function SlaMonitor({ token, user }) {
                                 {t.priority !== 'CRITICAL' && (
                                   <button
                                     onClick={() => handleEscalateTicket(t.id)}
-                                    className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition duration-150 shadow-sm"
-                                    title="Eskalasi Prioritas ke CRITICAL"
+                                    className="px-3.5 py-1.5 text-[10.5px] font-black uppercase text-white bg-rose-500 hover:bg-rose-600 rounded-xl shadow-sm"
                                   >
                                     Eskalasi
                                   </button>
@@ -505,21 +623,20 @@ export default function SlaMonitor({ token, user }) {
 
                                 <a
                                   href={`mailto:${t.requester.email}?subject=IT Helpdesk SLA Alert: ${t.id} - ${encodeURIComponent(t.title)}&body=Halo ${t.requester.name},%0D%0A%0D%0AKami ingin mengonfirmasi mengenai tiket laporan Anda dengan subjek "${encodeURIComponent(t.title)}" yang saat ini sedang dalam penanganan kami.`}
-                                  className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-850 rounded-lg transition duration-150"
-                                  title="Hubungi Pemohon lewat Email"
+                                  className="px-3.5 py-1.5 text-[10.5px] font-black uppercase text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-55"
                                 >
                                   Hubungi
                                 </a>
                               </>
                             )}
-                          </div>
+                          </>
                         )}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
       </div>
