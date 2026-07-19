@@ -23,6 +23,7 @@ import Peripherals from './pages/Peripherals';
 import ITCostOverview from './pages/ITCostOverview';
 import RentalAnalysis from './pages/RentalAnalysis';
 import TicketJournal from './pages/TicketJournal';
+import SlaMonitor from './pages/SlaMonitor';
 import Approvals from './pages/Approvals';
 import AuditTrail from './pages/AuditTrail';
 import SetupCompany from './pages/SetupCompany';
@@ -254,6 +255,14 @@ export default function App() {
               element={
                 <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
                   <TicketJournal user={user} token={token} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sla-monitor"
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <SlaMonitor user={user} token={token} />
                 </ProtectedRoute>
               }
             />

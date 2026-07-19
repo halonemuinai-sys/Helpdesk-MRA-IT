@@ -91,6 +91,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           roles: ['AGENT', 'ADMIN']
         },
         {
+          label: 'SLA Monitor',
+          path: '/sla-monitor',
+          icon: ShieldAlert,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
           label: 'Agent Performance (KPI)',
           path: '/performance',
           icon: Award,
