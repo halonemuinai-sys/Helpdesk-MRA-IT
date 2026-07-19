@@ -261,7 +261,7 @@ export default function App() {
             <Route
               path="/sla-monitor"
               element={
-                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                <ProtectedRoute user={user} allowedRoles={['ADMIN']}>
                   <SlaMonitor user={user} token={token} />
                 </ProtectedRoute>
               }
