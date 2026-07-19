@@ -11,6 +11,7 @@ import {
   Sun,
   Moon,
   ShieldCheck,
+  ShieldAlert,
   History,
   Building2,
   HelpCircle,
