@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, AlertTriangle } from 'lucide-react';
+import { Plus, AlertTriangle, Upload } from 'lucide-react';
 import useAssets from '../hooks/useAssets';
 import AssetKpiStats from '../components/assets/AssetKpiStats';
 import AssetFilterBar from '../components/assets/AssetFilterBar';
@@ -9,6 +9,7 @@ import AssetBastModal from '../components/assets/AssetBastModal';
 import AssetDetailDrawer from '../components/assets/AssetDetailDrawer';
 import RentalMonitoringWidget from '../components/assets/RentalMonitoringWidget';
 import CompanyBreakdownWidget from '../components/assets/CompanyBreakdownWidget';
+import AssetBulkImport from '../components/assets/AssetBulkImport';
 
 export default function Assets({ user, token }) {
   const {
@@ -73,6 +74,7 @@ export default function Assets({ user, token }) {
     formatRupiah, formatDateYYMMDD, formatIndonesianDate, formatNumberForInput,
   } = useAssets({ token, user });
   const [activeTab, setActiveTab] = useState('list');
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
@@ -87,13 +89,22 @@ export default function Assets({ user, token }) {
             Kelola inventarisasi perangkat IT sewa (rentals) maupun milik sendiri (owned), spesifikasi hardware, status, serta serah terima unit karyawan MRA Group.
           </p>
         </div>
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-rose-500/20 hover:shadow-xl transition transform hover:-translate-y-0.5 active:translate-y-0 duration-200"
-        >
-          <Plus className="w-4 h-4" />
-          Daftarkan Aset Baru
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setBulkImportOpen(true)}
+            className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-600 text-gray-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200"
+          >
+            <Upload className="w-4 h-4" />
+            Bulk Import
+          </button>
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-rose-500/20 hover:shadow-xl transition transform hover:-translate-y-0.5 active:translate-y-0 duration-200"
+          >
+            <Plus className="w-4 h-4" />
+            Daftarkan Aset Baru
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -238,6 +249,14 @@ export default function Assets({ user, token }) {
         formatIndonesianDate={formatIndonesianDate}
         user={user}
       />
+
+      {bulkImportOpen && (
+        <AssetBulkImport
+          token={token}
+          onClose={() => setBulkImportOpen(false)}
+          onDone={handleRefreshData}
+        />
+      )}
 
       <AssetDetailDrawer
         isViewDrawerOpen={isViewDrawerOpen}

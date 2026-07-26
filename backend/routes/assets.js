@@ -1,9 +1,12 @@
 const express = require('express');
+const multer = require('multer');
+const XLSX = require('xlsx');
 const prisma = require('../api/db');
 const { verifyToken } = require('../api/authMiddleware');
 const { syncAssetToGA, deleteAssetFromGA } = require('../api/gaSync');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // GET /api/assets/stats
 // Returns global statistics for KPI cards
@@ -184,6 +187,136 @@ router.get('/:id', verifyToken, async (req, res, next) => {
     next(err);
   }
 });
+
+// POST /api/assets/bulk-import
+// Accepts multipart Excel file, parses rows, detects duplicates.
+// ?dryRun=true → preview only (no DB write)
+// ?mode=skip|overwrite → how to handle duplicates (default: skip)
+router.post('/bulk-import', verifyToken, upload.single('file'), async (req, res, next) => {
+  try {
+    if (req.user.role === 'USER') return res.status(403).json({ error: 'Access denied.' });
+    if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan.' });
+
+    const dryRun = req.query.dryRun === 'true';
+    const mode = req.query.mode === 'overwrite' ? 'overwrite' : 'skip';
+    const { name: performedBy } = req.user;
+
+    // Parse Excel
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    if (!rows.length) return res.status(400).json({ error: 'File kosong atau format tidak sesuai.' });
+
+    // Normalize & validate each row
+    const VALID_OWNERSHIP = ['RENTAL', 'OWNED'];
+    const parsed = rows.map((row, i) => {
+      const assetTag = String(row['Asset Tag'] || '').trim();
+      const brand    = String(row['Brand'] || '').trim();
+      const model    = String(row['Model'] || '').trim();
+      const ownership = String(row['Ownership Type'] || 'RENTAL').trim().toUpperCase();
+      const rentalCost = parseFloat(String(row['Rental Cost'] || '0').replace(/[^0-9.]/g, '')) || 0;
+
+      const parseDate = (val) => {
+        if (!val) return null;
+        if (val instanceof Date) return val;
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? null : d;
+      };
+
+      const rentalStart = parseDate(row['Rental Start']);
+      const rentalEnd   = parseDate(row['Rental End']);
+
+      const errors = [];
+      if (!assetTag) errors.push('Asset Tag kosong');
+      if (!brand)    errors.push('Brand kosong');
+      if (!model)    errors.push('Model kosong');
+      if (!rentalStart) errors.push('Rental Start tidak valid');
+      if (!rentalEnd)   errors.push('Rental End tidak valid');
+      if (!VALID_OWNERSHIP.includes(ownership)) errors.push(`Ownership Type tidak valid: ${ownership}`);
+
+      return {
+        _row: i + 2,
+        assetTag,
+        deviceRef:     String(row['Device Ref'] || '').trim() || null,
+        vendorRef:     String(row['Vendor Ref'] || '').trim() || null,
+        vendor:        String(row['Vendor'] || '').trim() || null,
+        brand,
+        model,
+        processor:     String(row['Processor'] || '').trim() || null,
+        ram:           String(row['RAM'] || '').trim() || null,
+        storage:       String(row['Storage'] || '').trim() || null,
+        os:            String(row['OS'] || '').trim() || null,
+        office:        String(row['Office'] || '').trim() || null,
+        ownershipType: ownership,
+        rentalCost,
+        rentalStart,
+        rentalEnd,
+        notes:         String(row['Notes'] || '').trim() || null,
+        _errors: errors,
+      };
+    });
+
+    // Batch dedup check
+    const validRows = parsed.filter(r => r._errors.length === 0);
+    const tagsToCheck = validRows.map(r => r.assetTag);
+    const existing = await prisma.asset.findMany({
+      where: { assetTag: { in: tagsToCheck } },
+      select: { assetTag: true, id: true },
+    });
+    const existingMap = new Map(existing.map(e => [e.assetTag, e.id]));
+
+    const preview = parsed.map(r => {
+      const isDupe = existingMap.has(r.assetTag);
+      let status = r._errors.length > 0 ? 'error' : isDupe ? 'duplicate' : 'new';
+      return { ...r, status, _existingId: existingMap.get(r.assetTag) || null };
+    });
+
+    if (dryRun) return res.json({ preview, summary: buildSummary(preview) });
+
+    // Execute import
+    const results = { created: 0, updated: 0, skipped: 0, errors: 0 };
+    for (const row of preview) {
+      if (row.status === 'error') { results.errors++; continue; }
+
+      const { _row, _errors, _existingId, status, ...data } = row;
+
+      if (status === 'duplicate') {
+        if (mode === 'overwrite' && _existingId) {
+          await prisma.asset.update({ where: { id: _existingId }, data: {
+            ...data,
+            auditLogs: undefined,
+          }});
+          results.updated++;
+        } else {
+          results.skipped++;
+        }
+        continue;
+      }
+
+      await prisma.asset.create({ data: {
+        ...data,
+        status: 'AVAILABLE',
+        gaSyncStatus: 'PENDING',
+        auditLogs: undefined,
+      }});
+      results.created++;
+    }
+
+    res.json({ success: true, results, summary: buildSummary(preview) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+function buildSummary(preview) {
+  return {
+    total:     preview.length,
+    new:       preview.filter(r => r.status === 'new').length,
+    duplicate: preview.filter(r => r.status === 'duplicate').length,
+    error:     preview.filter(r => r.status === 'error').length,
+  };
+}
 
 // POST /api/assets
 // Creates a new asset record

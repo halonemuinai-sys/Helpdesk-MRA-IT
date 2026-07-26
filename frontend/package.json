@@ -20,7 +20,8 @@
     "react-flatpickr": "^4.0.11",
     "react-router-dom": "^7.16.0",
     "react-select": "^5.10.2",
-    "sweetalert2": "^11.26.25"
+    "sweetalert2": "^11.26.25",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
