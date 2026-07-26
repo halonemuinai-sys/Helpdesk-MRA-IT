@@ -15,11 +15,14 @@ const TEMPLATE_COLUMNS = [
   'Vendor', 'Vendor Ref', 'Notes',
 ];
 
-const TEMPLATE_EXAMPLE = [
-  'AST-MRA-0001', 'LP10001', 'Lenovo', 'ThinkPad L14 Gen 2', 'Intel Core i5-1135G7',
-  '16GB', '512GB SSD', 'Windows 11 Pro', 'M365',  'RENTAL',
-  850000, '2024-01-01', '2026-12-31',
-  'PT Javarent', 'ASN/2024/001', '',
+// Two example rows: one RENTAL, one OWNED
+const TEMPLATE_EXAMPLES = [
+  ['AST-MRA-0001', 'LP10001', 'Lenovo', 'ThinkPad L14 Gen 2', 'Intel Core i5-1135G7',
+   '16GB', '512GB SSD', 'Windows 11 Pro', 'M365', 'RENTAL',
+   850000, '2024-01-01', '2026-12-31', 'PT Javarent', 'ASN/2024/001', ''],
+  ['AST-MRA-0002', 'LP10002', 'Dell', 'Latitude 5420', 'Intel Core i7-1165G7',
+   '16GB', '512GB SSD', 'Windows 11 Pro', 'M365', 'OWNED',
+   0, '', '', '', '', 'Aset milik sendiri'],
 ];
 
 const STATUS_CONFIG = {
@@ -30,7 +33,7 @@ const STATUS_CONFIG = {
 
 function downloadTemplate() {
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_COLUMNS, TEMPLATE_EXAMPLE]);
+  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_COLUMNS, ...TEMPLATE_EXAMPLES]);
 
   // Column widths
   ws['!cols'] = TEMPLATE_COLUMNS.map((_, i) =>

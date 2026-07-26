@@ -224,15 +224,16 @@ router.post('/bulk-import', verifyToken, upload.single('file'), async (req, res,
         return isNaN(d.getTime()) ? null : d;
       };
 
-      const rentalStart = parseDate(row['Rental Start']);
-      const rentalEnd   = parseDate(row['Rental End']);
+      const isRental = ownership === 'RENTAL';
+      const rentalStart = parseDate(row['Rental Start']) || (!isRental ? new Date('2000-01-01') : null);
+      const rentalEnd   = parseDate(row['Rental End'])   || (!isRental ? new Date('2099-12-31') : null);
 
       const errors = [];
       if (!assetTag) errors.push('Asset Tag kosong');
       if (!brand)    errors.push('Brand kosong');
       if (!model)    errors.push('Model kosong');
-      if (!rentalStart) errors.push('Rental Start tidak valid');
-      if (!rentalEnd)   errors.push('Rental End tidak valid');
+      if (isRental && !rentalStart) errors.push('Rental Start tidak valid');
+      if (isRental && !rentalEnd)   errors.push('Rental End tidak valid');
       if (!VALID_OWNERSHIP.includes(ownership)) errors.push(`Ownership Type tidak valid: ${ownership}`);
 
       return {
