@@ -127,8 +127,8 @@ export default function AssetBulkImport({ token, onClose, onDone }) {
   const OPTIONAL_COLS = ['Device Ref', 'Processor', 'RAM', 'Storage', 'OS', 'Rental Cost', 'Rental Start', 'Rental End', 'Vendor', 'Notes'];
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl shadow-black/20 flex flex-col h-full overflow-hidden border-l border-gray-200 dark:border-slate-700/60">
+    <div className="fixed top-4 right-4 z-50 w-full max-w-md flex flex-col">
+      <div className="bg-white dark:bg-slate-900 shadow-2xl shadow-black/15 flex flex-col overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-700/60 max-h-[calc(100vh-2rem)]">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
