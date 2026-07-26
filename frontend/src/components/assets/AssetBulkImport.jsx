@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import {
   X, Upload, FileSpreadsheet, CheckCircle2, AlertTriangle,
   AlertCircle, Download, ChevronRight, ChevronLeft, Loader2,
-  RefreshCw, SkipForward, Pencil,
+  RefreshCw, SkipForward, Pencil, FileCheck, Info,
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -123,82 +123,137 @@ export default function AssetBulkImport({ token, onClose, onDone }) {
   const dupeCount = preview.filter(r => r.status === 'duplicate').length;
   const errCount  = preview.filter(r => r.status === 'error').length;
 
+  const REQUIRED_COLS = ['Asset Tag', 'Brand', 'Model', 'Ownership Type'];
+  const OPTIONAL_COLS = ['Device Ref', 'Processor', 'RAM', 'Storage', 'OS', 'Rental Cost', 'Rental Start', 'Rental End', 'Vendor', 'Notes'];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-md" onClick={onClose} />
+      <div className="relative w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl shadow-black/20 flex flex-col max-h-[90vh] overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100 dark:border-slate-800 shrink-0">
-          <div>
-            <h2 className="text-lg font-black text-gray-900 dark:text-slate-100 flex items-center gap-2">
+        <div className="flex items-center justify-between px-6 pt-6 pb-5 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
               <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
-              Bulk Import Asset
-            </h2>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Import massal dari file Excel · deteksi duplikasi otomatis</p>
+            </div>
+            <div>
+              <h2 className="text-base font-black text-gray-900 dark:text-slate-100">Bulk Import Asset</h2>
+              <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">Import massal · deteksi duplikasi otomatis</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Step bar */}
-        <div className="px-7 py-4 border-b border-gray-100 dark:border-slate-800 shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="px-6 pb-5 shrink-0">
+          <div className="flex items-center">
             {[{ n: 1, label: 'Upload File' }, { n: 2, label: 'Preview & Cek' }, { n: 3, label: 'Selesai' }].map(({ n, label }, idx) => {
               const done = step > n, active = step === n;
               return (
                 <React.Fragment key={n}>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${done ? 'bg-emerald-500 text-white' : active ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-gray-100 dark:bg-slate-800 text-gray-400'}`}>
-                      {done ? '✓' : n}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ring-4 transition-all ${
+                      done    ? 'bg-emerald-500 text-white ring-emerald-100 dark:ring-emerald-950/40' :
+                      active  ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 ring-slate-100 dark:ring-slate-800' :
+                                'bg-gray-100 dark:bg-slate-800 text-gray-400 ring-transparent'
+                    }`}>
+                      {done ? <CheckCircle2 className="w-4 h-4" /> : n}
                     </div>
-                    <span className={`text-xs font-semibold ${active ? 'text-slate-800 dark:text-slate-200' : done ? 'text-emerald-600' : 'text-gray-400'}`}>{label}</span>
+                    <span className={`text-[10px] font-bold whitespace-nowrap ${
+                      active ? 'text-slate-800 dark:text-slate-200' : done ? 'text-emerald-600' : 'text-gray-400'
+                    }`}>{label}</span>
                   </div>
-                  {idx < 2 && <div className={`flex-1 h-px ${done ? 'bg-emerald-300' : 'bg-gray-200 dark:bg-slate-800'}`} />}
+                  {idx < 2 && (
+                    <div className={`flex-1 h-0.5 mx-2 mb-4 rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-gray-150 dark:bg-slate-800'}`} />
+                  )}
                 </React.Fragment>
               );
             })}
           </div>
         </div>
 
+        <div className="h-px bg-gray-100 dark:bg-slate-800 shrink-0" />
+
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-7 py-6">
+        <div className="flex-1 overflow-y-auto px-6 py-5">
 
           {/* ── Step 1: Upload ── */}
           {step === 1 && (
-            <div className="space-y-5">
-              <button
-                type="button"
-                onClick={downloadTemplate}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-emerald-400 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                Download Template Excel
-              </button>
+            <div className="space-y-4">
 
+              {/* Template download card */}
+              <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/50">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
+                    <FileCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-800 dark:text-slate-200">Download Template Excel</p>
+                    <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">Gunakan template ini agar format kolom sesuai sistem</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadTemplate}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-colors shrink-0 shadow-sm shadow-emerald-500/20"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Download
+                </button>
+              </div>
+
+              {/* Required columns info */}
+              <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30">
+                <Info className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[11px] font-bold text-blue-700 dark:text-blue-400 mb-1.5">Kolom wajib diisi:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {REQUIRED_COLS.map(c => (
+                      <span key={c} className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[10px] font-semibold">{c}</span>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-blue-500 dark:text-blue-500 mt-1.5">
+                    Ownership Type: <span className="font-bold">RENTAL</span> atau <span className="font-bold">OWNED</span> — untuk OWNED, kolom Rental boleh kosong.
+                  </p>
+                </div>
+              </div>
+
+              {/* Drop zone */}
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onDrop}
-                onClick={() => fileRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all ${
+                onClick={() => !parsing && fileRef.current?.click()}
+                className={`relative border-2 border-dashed rounded-2xl py-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 ${
                   dragOver
-                    ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/10'
-                    : 'border-gray-200 dark:border-slate-700 hover:border-emerald-400 hover:bg-gray-50/50 dark:hover:bg-slate-800/30'
+                    ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/10 scale-[1.01]'
+                    : 'border-gray-200 dark:border-slate-700 hover:border-emerald-300 hover:bg-gray-50/70 dark:hover:bg-slate-800/30'
                 }`}
               >
                 {parsing ? (
-                  <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+                  <>
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-600 dark:text-slate-300">Memproses file...</p>
+                    <p className="text-xs text-gray-400">Mengecek duplikasi ke server</p>
+                  </>
                 ) : (
-                  <Upload className="w-10 h-10 text-gray-300 dark:text-slate-600" />
+                  <>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${dragOver ? 'bg-emerald-100 dark:bg-emerald-950/40' : 'bg-gray-100 dark:bg-slate-800'}`}>
+                      <Upload className={`w-6 h-6 transition-colors ${dragOver ? 'text-emerald-500' : 'text-gray-400 dark:text-slate-500'}`} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-gray-700 dark:text-slate-200">
+                        {dragOver ? 'Lepaskan file di sini' : 'Drag & drop file Excel'}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">atau <span className="text-emerald-600 dark:text-emerald-400 font-semibold">klik untuk pilih file</span> · .xlsx / .xls</p>
+                    </div>
+                  </>
                 )}
-                <div className="text-center">
-                  <p className="text-sm font-bold text-gray-600 dark:text-slate-300">
-                    {parsing ? 'Memproses file...' : 'Drag & drop file Excel di sini'}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">atau klik untuk pilih file · format .xlsx</p>
-                </div>
               </div>
               <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => { if (e.target.files[0]) parseFile(e.target.files[0]); }} />
 
@@ -213,39 +268,37 @@ export default function AssetBulkImport({ token, onClose, onDone }) {
 
           {/* ── Step 2: Preview ── */}
           {step === 2 && (
-            <div className="space-y-5">
-              {/* Summary chips */}
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-4">
+
+              {/* Summary stat row */}
+              <div className="grid grid-cols-4 gap-3">
                 {[
-                  { label: `${summary?.total || 0} Total Baris`, color: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' },
-                  { label: `${newCount} Baru`, color: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30' },
-                  { label: `${dupeCount} Duplikat`, color: 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30' },
-                  { label: `${errCount} Error`, color: 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/30' },
-                ].map(c => (
-                  <span key={c.label} className={`px-3 py-1.5 rounded-xl text-xs font-bold ${c.color}`}>{c.label}</span>
+                  { label: 'Total', value: summary?.total || 0, color: 'text-slate-700 dark:text-slate-300', bg: 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50' },
+                  { label: 'Baru', value: newCount,  color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30' },
+                  { label: 'Duplikat', value: dupeCount, color: 'text-amber-700 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30'   },
+                  { label: 'Error', value: errCount,  color: 'text-red-700 dark:text-red-400',     bg: 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30'         },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-2xl border px-4 py-3 ${s.bg}`}>
+                    <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
+                    <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 mt-0.5">{s.label}</p>
+                  </div>
                 ))}
               </div>
 
-              {/* Duplicate mode selector */}
+              {/* Duplicate mode */}
               {dupeCount > 0 && (
                 <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-950/10 border border-amber-200 dark:border-amber-900/20 rounded-2xl">
                   <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                   <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex-1">
-                    Ditemukan <span className="font-black">{dupeCount}</span> Asset Tag yang sudah ada. Pilih aksi:
+                    <span className="font-black">{dupeCount}</span> Asset Tag sudah ada. Pilih aksi untuk duplikat:
                   </p>
-                  <div className="flex gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setDupeMode('skip')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${dupeMode === 'skip' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400'}`}
-                    >
+                  <div className="flex gap-1.5 shrink-0">
+                    <button type="button" onClick={() => setDupeMode('skip')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${dupeMode === 'skip' ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-slate-400'}`}>
                       <SkipForward className="w-3 h-3" /> Skip
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setDupeMode('overwrite')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${dupeMode === 'overwrite' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400'}`}
-                    >
+                    <button type="button" onClick={() => setDupeMode('overwrite')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${dupeMode === 'overwrite' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-amber-300'}`}>
                       <Pencil className="w-3 h-3" /> Overwrite
                     </button>
                   </div>
@@ -257,37 +310,46 @@ export default function AssetBulkImport({ token, onClose, onDone }) {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-gray-50 dark:bg-slate-800/50 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        <th className="px-4 py-3">Row</th>
+                      <tr className="bg-gray-50 dark:bg-slate-800/60 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-slate-800">
+                        <th className="px-4 py-3 w-12">#</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Asset Tag</th>
-                        <th className="px-4 py-3">Brand</th>
-                        <th className="px-4 py-3">Model</th>
-                        <th className="px-4 py-3">Ownership</th>
+                        <th className="px-4 py-3">Brand · Model</th>
+                        <th className="px-4 py-3">Type</th>
                         <th className="px-4 py-3">Rental Cost</th>
                         <th className="px-4 py-3">Keterangan</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800/70">
                       {preview.map((row) => {
                         const cfg = STATUS_CONFIG[row.status];
                         return (
-                          <tr key={row._row} className={`${row.status === 'error' ? 'bg-red-50/30 dark:bg-red-950/10' : row.status === 'duplicate' ? 'bg-amber-50/30 dark:bg-amber-950/10' : ''}`}>
-                            <td className="px-4 py-2.5 text-gray-400 font-mono">{row._row}</td>
-                            <td className="px-4 py-2.5">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                          <tr key={row._row} className={`transition-colors ${
+                            row.status === 'error'     ? 'bg-red-50/40 dark:bg-red-950/10' :
+                            row.status === 'duplicate' ? 'bg-amber-50/40 dark:bg-amber-950/10' : ''
+                          }`}>
+                            <td className="px-4 py-3 text-gray-300 dark:text-slate-600 font-mono text-[10px]">{row._row}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} shrink-0`} />
                                 {cfg.label}
                               </span>
                             </td>
-                            <td className="px-4 py-2.5 font-mono font-bold text-gray-800 dark:text-slate-200">{row.assetTag || '—'}</td>
-                            <td className="px-4 py-2.5 text-gray-600 dark:text-slate-400">{row.brand || '—'}</td>
-                            <td className="px-4 py-2.5 text-gray-600 dark:text-slate-400 max-w-[140px] truncate">{row.model || '—'}</td>
-                            <td className="px-4 py-2.5 text-gray-600 dark:text-slate-400">{row.ownershipType}</td>
-                            <td className="px-4 py-2.5 text-gray-600 dark:text-slate-400 font-mono">
-                              {row.rentalCost ? `Rp ${Number(row.rentalCost).toLocaleString('id-ID')}` : '—'}
+                            <td className="px-4 py-3 font-mono font-bold text-gray-800 dark:text-slate-200 text-[11px]">{row.assetTag || '—'}</td>
+                            <td className="px-4 py-3">
+                              <span className="font-semibold text-gray-700 dark:text-slate-300">{row.brand}</span>
+                              <span className="text-gray-400 dark:text-slate-500"> · </span>
+                              <span className="text-gray-500 dark:text-slate-400 truncate max-w-[100px] inline-block align-bottom">{row.model}</span>
                             </td>
-                            <td className="px-4 py-2.5 text-red-500 dark:text-red-400 text-[10px]">
+                            <td className="px-4 py-3">
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${row.ownershipType === 'RENTAL' ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
+                                {row.ownershipType}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-500 dark:text-slate-400 font-mono text-[11px]">
+                              {row.ownershipType === 'RENTAL' && row.rentalCost ? `Rp ${Number(row.rentalCost).toLocaleString('id-ID')}` : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-red-500 dark:text-red-400 text-[10px] max-w-[140px]">
                               {row._errors?.join(', ') || ''}
                             </td>
                           </tr>
@@ -309,29 +371,30 @@ export default function AssetBulkImport({ token, onClose, onDone }) {
 
           {/* ── Step 3: Done ── */}
           {step === 3 && result && (
-            <div className="flex flex-col items-center justify-center py-8 gap-6">
-              <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center py-10 gap-6">
+              <div className="w-16 h-16 rounded-3xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
                 <CheckCircle2 className="w-8 h-8 text-emerald-500" />
               </div>
               <div className="text-center">
                 <h3 className="text-xl font-black text-gray-900 dark:text-slate-100">Import Selesai!</h3>
-                <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">Data asset berhasil diproses.</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">Data asset berhasil diproses ke sistem.</p>
               </div>
-              <div className="grid grid-cols-3 gap-4 w-full max-w-sm">
+              <div className="grid grid-cols-3 gap-3 w-full max-w-xs">
                 {[
-                  { label: 'Dibuat',   value: result.created, color: 'text-emerald-600 dark:text-emerald-400' },
-                  { label: 'Diupdate', value: result.updated, color: 'text-amber-600 dark:text-amber-400'   },
-                  { label: 'Di-skip',  value: result.skipped, color: 'text-slate-600 dark:text-slate-400'   },
+                  { label: 'Dibuat',   value: result.created, icon: '✦', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30' },
+                  { label: 'Diupdate', value: result.updated, icon: '↻', color: 'text-amber-600 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30'   },
+                  { label: 'Di-skip',  value: result.skipped, icon: '—', color: 'text-slate-500 dark:text-slate-400',   bg: 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50'   },
                 ].map(c => (
-                  <div key={c.label} className="text-center p-4 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800">
+                  <div key={c.label} className={`text-center p-4 rounded-2xl border ${c.bg}`}>
                     <p className={`text-2xl font-black ${c.color}`}>{c.value}</p>
-                    <p className="text-[10px] font-semibold text-gray-400 mt-0.5">{c.label}</p>
+                    <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 mt-1">{c.label}</p>
                   </div>
                 ))}
               </div>
               {result.errors > 0 && (
-                <p className="text-xs text-red-500 dark:text-red-400 font-semibold">
-                  {result.errors} baris dilewati karena error validasi.
+                <p className="text-xs text-red-500 dark:text-red-400 font-semibold flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {result.errors} baris dilewati karena error validasi
                 </p>
               )}
             </div>
@@ -339,15 +402,16 @@ export default function AssetBulkImport({ token, onClose, onDone }) {
         </div>
 
         {/* Footer */}
-        <div className="px-7 py-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
+        <div className="h-px bg-gray-100 dark:bg-slate-800 shrink-0" />
+        <div className="px-6 py-4 flex items-center justify-between gap-3 shrink-0">
           <div>
             {step === 2 && (
               <button
                 type="button"
                 onClick={() => { setStep(1); setPreview([]); setSummary(null); setFile(null); setParseError(''); }}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
               >
-                <ChevronLeft className="w-4 h-4" /> Ganti File
+                <ChevronLeft className="w-3.5 h-3.5" /> Ganti File
               </button>
             )}
           </div>
@@ -357,16 +421,16 @@ export default function AssetBulkImport({ token, onClose, onDone }) {
                 <button
                   type="button"
                   onClick={() => { setStep(1); setPreview([]); setSummary(null); setFile(null); setResult(null); setParseError(''); }}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                 >
-                  <RefreshCw className="w-4 h-4" /> Import Lagi
+                  <RefreshCw className="w-3.5 h-3.5" /> Import Lagi
                 </button>
                 <button
                   type="button"
                   onClick={() => { onDone?.(); onClose(); }}
-                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-bold hover:bg-slate-700 dark:hover:bg-slate-300 transition-colors"
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold hover:bg-slate-700 dark:hover:bg-slate-200 transition-colors"
                 >
-                  Selesai & Refresh <ChevronRight className="w-4 h-4" />
+                  Selesai & Refresh <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </>
             ) : step === 2 ? (
@@ -374,9 +438,9 @@ export default function AssetBulkImport({ token, onClose, onDone }) {
                 type="button"
                 onClick={handleImport}
                 disabled={importing || newCount + (dupeMode === 'overwrite' ? dupeCount : 0) === 0}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-bold hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors shadow-sm"
               >
-                {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                 {importing ? 'Mengimport...' : `Import ${newCount + (dupeMode === 'overwrite' ? dupeCount : 0)} Asset`}
               </button>
             ) : null}
