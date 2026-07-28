@@ -323,7 +323,7 @@ async function sendTicketAssignedEmail(ticket, agent) {
 
       <!-- Button Link (Redirect to Dashboard Tickets Page) -->
       <div style="text-align: center; margin: 25px 0 15px 0;">
-        <a href="http://localhost:5173/tickets" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);">
+        <a href="${process.env.CLIENT_URL || 'https://helpdesk2.mra.co.id'}/tickets" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);">
           Buka Tickets List Dashboard
         </a>
       </div>
