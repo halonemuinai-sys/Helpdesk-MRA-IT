@@ -17,6 +17,60 @@ const CATEGORIES = [
   { value: 'Lainnya',   label: 'Lainnya',            icon: HelpCircle, desc: 'Kendala IT lainnya',            iconBg: 'bg-slate-50',   iconColor: 'text-slate-400'  },
 ];
 
+const SUBCATEGORIES = {
+  Access: [
+    { value: 'Pembuatan Akun Email',         label: 'Buat Akun Email',        emoji: '📧' },
+    { value: 'Reset Password Email',          label: 'Reset Password Email',   emoji: '🔑' },
+    { value: 'Login Domain (Active Directory)', label: 'Login Domain / AD',    emoji: '🖥️' },
+    { value: 'Akun Retailsoft ERP',           label: 'Retailsoft ERP',         emoji: '🛍️' },
+    { value: 'Akun NetSuite ERP',             label: 'NetSuite ERP',           emoji: '📊' },
+    { value: 'Akun Ginee ERP',                label: 'Ginee ERP',              emoji: '📦' },
+    { value: 'Akun SAP',                      label: 'SAP',                    emoji: '⚙️' },
+    { value: 'Akses Shared Folder / Drive',   label: 'Shared Folder',          emoji: '📁' },
+    { value: 'VPN Account Request',           label: 'VPN / Remote',           emoji: '🔐' },
+    { value: 'CCTV Access',                   label: 'Akses CCTV',             emoji: '📷' },
+  ],
+  Hardware: [
+    { value: 'PC/Laptop',        label: 'Laptop / PC',      emoji: '💻' },
+    { value: 'Monitor',          label: 'Monitor',           emoji: '🖥️' },
+    { value: 'Keyboard/Mouse',   label: 'Keyboard / Mouse',  emoji: '⌨️' },
+    { value: 'IP Phone',         label: 'IP Phone',          emoji: '☎️' },
+    { value: 'UPS',              label: 'UPS / Power',       emoji: '🔋' },
+    { value: 'Projector',        label: 'Proyektor',         emoji: '📽️' },
+    { value: 'POS Cashier Machine', label: 'Mesin Kasir',   emoji: '🖨️' },
+  ],
+  Software: [
+    { value: 'Outlook/Email',                         label: 'Outlook / Email',     emoji: '📨' },
+    { value: 'Microsoft Office (Word, Excel, etc.)',   label: 'MS Office',           emoji: '📝' },
+    { value: 'Google Workspace',                       label: 'Google Workspace',    emoji: '🔵' },
+    { value: 'Retailsoft ERP',                         label: 'Retailsoft ERP',      emoji: '🛍️' },
+    { value: 'NetSuite ERP',                           label: 'NetSuite ERP',        emoji: '📊' },
+    { value: 'Ginee ERP',                              label: 'Ginee ERP',           emoji: '📦' },
+    { value: 'SAP',                                    label: 'SAP',                 emoji: '⚙️' },
+    { value: 'Operating System (Windows/macOS)',        label: 'OS Windows / macOS',  emoji: '🪟' },
+    { value: 'Antivirus',                              label: 'Antivirus',           emoji: '🛡️' },
+    { value: 'Custom Internal Apps',                   label: 'Aplikasi Internal',   emoji: '🔧' },
+  ],
+  Network: [
+    { value: 'Internet Slow/Offline',   label: 'Internet Lambat / Mati',  emoji: '🌐' },
+    { value: 'Wi-Fi Connection',        label: 'Wi-Fi / Hotspot',          emoji: '📶' },
+    { value: 'LAN Cable Connection',    label: 'Kabel LAN',                emoji: '🔌' },
+    { value: 'VPN/Remote Access',       label: 'VPN / Remote',             emoji: '🔐' },
+    { value: 'Switch/Router Issue',     label: 'Switch / Router',          emoji: '📡' },
+  ],
+  Printer: [
+    { value: 'Tidak Bisa Cetak',   label: 'Tidak Bisa Cetak',  emoji: '🖨️' },
+    { value: 'Tidak Bisa Scan',    label: 'Tidak Bisa Scan',   emoji: '📄' },
+    { value: 'Paper Jam',          label: 'Kertas Macet',       emoji: '⚠️' },
+    { value: 'Kualitas Cetak',     label: 'Kualitas Cetak',    emoji: '🎨' },
+  ],
+  Phone: [
+    { value: 'IP Phone / Ekstensi',   label: 'IP Phone / Ekstensi',   emoji: '☎️' },
+    { value: 'Smartphone',            label: 'Smartphone',             emoji: '📱' },
+    { value: 'WhatsApp Bisnis',       label: 'WhatsApp Bisnis',        emoji: '💬' },
+  ],
+};
+
 // ── Reusable Input Row ────────────────────────────────────────────────────────
 function InputRow({ icon: Icon, children, last }) {
   return (
@@ -42,6 +96,7 @@ export default function PublicTicketForm() {
   const companyRef = useRef(null);
 
   const [category, setCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
@@ -105,6 +160,7 @@ export default function PublicTicketForm() {
         body: JSON.stringify({
           name: name.trim(), email: email.trim().toLowerCase(),
           company: effectiveCompany.trim(), category,
+          subCategory: subCategory || undefined,
           title: title.trim(), description: description.trim(),
           priority: 'LOW', source: 'Self-Service Portal',
         }),
@@ -122,7 +178,7 @@ export default function PublicTicketForm() {
 
   const resetForm = () => {
     setStep(1); setName(''); setEmail(''); setCompany(''); setCompanySearch('');
-    setCategory(''); setTitle(''); setDescription(''); setTicketId(''); setError('');
+    setCategory(''); setSubCategory(''); setTitle(''); setDescription(''); setTicketId(''); setError('');
   };
 
   return (
@@ -277,7 +333,8 @@ export default function PublicTicketForm() {
                     const active = category === cat.value;
                     return (
                       <button
-                        key={cat.value} type="button" onClick={() => setCategory(cat.value)}
+                        key={cat.value} type="button"
+                        onClick={() => { setCategory(cat.value); setSubCategory(''); }}
                         className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all active:scale-[0.97] ${
                           active
                             ? 'border-slate-900 bg-slate-900 shadow-sm'
@@ -296,6 +353,35 @@ export default function PublicTicketForm() {
                   })}
                 </div>
               </div>
+
+              {/* Sub-category chips — muncul saat kategori dipilih */}
+              {category && SUBCATEGORIES[category] && (
+                <div>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">
+                    {category === 'Access' ? 'Jenis Permintaan' : 'Detail Masalah'}
+                    <span className="ml-1.5 text-gray-300 normal-case font-normal tracking-normal">· opsional</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SUBCATEGORIES[category].map(sub => {
+                      const active = subCategory === sub.value;
+                      return (
+                        <button
+                          key={sub.value} type="button"
+                          onClick={() => setSubCategory(active ? '' : sub.value)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-[0.96] ${
+                            active
+                              ? 'bg-slate-900 text-white border-slate-900'
+                              : 'bg-white text-slate-600 border-gray-200 hover:border-slate-400'
+                          }`}
+                        >
+                          <span>{sub.emoji}</span>
+                          {sub.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Title + Description */}
               <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
