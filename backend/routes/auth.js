@@ -119,8 +119,7 @@ router.post('/forgot-password', authRateLimiter, async (req, res, next) => {
       { expiresIn: '1h' }
     );
 
-    // Dynamic reset link depending on environment (falls back to local port)
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = process.env.CLIENT_URL || 'https://helpdesk2.mra.co.id';
     const resetLink = `${clientUrl}/reset-password?token=${resetToken}`;
 
     console.log('====================================');
