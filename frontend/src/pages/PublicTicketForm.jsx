@@ -99,6 +99,8 @@ export default function PublicTicketForm() {
   const [subCategory, setSubCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [dupTicket, setDupTicket] = useState(null);
+  const [dupChecking, setDupChecking] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/companies/public`)
@@ -149,8 +151,7 @@ export default function PublicTicketForm() {
   const handleNext = () => { if (step1Valid) setStep(2); };
   const handleBack = () => setStep(1);
 
-  const handleSubmit = async () => {
-    if (!step2Valid) return;
+  const doSubmit = async () => {
     setSubmitting(true);
     setError('');
     try {
@@ -168,6 +169,7 @@ export default function PublicTicketForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal mengirim laporan.');
       setTicketId(data.ticketId || data.ticket?.id || '');
+      setDupTicket(null);
       setStep(3);
     } catch (err) {
       setError(err.message);
@@ -176,9 +178,31 @@ export default function PublicTicketForm() {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!step2Valid) return;
+    setDupChecking(true);
+    try {
+      const res = await fetch(`${API_URL}/tickets/public/check-duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), category }),
+      });
+      const data = await res.json();
+      if (data.hasDuplicate) {
+        setDupTicket(data.ticket);
+        return;
+      }
+    } catch (_) {
+      // jika cek gagal, lanjut submit
+    } finally {
+      setDupChecking(false);
+    }
+    await doSubmit();
+  };
+
   const resetForm = () => {
     setStep(1); setName(''); setEmail(''); setCompany(''); setCompanySearch('');
-    setCategory(''); setSubCategory(''); setTitle(''); setDescription(''); setTicketId(''); setError('');
+    setCategory(''); setSubCategory(''); setTitle(''); setDescription(''); setTicketId(''); setError(''); setDupTicket(null);
   };
 
   return (
@@ -411,6 +435,49 @@ export default function PublicTicketForm() {
                 </div>
               )}
 
+              {/* Duplicate warning */}
+              {dupTicket && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 overflow-hidden">
+                  <div className="flex items-start gap-3 px-4 py-3.5 border-b border-amber-100">
+                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-amber-800">Tiket serupa masih aktif</p>
+                      <p className="text-[11px] text-amber-600 mt-0.5">
+                        Kamu sudah punya tiket <strong>{dupTicket.category}</strong>{dupTicket.subCategory && dupTicket.subCategory !== '-' ? ` — ${dupTicket.subCategory}` : ''} yang masih diproses.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 bg-white/60">
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Tiket sebelumnya</p>
+                    <p className="text-xs font-bold text-slate-800 truncate">{dupTicket.title}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                        dupTicket.status === 'OPEN' ? 'bg-blue-100 text-blue-700' :
+                        dupTicket.status === 'IN_PROGRESS' ? 'bg-emerald-100 text-emerald-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>{dupTicket.status.replace('_', ' ')}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{dupTicket.id.slice(0, 8).toUpperCase()}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 px-4 pb-3 pt-2">
+                    <button
+                      type="button" onClick={() => setDupTicket(null)}
+                      className="flex-1 py-2 rounded-xl text-xs font-semibold border border-amber-200 text-amber-700 hover:bg-amber-50 transition-colors"
+                    >
+                      Batalkan
+                    </button>
+                    <button
+                      type="button" onClick={() => { setDupTicket(null); doSubmit(); }}
+                      disabled={submitting}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
+                    >
+                      {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                      Tetap Kirim
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2.5">
                 <button
                   type="button" onClick={handleBack}
@@ -419,10 +486,12 @@ export default function PublicTicketForm() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
-                  type="button" onClick={handleSubmit} disabled={!step2Valid || submitting}
+                  type="button" onClick={handleSubmit} disabled={!step2Valid || submitting || dupChecking}
                   className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-700 active:scale-[0.98] transition-all disabled:opacity-30 disabled:pointer-events-none shadow-sm"
                 >
-                  {submitting ? (
+                  {dupChecking ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Memeriksa...</>
+                  ) : submitting ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Mengirim...</>
                   ) : (
                     <><Send className="w-4 h-4" /> Kirim Laporan</>

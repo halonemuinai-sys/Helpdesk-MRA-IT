@@ -736,6 +736,35 @@ router.patch('/:id/assign', verifyToken, async (req, res, next) => {
   }
 });
 
+// POST /api/tickets/public/check-duplicate
+// Check if requester already has an open ticket in the same category within 24h
+router.post('/public/check-duplicate', async (req, res, next) => {
+  try {
+    const { email, category } = req.body;
+    if (!email || !category) return res.json({ hasDuplicate: false });
+
+    const requester = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!requester) return res.json({ hasDuplicate: false });
+
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const existing = await prisma.ticket.findFirst({
+      where: {
+        requesterId: requester.id,
+        category,
+        status: { in: ['OPEN', 'IN_PROGRESS', 'PENDING'] },
+        createdAt: { gte: since },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, title: true, status: true, createdAt: true, subCategory: true },
+    });
+
+    if (!existing) return res.json({ hasDuplicate: false });
+    res.json({ hasDuplicate: true, ticket: existing });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/tickets/public
 // Create a ticket from public sources (e.g. Google Form)
 router.post('/public', async (req, res, next) => {
