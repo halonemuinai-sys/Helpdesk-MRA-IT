@@ -18,21 +18,13 @@ export default function RentalMonitoringWidget({ assets, formatRupiah, onEditAss
   const [showAllExpired, setShowAllExpired] = useState(false);
 
   const now = new Date();
-  
+
   // 1. Filter semua aset bertipe RENTAL
   const rentalAssets = assets.filter(a => a.ownershipType === 'RENTAL');
 
-  // 2. Filter aset sewa aktif (belum melewati rentalEnd)
-  const activeRentals = rentalAssets.filter(a => {
-    if (!a.rentalEnd) return true; // Asumsikan aktif jika tanggal tidak ada
-    return new Date(a.rentalEnd) >= now;
-  });
-
-  // 3. Filter aset sewa kadaluarsa (melewati rentalEnd)
-  const expiredRentals = rentalAssets.filter(a => {
-    if (!a.rentalEnd) return false;
-    return new Date(a.rentalEnd) < now;
-  });
+  // 2 & 3. Gunakan rentalStatus dari backend — tidak hitung ulang di frontend
+  const activeRentals  = rentalAssets.filter(a => a.rentalStatus !== 'EXPIRED');
+  const expiredRentals = rentalAssets.filter(a => a.rentalStatus === 'EXPIRED');
 
   // 4. Hitung status di antara sewa aktif
   const assignedActive = activeRentals.filter(a => a.status === 'ASSIGNED');

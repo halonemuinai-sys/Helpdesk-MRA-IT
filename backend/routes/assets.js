@@ -163,7 +163,26 @@ router.get('/', verifyToken, async (req, res, next) => {
 
     const paginatedAssets = filteredAssets.slice(skipValue, skipValue + takeValue);
 
-    res.json(paginatedAssets);
+    const now = new Date();
+    const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const in90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+    const withRentalStatus = paginatedAssets.map(a => {
+      let rentalStatus;
+      if (a.ownershipType === 'OWNED') {
+        rentalStatus = 'OWNED';
+      } else {
+        const end = a.rentalEnd ? new Date(a.rentalEnd) : null;
+        if (!end)               rentalStatus = 'ACTIVE';
+        else if (end < now)     rentalStatus = 'EXPIRED';
+        else if (end <= in30)   rentalStatus = 'EXPIRING_SOON';
+        else if (end <= in90)   rentalStatus = 'EXPIRING';
+        else                    rentalStatus = 'ACTIVE';
+      }
+      return { ...a, rentalStatus };
+    });
+
+    res.json(withRentalStatus);
   } catch (err) {
     next(err);
   }

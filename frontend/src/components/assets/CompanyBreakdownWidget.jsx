@@ -2,11 +2,9 @@ import React from 'react';
 import { Building2, TrendingUp, AlertCircle, ShieldAlert, Laptop, CheckCircle2 } from 'lucide-react';
 
 export default function CompanyBreakdownWidget({ assets, companyMasters, formatRupiah }) {
-  const now = new Date();
-
-  // 1. Ambil semua unit sewa aktif (ownershipType === 'RENTAL' dan rentalEnd >= sekarang)
+  // 1. Ambil semua unit sewa aktif — gunakan rentalStatus dari backend (bukan hitung ulang)
   const activeRentalAssets = assets.filter(a => {
-    return a.ownershipType === 'RENTAL' && (!a.rentalEnd || new Date(a.rentalEnd) >= now);
+    return a.ownershipType === 'RENTAL' && a.rentalStatus !== 'EXPIRED';
   });
 
   // 2. Lakukan pengelompokkan (grouping) berdasarkan CompanyMaster

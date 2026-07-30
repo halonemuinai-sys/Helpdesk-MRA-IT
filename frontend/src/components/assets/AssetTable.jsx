@@ -70,15 +70,17 @@ export default function AssetTable({
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800/40 text-gray-700 dark:text-slate-300">
               {sortedAssets.map((asset) => {
                 const statusObj = STATUS_OPTIONS.find(o => o.value === asset.status) || STATUS_OPTIONS[0];
-                const leaseEnd = new Date(asset.rentalEnd);
-                const today = new Date();
-                const remainingDays = Math.ceil((leaseEnd - today) / (1000 * 60 * 60 * 24));
-                const isLeaseNearExpiry = remainingDays >= 0 && remainingDays <= 90;
-                const isLeaseExpired = remainingDays < 0;
+                const rs = asset.rentalStatus; // OWNED | ACTIVE | EXPIRING | EXPIRING_SOON | EXPIRED
+                const remainingDays = (rs !== 'OWNED' && asset.rentalEnd)
+                  ? Math.ceil((new Date(asset.rentalEnd) - new Date()) / (1000 * 60 * 60 * 24))
+                  : null;
                 const isPhone = isSmartphone(asset);
  
                 return (
-                  <tr key={asset.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                  <tr key={asset.id}
+                    className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors"
+                    style={rs === 'EXPIRED' ? { boxShadow: 'inset 4px 0 0 0 #dc2626' } : rs === 'EXPIRING_SOON' ? { boxShadow: 'inset 4px 0 0 0 #f59e0b' } : undefined}
+                  >
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
                         <div className={`p-1.5 rounded-lg shrink-0 ${isPhone ? 'bg-indigo-500/10 text-indigo-500' : 'bg-rose-500/10 text-rose-500'}`}>
@@ -139,12 +141,14 @@ export default function AssetTable({
                       ) : (
                         <>
                           <div>{formatDateYYMMDD(asset.rentalEnd)}</div>
-                          {isLeaseExpired ? (
-                            <span className="text-[9px] font-black text-red-500 block">Sewa Habis!</span>
-                          ) : isLeaseNearExpiry ? (
-                            <span className="text-[9px] font-bold text-amber-500 block">{remainingDays} hari sisa sewa</span>
+                          {rs === 'EXPIRED' ? (
+                            <span className="text-[9px] font-black text-red-500 block">Sewa Habis! ({Math.abs(remainingDays)}h lalu)</span>
+                          ) : rs === 'EXPIRING_SOON' ? (
+                            <span className="text-[9px] font-black text-amber-500 block">⚠ {remainingDays} hari lagi</span>
+                          ) : rs === 'EXPIRING' ? (
+                            <span className="text-[9px] font-bold text-slate-400 block">{remainingDays} hari sisa</span>
                           ) : (
-                            <span className="text-[9px] text-slate-400 block">{remainingDays} hari sisa sewa</span>
+                            <span className="text-[9px] text-slate-400 block">{remainingDays} hari sisa</span>
                           )}
                         </>
                       )}
