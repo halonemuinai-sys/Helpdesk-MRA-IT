@@ -263,10 +263,16 @@ export default function DashboardPerformancePanel({
               <h4 className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-2 transition-transform duration-300 group-hover:translate-x-1">
                 {avgTeamResolution > 0 ? `${avgTeamResolution} hrs` : '0 hrs'}
               </h4>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <span className={`text-xs font-bold ${teamComplianceRate >= 90 ? 'text-emerald-600 dark:text-emerald-400' : teamComplianceRate >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {teamComplianceRate}% On-Time
+                </span>
+                <span className="text-[10px] text-gray-400 dark:text-slate-500">({totalSlaMet}/{totalResolved} tiket)</span>
+              </div>
             </div>
             <p className="text-[10px] text-gray-500 mt-4 font-medium flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110 text-indigo-500 animate-pulse" />
-              Active resolution time
+              SLA compliance bulan ini
             </p>
           </div>
 
