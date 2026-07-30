@@ -23,6 +23,10 @@ export default function DashboardPerformancePanel({
   const totalSlaMet = timeframedLeaderboard.reduce((acc, a) => acc + a.metrics.slaMet, 0);
   const teamComplianceRate = totalResolved > 0 ? Math.round((totalSlaMet / totalResolved) * 100) : 100;
 
+  const totalResponseSlaMet = timeframedLeaderboard.reduce((acc, a) => acc + (a.metrics.responseSlaMet || 0), 0);
+  const totalResponseSlaTotal = timeframedLeaderboard.reduce((acc, a) => acc + (a.metrics.responseSlaTotal || 0), 0);
+  const teamResponseComplianceRate = totalResponseSlaTotal > 0 ? Math.round((totalResponseSlaMet / totalResponseSlaTotal) * 100) : 100;
+
   const hasRawResponse = timeframedLeaderboard.some(a => a.metrics.respondedCount !== undefined);
   let avgTeamResponse = 0;
   if (hasRawResponse) {
@@ -147,10 +151,16 @@ export default function DashboardPerformancePanel({
               <h4 className="text-2xl font-black text-gray-800 dark:text-slate-100 mt-2 transition-transform duration-300 group-hover:translate-x-1">
                 {avgTeamResponse > 0 ? `${avgTeamResponse} min` : '0 min'}
               </h4>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <span className={`text-xs font-bold ${teamResponseComplianceRate >= 90 ? 'text-emerald-600 dark:text-emerald-400' : teamResponseComplianceRate >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {teamResponseComplianceRate}% On-Time
+                </span>
+                <span className="text-[10px] text-gray-400 dark:text-slate-500">({totalResponseSlaMet}/{totalResponseSlaTotal} tiket)</span>
+              </div>
             </div>
             <p className="text-[10px] text-gray-500 mt-4 font-medium flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12 text-brand-500" />
-              Speed to first response
+              Response SLA compliance bulan ini
             </p>
           </div>
 

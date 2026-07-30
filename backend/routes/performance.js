@@ -344,7 +344,9 @@ router.get('/', verifyToken, async (req, res, next) => {
           totalResponseMs,
           respondedCount,
           totalResolutionMs,
-          resolvedCountWithTime
+          resolvedCountWithTime,
+          responseSlaMet,
+          responseSlaTotal
         }
       };
     });
