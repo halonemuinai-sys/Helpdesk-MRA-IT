@@ -30,6 +30,7 @@ router.get('/', verifyToken, async (req, res, next) => {
         { brand: { contains: search, mode: 'insensitive' } },
         { location: { contains: search, mode: 'insensitive' } },
         { contractNumber: { contains: search, mode: 'insensitive' } },
+        { bandwidth: { contains: search, mode: 'insensitive' } },
         { authorizedCompanyMaster: { name: { contains: search, mode: 'insensitive' } } }
       ];
     }
@@ -81,6 +82,7 @@ router.post('/', verifyToken, async (req, res, next) => {
       brand, 
       location,
       contractNumber,
+      bandwidth,
       billingCycle, 
       cost, 
       startDate, 
@@ -116,6 +118,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         brand: brand || null,
         location: location || null,
         contractNumber: contractNumber || null,
+        bandwidth: bandwidth || null,
         billingCycle,
         cost: parseFloat(cost),
         startDate: new Date(startDate),
@@ -159,6 +162,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       brand,
       location,
       contractNumber,
+      bandwidth,
       billingCycle,
       cost,
       startDate,
@@ -188,6 +192,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (brand !== undefined) updateData.brand = brand || null;
     if (location !== undefined) updateData.location = location || null;
     if (contractNumber !== undefined) updateData.contractNumber = contractNumber || null;
+    if (bandwidth !== undefined) updateData.bandwidth = bandwidth || null;
     if (billingCycle !== undefined) updateData.billingCycle = billingCycle;
     if (cost !== undefined) updateData.cost = parseFloat(cost);
     if (startDate !== undefined) updateData.startDate = new Date(startDate);

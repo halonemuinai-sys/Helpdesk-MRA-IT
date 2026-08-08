@@ -76,6 +76,9 @@ export default function SubscriptionTable({
                             {sub.contractNumber && (
                               <p className="text-[9px] text-amber-600 dark:text-amber-400 font-bold truncate max-w-[180px]">CID/Kontrak: {sub.contractNumber}</p>
                             )}
+                            {sub.bandwidth && (
+                              <p className="text-[9px] text-cyan-600 dark:text-cyan-400 font-bold truncate max-w-[180px]">⚡ Bandwidth: {sub.bandwidth}</p>
+                            )}
                           </div>
                         </div>
                       </td>

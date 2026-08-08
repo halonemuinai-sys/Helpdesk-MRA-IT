@@ -34,6 +34,7 @@ export default function useSubscriptions({ token }) {
   const [formBrand, setFormBrand] = useState('');
   const [formLocation, setFormLocation] = useState('');
   const [formContractNumber, setFormContractNumber] = useState('');
+  const [formBandwidth, setFormBandwidth] = useState('');
   const [formBillingCycle, setFormBillingCycle] = useState('1 Tahun');
   const [formCost, setFormCost] = useState('');
   const [formStartDate, setFormStartDate] = useState('');
@@ -144,6 +145,7 @@ export default function useSubscriptions({ token }) {
     setFormBrand('');
     setFormLocation('');
     setFormContractNumber('');
+    setFormBandwidth('');
     setFormBillingCycle('1 Tahun');
     setFormCost('');
     const today = new Date().toISOString().split('T')[0];
@@ -172,6 +174,7 @@ export default function useSubscriptions({ token }) {
     setFormBrand(sub.brand || '');
     setFormLocation(sub.location || '');
     setFormContractNumber(sub.contractNumber || '');
+    setFormBandwidth(sub.bandwidth || '');
     setFormBillingCycle(sub.billingCycle);
     setFormCost(formatNumberForInput(sub.cost));
     setFormStartDate(sub.startDate.split('T')[0]);
@@ -197,6 +200,7 @@ export default function useSubscriptions({ token }) {
     setFormBrand(sub.brand || '');
     setFormLocation(sub.location || '');
     setFormContractNumber(sub.contractNumber || '');
+    setFormBandwidth(sub.bandwidth || '');
     setFormBillingCycle(sub.billingCycle);
     setFormCost(formatNumberForInput(sub.cost));
     const oldExpiry = new Date(sub.expiryDate);
@@ -246,6 +250,7 @@ export default function useSubscriptions({ token }) {
         brand: formBrand || null,
         location: formLocation || null,
         contractNumber: formContractNumber || null,
+        bandwidth: formBandwidth || null,
         billingCycle: formBillingCycle,
         cost: parseFloat(formCost.toString().replace(/\./g, '')) || 0,
         startDate: new Date(formStartDate).toISOString(),
@@ -332,6 +337,7 @@ export default function useSubscriptions({ token }) {
       (sub.authorizedCompanyMaster?.name && sub.authorizedCompanyMaster.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (sub.location && sub.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (sub.contractNumber && sub.contractNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (sub.bandwidth && sub.bandwidth.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (sub.notes && sub.notes.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = !selectedCategory || sub.category === selectedCategory;
     const matchesCompany = !selectedCompanyMasterId || sub.companyMasterId === parseInt(selectedCompanyMasterId, 10);
@@ -364,6 +370,7 @@ export default function useSubscriptions({ token }) {
     formBrand, setFormBrand,
     formLocation, setFormLocation,
     formContractNumber, setFormContractNumber,
+    formBandwidth, setFormBandwidth,
     formBillingCycle, setFormBillingCycle,
     formCost, setFormCost,
     formStartDate, setFormStartDate,

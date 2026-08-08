@@ -16,6 +16,7 @@ export default function SubscriptionFormDrawer({
   formBrand, setFormBrand,
   formLocation, setFormLocation,
   formContractNumber, setFormContractNumber,
+  formBandwidth, setFormBandwidth,
   formBillingCycle, setFormBillingCycle,
   formCost, setFormCost,
   formStartDate, setFormStartDate,
@@ -190,22 +191,38 @@ export default function SubscriptionFormDrawer({
               </div>
 
               {/* No Kontrak / Billing ID (Highlight jika kategori ISP) */}
-              <div className={`space-y-1 md:col-span-2 transition-all ${formCategory === 'ISP' ? 'p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30' : ''}`}>
-                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                  <span>Nomor Kontrak / ID Pelanggan Billing / Circuit ID</span>
-                  {formCategory === 'ISP' && (
-                    <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide">
-                      Kontrak ISP / Billing ID
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  placeholder={formCategory === 'ISP' ? "Ex: Customer ID Biznet: 123456, SID Astinet: 0012398" : "Ex: No Kontrak Billing, Customer ID, Circuit ID ISP"}
-                  value={formContractNumber}
-                  onChange={(e) => setFormContractNumber(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
-                />
+              <div className={`space-y-3 md:col-span-2 transition-all ${formCategory === 'ISP' ? 'p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30' : ''}`}>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                    <span>Nomor Kontrak / ID Pelanggan Billing / Circuit ID</span>
+                    {formCategory === 'ISP' && (
+                      <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide">
+                        Detail Khusus ISP
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={formCategory === 'ISP' ? "Ex: Customer ID Biznet: 123456, SID Astinet: 0012398" : "Ex: No Kontrak Billing, Customer ID, Circuit ID ISP"}
+                    value={formContractNumber}
+                    onChange={(e) => setFormContractNumber(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                  />
+                </div>
+
+                {/* Field Kapasitas Bandwidth (Khusus ISP / Internet) */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                    Kapasitas Bandwidth (Mbps / Gbps)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 100 Mbps Dedicated 1:1, 50 Mbps Broadband, 1 Gbps"
+                    value={formBandwidth}
+                    onChange={(e) => setFormBandwidth(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                  />
+                </div>
               </div>
 
               {/* Billing Cycle */}

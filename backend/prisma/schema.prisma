@@ -209,6 +209,9 @@ model ITSubscription {
   // Nomor Kontrak / ID Pelanggan / Circuit ID Billing (khususnya untuk ISP / Hosting / Domain)
   contractNumber          String?
 
+  // Kapasitas Bandwidth (khususnya untuk ISP, e.g. "100 Mbps Dedicated 1:1", "1 Gbps")
+  bandwidth               String?
+
   // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
   replacedSubscriptionId  String?          @unique
   replacedSubscription    ITSubscription?  @relation("SubscriptionReplacement", fields: [replacedSubscriptionId], references: [id])
