@@ -148,7 +148,10 @@ $$\text{Total Anggaran Slot 2027} = \sum_{\text{Jan}}^{M_{\text{expired}}} \text
 ## 7.1. Breakdown Biaya Sewa Perangkat per Departemen (Departmental Rental Breakdown)
 
 Setiap aset rental (Laptop, Mobile/iPhone 15 Sales Advisor, Tablet VIP, POS Terminal) dihubungkan dengan pengguna/divisi departemen pengguna:
-- **Departemen Standar MRA Retail:** `Sales Advisor / Store Staff`, `VIP Sales Bvlgari`, `Store Operations`, `Finance & Accounting`, `General Affairs`, `IT Department`, `Marketing & CRM`, `Executive / Directors`.
+- **Hierarki Penentuan Departemen:**
+  - **Primary (Utama):** `User.department` di database Helpdesk MRA (e.g., `Finance & Accounting`, `Sales & Boutique`, `Store Operations`, `IT Department`, `GA`).
+  - **Secondary / Sub-Level:** `User.jobPosition` (Job Title) untuk rincian spesifik peran (e.g., `VIP Sales Advisor`, `Store Manager`).
+  - **Shared Store Devices:** Perangkat bersama (POS Kasir, Display Tablet, CCTV NVR) otomatis di-assign ke departemen **`Store Operations`** atau **`IT Infrastructure`**.
 - **Modul Budget 360:** Menyediakan filter dan grafik pie/tabel breakdown alokasi biaya sewa perangkat per departemen per entitas PT MRA Retail.
 
 ---
