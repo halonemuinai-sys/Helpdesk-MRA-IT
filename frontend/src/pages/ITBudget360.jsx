@@ -129,7 +129,7 @@ export default function ITBudget360() {
       prev.map((item) => (item.id === updatedBudget.id ? updatedBudget : item))
     );
     setTaggingBudget(updatedBudget);
-    fetchReportData();
+    handleLoadData();
   };
 
   useEffect(() => {
