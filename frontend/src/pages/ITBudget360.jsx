@@ -124,11 +124,21 @@ export default function ITBudget360() {
       });
       if (res.ok) {
         const data = await res.json();
-        setCompanies(data);
+        if (data && data.length > 0) {
+          setCompanies(data);
+          return;
+        }
       }
     } catch (err) {
       console.error('Failed to fetch company masters:', err);
     }
+    // Fallback 4 PT MRA Utama
+    setCompanies([
+      { id: 1, name: 'PT Mogems Putri Int (Bvlgari / Retail)' },
+      { id: 2, name: 'PT Permata Landmarq Abadi (Property & HQ)' },
+      { id: 3, name: 'PT Jemma Putri Int (Wiggle Wiggle)' },
+      { id: 4, name: 'PT Amanda Arumdhani (Media & Publications)' }
+    ]);
   };
 
   const handleLoadData = async () => {
