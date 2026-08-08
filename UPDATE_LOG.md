@@ -191,10 +191,34 @@ Params dibersihkan dari URL setelah dikonsumsi (`replace: true`).
 
 ---
 
+## 12. Fitur: Tab Baru "IT Cost Overview" di IT Budget 360
+**File:** `frontend/src/pages/ITBudget360.jsx`  
+**Commit:** `Latest`
+
+**Fungsi:**
+Tab dedicated **"IT Cost Overview"** sebagai tampilan default eksekutif untuk memantau beban biaya IT secara komprehensif.
+
+**Fitur Utama:**
+1. **Executive Cost KPI Highlight Cards:**
+   - **Total Realisasi Cost:** Rupiah terpakai vs total pagu + progress bar % terpakai.
+   - **Biaya Operasional (OPEX):** Total & persentase alokasi OPEX.
+   - **Investasi Aset (CAPEX):** Total & persentase alokasi CAPEX.
+   - **Sisa Pagu Anggaran:** Status kesehatan anggaran (*Healthy*, *Menipis <10%*, *Over Budget*).
+2. **Cost Distribution Panels:**
+   - **Breakdown per Kategori Akun:** Distribusi biaya ke Hardware, Software, Cloud/ISP, Maintenance, dll.
+   - **Alokasi per Perusahaan Group:** Persentase alokasi biaya per unit (PT Mogems, PLA, Jemma, Amanda, GA Shared).
+3. **Top 5 Major IT Cost Drivers Table:**
+   - Tabel 5 pengeluaran biaya IT terbesar beserta status varian (Terserap / Over Budget) dan tombol quick-action ke Tagging Modal.
+4. **Budget Variance Alert Banner:**
+   - Banner peringatan otomatis untuk item-item yang penyerapan anggarannya telah menyerap ≥85% pagu.
+
+---
+
 ## Ringkasan File yang Berubah
 
 | File | Tipe | Perubahan |
 |---|---|---|
+| `frontend/src/pages/ITBudget360.jsx` | Frontend | **Tab baru** — IT Cost Overview + default tab |
 | `backend/routes/assets.js` | Backend | +GET /:id endpoint, fix GA sync fire-and-forget |
 | `backend/routes/performance.js` | Backend | +POST /send-report + HTML email generator |
 | `backend/api/email.js` | Backend | Export `sendMail` sebagai named export |
@@ -221,6 +245,7 @@ Frontend (React 19 + Vite + Tailwind)
   └── /tickets          → TicketsSummary (SLA filter, month filter, URL param open)
   └── /assets           → Assets (URL param open drawer)
   └── /performance      → AgentPerformance (Send Report button)
+  └── /budget-360       → ITBudget360 (IT Cost Overview tab, Executive Summary, 5 Pilar)
 
 Backend (Express + Prisma + PostgreSQL)
   └── POST /api/tickets/public        → public ticket creation (no auth)
@@ -231,4 +256,4 @@ Backend (Express + Prisma + PostgreSQL)
 
 ---
 
-*Generated: 12 Juli 2026*
+*Updated: 9 Agustus 2026*

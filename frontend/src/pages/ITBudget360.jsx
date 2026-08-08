@@ -82,7 +82,7 @@ export default function ITBudget360() {
   const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [viewMode, setViewMode] = useState('accrual'); // 'accrual' (Prorated) vs 'cash' (Cash Outflow)
-  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'projects' | 'departmental' | 'consolidation' | 'pillar-recap'
+  const [activeTab, setActiveTab] = useState('cost-overview'); // 'cost-overview' | 'summary' | 'projects' | 'departmental' | 'consolidation' | 'pillar-recap'
 
   // Data State
   const [companies, setCompanies] = useState([]);
@@ -437,10 +437,21 @@ export default function ITBudget360() {
       </div>
 
       {/* Tabs Bar */}
-      <div className="flex items-center gap-2 border-b border-slate-200/80 dark:border-slate-800/80 pb-3">
+      <div className="flex items-center gap-2 border-b border-slate-200/80 dark:border-slate-800/80 pb-3 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('cost-overview')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+            activeTab === 'cost-overview'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+              : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
+          }`}
+        >
+          <DollarSign className="w-4 h-4" />
+          IT Cost Overview
+        </button>
         <button
           onClick={() => setActiveTab('summary')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
             activeTab === 'summary'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
@@ -451,7 +462,7 @@ export default function ITBudget360() {
         </button>
         <button
           onClick={() => setActiveTab('projects')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
             activeTab === 'projects'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
@@ -462,7 +473,7 @@ export default function ITBudget360() {
         </button>
         <button
           onClick={() => setActiveTab('departmental')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
             activeTab === 'departmental'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
@@ -473,7 +484,7 @@ export default function ITBudget360() {
         </button>
         <button
           onClick={() => setActiveTab('consolidation')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
             activeTab === 'consolidation'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
@@ -484,7 +495,7 @@ export default function ITBudget360() {
         </button>
         <button
           onClick={() => setActiveTab('pillar-recap')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
             activeTab === 'pillar-recap'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
@@ -502,6 +513,466 @@ export default function ITBudget360() {
         />
       ) : !reportData ? null : (
         <>
+          {/* TAB 0: IT COST OVERVIEW (Rekapitulasi Budget vs Realisasi 1 Tahun per Bulan) */}
+          {activeTab === 'cost-overview' && (() => {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            const monthlyTrend = reportData?.monthlyTrend || [];
+
+            // Helper to build 12-month array for specific category
+            const buildMonthlyRow = (catId, catType, accountTypeMatch) => {
+              const months = Array(12).fill(0);
+
+              if (catId === 'isp') {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.isp || 0; });
+              } else if (catId === 'software') {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.subscriptions || 0; });
+              } else if (catId === 'rental') {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.assetsRental || 0; });
+              } else if (catId === 'peripherals') {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.peripherals || 0; });
+              } else {
+                projectBudgets.forEach(pb => {
+                  const isMatch = (pb.budgetType === catType) && (
+                    !accountTypeMatch || pb.accountType === accountTypeMatch || pb.category === accountTypeMatch
+                  );
+                  if (isMatch) {
+                    if (Array.isArray(pb.expenses) && pb.expenses.length > 0) {
+                      pb.expenses.forEach(exp => {
+                        const d = new Date(exp.expenseDate);
+                        if (d.getFullYear() === parseInt(selectedYear)) {
+                          const mIdx = d.getMonth();
+                          if (mIdx >= 0 && mIdx < 12) months[mIdx] += (exp.amount || 0);
+                        }
+                      });
+                    } else if (pb.actualCost > 0) {
+                      const perMonth = (pb.actualCost || 0) / 12;
+                      for (let i = 0; i < 12; i++) months[i] += perMonth;
+                    }
+                  }
+                });
+              }
+              return months;
+            };
+
+            const getCategoryBudget = (catId, catType, accountTypeMatch) => {
+              if (catId === 'isp') return reportData?.grandTotal?.isp || 0;
+              if (catId === 'software') return reportData?.grandTotal?.subscriptions || 0;
+              if (catId === 'rental') return reportData?.grandTotal?.assetsRental || 0;
+              if (catId === 'peripherals') return reportData?.grandTotal?.peripherals || 0;
+
+              let sum = 0;
+              projectBudgets.forEach(pb => {
+                const isMatch = (pb.budgetType === catType) && (
+                  !accountTypeMatch || pb.accountType === accountTypeMatch || pb.category === accountTypeMatch
+                );
+                if (isMatch) sum += (pb.allocatedBudget || 0);
+              });
+              return sum;
+            };
+
+            // Define Categories
+            const opexCategories = [
+              { id: 'isp', name: 'Connectivity & Network ISP', type: 'OPEX', accountType: 'Network/ISP' },
+              { id: 'software', name: 'Subskripsi & Software SaaS / Cloud', type: 'OPEX', accountType: 'Software License' },
+              { id: 'rental', name: 'Sewa Perangkat Laptop & Aset (Rentals)', type: 'OPEX', accountType: 'Utilities' },
+              { id: 'maintenance', name: 'Maintenance Hardware & Support SLA', type: 'OPEX', accountType: 'Maintenance' },
+              { id: 'peripherals', name: 'Pembelian Periferal & Consumables', type: 'OPEX', accountType: 'Consumables' },
+              { id: 'opex_projects', name: 'Proyek Operasional & Utilitas IT', type: 'OPEX', accountType: 'Operations' }
+            ].map(cat => {
+              const months = buildMonthlyRow(cat.id, cat.type, cat.accountType);
+              const budget = getCategoryBudget(cat.id, cat.type, cat.accountType);
+              const ytdActual = months.reduce((a, b) => a + b, 0);
+              const variance = budget - ytdActual;
+              const utilPct = budget > 0 ? ((ytdActual / budget) * 100).toFixed(1) : (ytdActual > 0 ? '100' : '0');
+              return { ...cat, budget, months, ytdActual, variance, utilPct };
+            });
+
+            const capexCategories = [
+              { id: 'hardware_capex', name: 'Pembelian Hardware & Perangkat Utama', type: 'CAPEX', accountType: 'Hardware' },
+              { id: 'infra_capex', name: 'Infrastruktur Data Center & Server', type: 'CAPEX', accountType: 'Infrastructure' },
+              { id: 'digital_capex', name: 'Proyek Inovasi & Transformasi Digital', type: 'CAPEX', accountType: 'Digital Transformation' }
+            ].map(cat => {
+              const months = buildMonthlyRow(cat.id, cat.type, cat.accountType);
+              const budget = getCategoryBudget(cat.id, cat.type, cat.accountType);
+              const ytdActual = months.reduce((a, b) => a + b, 0);
+              const variance = budget - ytdActual;
+              const utilPct = budget > 0 ? ((ytdActual / budget) * 100).toFixed(1) : (ytdActual > 0 ? '100' : '0');
+              return { ...cat, budget, months, ytdActual, variance, utilPct };
+            });
+
+            // Subtotals
+            const sumMonths = (cats) => {
+              const res = Array(12).fill(0);
+              cats.forEach(c => c.months.forEach((v, idx) => res[idx] += v));
+              return res;
+            };
+
+            const opexBudgetTotal = opexCategories.reduce((s, c) => s + c.budget, 0);
+            const opexMonthsTotal = sumMonths(opexCategories);
+            const opexYtdTotal = opexMonthsTotal.reduce((a, b) => a + b, 0);
+            const opexVarianceTotal = opexBudgetTotal - opexYtdTotal;
+
+            const capexBudgetTotal = capexCategories.reduce((s, c) => s + c.budget, 0);
+            const capexMonthsTotal = sumMonths(capexCategories);
+            const capexYtdTotal = capexMonthsTotal.reduce((a, b) => a + b, 0);
+            const capexVarianceTotal = capexBudgetTotal - capexYtdTotal;
+
+            const grandBudgetTotal = opexBudgetTotal + capexBudgetTotal;
+            const grandMonthsTotal = opexMonthsTotal.map((v, i) => v + capexMonthsTotal[i]);
+            const grandYtdTotal = opexYtdTotal + capexYtdTotal;
+            const grandVarianceTotal = grandBudgetTotal - grandYtdTotal;
+            const grandUtilPct = grandBudgetTotal > 0 ? ((grandYtdTotal / grandBudgetTotal) * 100).toFixed(1) : '0';
+
+            const maxMonthlyVal = Math.max(...grandMonthsTotal, 1);
+
+            const handleExportCSV = () => {
+              const headers = ['Kategori Akun', 'Tipe', 'Pagu Budget 1 Tahun', ...monthNames, 'Total YTD', 'Sisa Budget', '% Terpakai'];
+              const rows = [];
+
+              const addRow = (name, type, budget, months, ytd, varVal, pct) => {
+                rows.push([
+                  `"${name}"`, type, budget, ...months, ytd, varVal, `"${pct}%"`
+                ].join(','));
+              };
+
+              rows.push('--- OPEX ---');
+              opexCategories.forEach(c => addRow(c.name, c.type, c.budget, c.months, c.ytdActual, c.variance, c.utilPct));
+              addRow('SUBTOTAL OPEX', 'OPEX', opexBudgetTotal, opexMonthsTotal, opexYtdTotal, opexVarianceTotal, opexBudgetTotal > 0 ? ((opexYtdTotal/opexBudgetTotal)*100).toFixed(1) : '0');
+
+              rows.push('--- CAPEX ---');
+              capexCategories.forEach(c => addRow(c.name, c.type, c.budget, c.months, c.ytdActual, c.variance, c.utilPct));
+              addRow('SUBTOTAL CAPEX', 'CAPEX', capexBudgetTotal, capexMonthsTotal, capexYtdTotal, capexVarianceTotal, capexBudgetTotal > 0 ? ((capexYtdTotal/capexBudgetTotal)*100).toFixed(1) : '0');
+
+              rows.push('--- GRAND TOTAL ---');
+              addRow('GRAND TOTAL BIAYA IT', 'TOTAL', grandBudgetTotal, grandMonthsTotal, grandYtdTotal, grandVarianceTotal, grandUtilPct);
+
+              const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+              const encodedUri = encodeURI(csvContent);
+              const link = document.createElement('a');
+              link.setAttribute('href', encodedUri);
+              link.setAttribute('download', `IT_Cost_Overview_Matrix_${selectedYear}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            };
+
+            return (
+              <div className="space-y-6">
+                {/* Header Title & Controls */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                  <div>
+                    <h2 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                      <BarChart2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      IT Cost Overview — Rekapitulasi Budget vs Realisasi 1 Tahun
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">Matriks perbandingan Pagu Anggaran vs Realisasi per Kategori Akun (OPEX &amp; CAPEX) dari Januari s/d Desember {selectedYear}</p>
+                  </div>
+
+                  <button
+                    onClick={handleExportCSV}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-md shadow-emerald-600/20 shrink-0"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Export Matriks 12 Bulan (CSV)
+                  </button>
+                </div>
+
+                {/* KPI Overview Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1: Pagu Budget */}
+                  <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Pagu Budget ({selectedYear})</p>
+                      <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 rounded-xl flex items-center justify-center">
+                        <Wallet className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-2 truncate">
+                      {formatRupiah(grandBudgetTotal)}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 mt-1 font-medium">Akumulasi OPEX + CAPEX</p>
+                  </div>
+
+                  {/* Card 2: Realisasi YTD */}
+                  <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Realisasi YTD (12 Bulan)</p>
+                      <div className="w-8 h-8 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 rounded-xl flex items-center justify-center">
+                        <DollarSign className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-2 truncate">
+                      {formatRupiah(grandYtdTotal)}
+                    </h3>
+                    <div className="mt-1 flex items-center justify-between text-[10px]">
+                      <span className="text-slate-500 font-medium">Penyerapan</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{grandUtilPct}%</span>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Sisa Pagu */}
+                  <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sisa Budget / Varian</p>
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                        grandVarianceTotal < 0 ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40' : 'bg-teal-50 text-teal-600 dark:bg-teal-950/40'
+                      }`}>
+                        <Wallet className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <h3 className={`text-xl font-black mt-2 truncate ${
+                      grandVarianceTotal < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-teal-600 dark:text-teal-400'
+                    }`}>
+                      {formatRupiah(grandVarianceTotal)}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                      {grandVarianceTotal < 0 ? 'Over Budget' : 'Sisa Pagu Aman'}
+                    </p>
+                  </div>
+
+                  {/* Card 4: Rasio OPEX vs CAPEX */}
+                  <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Rasio OPEX vs CAPEX</p>
+                      <div className="w-8 h-8 bg-purple-50 dark:bg-purple-950/40 text-purple-600 rounded-xl flex items-center justify-center">
+                        <TrendingUp className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-xs font-mono font-bold">
+                      <span className="text-blue-600 dark:text-blue-400">OPEX {grandYtdTotal > 0 ? ((opexYtdTotal/grandYtdTotal)*100).toFixed(0) : 0}%</span>
+                      <span className="text-purple-600 dark:text-purple-400">CAPEX {grandYtdTotal > 0 ? ((capexYtdTotal/grandYtdTotal)*100).toFixed(0) : 0}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-2.5 overflow-hidden flex">
+                      <div
+                        className="bg-blue-500 h-full transition-all duration-500"
+                        style={{ width: `${grandYtdTotal > 0 ? ((opexYtdTotal/grandYtdTotal)*100) : 50}%` }}
+                      />
+                      <div
+                        className="bg-purple-500 h-full transition-all duration-500"
+                        style={{ width: `${grandYtdTotal > 0 ? ((capexYtdTotal/grandYtdTotal)*100) : 50}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visual Chart: Tren Realisasi Biaya Bulanan (Jan - Des) */}
+                <div className="bg-white/80 dark:bg-slate-900/60 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                      <BarChart2 className="w-4 h-4 text-emerald-500" />
+                      Grafik Realisasi Biaya IT Bulanan (Januari - Desember {selectedYear})
+                    </h3>
+                    <div className="flex items-center gap-4 text-[10px] font-bold">
+                      <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                        <span className="w-2.5 h-2.5 bg-blue-500 rounded-sm inline-block" /> OPEX
+                      </span>
+                      <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                        <span className="w-2.5 h-2.5 bg-purple-500 rounded-sm inline-block" /> CAPEX
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Visual Monthly Bar Chart */}
+                  <div className="pt-4 pb-2">
+                    <div className="h-44 flex items-end justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                      {monthNames.map((mName, idx) => {
+                        const opexVal = opexMonthsTotal[idx] || 0;
+                        const capexVal = capexMonthsTotal[idx] || 0;
+                        const totalVal = opexVal + capexVal;
+
+                        const opexH = maxMonthlyVal > 0 ? (opexVal / maxMonthlyVal) * 100 : 0;
+                        const capexH = maxMonthlyVal > 0 ? (capexVal / maxMonthlyVal) * 100 : 0;
+
+                        return (
+                          <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative h-full justify-end">
+                            {/* Hover Tooltip */}
+                            <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-mono py-1 px-2.5 rounded-lg whitespace-nowrap z-20 pointer-events-none shadow-xl border border-slate-700">
+                              <p className="font-bold border-b border-slate-700 pb-0.5 mb-0.5">{mName} {selectedYear}</p>
+                              <p className="text-blue-300">OPEX: {formatRupiah(opexVal)}</p>
+                              <p className="text-purple-300">CAPEX: {formatRupiah(capexVal)}</p>
+                              <p className="text-emerald-400 font-bold mt-0.5">Total: {formatRupiah(totalVal)}</p>
+                            </div>
+
+                            {/* Bar Stack */}
+                            <div className="w-full max-w-[28px] flex flex-col items-center justify-end rounded-t-lg overflow-hidden bg-slate-100 dark:bg-slate-800/60 transition-all group-hover:ring-2 group-hover:ring-emerald-500/50">
+                              {capexVal > 0 && (
+                                <div
+                                  className="w-full bg-purple-500 transition-all duration-500"
+                                  style={{ height: `${capexH}%` }}
+                                />
+                              )}
+                              {opexVal > 0 && (
+                                <div
+                                  className="w-full bg-blue-500 transition-all duration-500"
+                                  style={{ height: `${opexH}%` }}
+                                />
+                              )}
+                            </div>
+
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{mName}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabel Matriks 12 Bulan (Matrix Table 1 Tahun per Bulan) */}
+                <div className="bg-white/80 dark:bg-slate-900/60 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        Tabel Rekapitulasi Cost Overview 12 Bulan ({selectedYear})
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Perincian Pagu Anggaran &amp; Realisasi Biaya Bulanan per Kategori Akun OPEX &amp; CAPEX</p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b-2 border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 bg-slate-50 dark:bg-slate-850">
+                          <th className="py-3 px-3.5 sticky left-0 bg-slate-50 dark:bg-slate-850 z-10 min-w-[220px]">Kategori Akun IT</th>
+                          <th className="py-3 px-3 font-mono text-right min-w-[110px]">Pagu Budget (1Th)</th>
+                          {monthNames.map(m => (
+                            <th key={m} className="py-3 px-2 font-mono text-right min-w-[85px]">{m}</th>
+                          ))}
+                          <th className="py-3 px-3 font-mono text-right min-w-[115px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300">Total YTD</th>
+                          <th className="py-3 px-3 font-mono text-right min-w-[115px]">Sisa Budget</th>
+                          <th className="py-3 px-2 text-center min-w-[70px]">% Terpakai</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-[11px]">
+                        {/* HEADER SECTION 1: OPEX */}
+                        <tr className="bg-blue-50/60 dark:bg-blue-950/30 text-blue-800 dark:text-blue-200 font-black text-[10px] uppercase tracking-wider">
+                          <td colSpan={17} className="py-2 px-3.5">
+                            📊 Biaya Operasional (OPEX)
+                          </td>
+                        </tr>
+                        {opexCategories.map(cat => (
+                          <tr key={cat.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+                            <td className="py-2.5 px-3.5 font-sans font-bold text-slate-800 dark:text-slate-100 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-sm">
+                              {cat.name}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-bold text-slate-700 dark:text-slate-200">
+                              {formatRupiah(cat.budget)}
+                            </td>
+                            {cat.months.map((val, idx) => (
+                              <td key={idx} className={`py-2.5 px-2 text-right ${val > 0 ? 'text-slate-800 dark:text-slate-100 font-semibold' : 'text-slate-300 dark:text-slate-700'}`}>
+                                {val > 0 ? formatRupiah(val) : '-'}
+                              </td>
+                            ))}
+                            <td className="py-2.5 px-3 text-right font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
+                              {formatRupiah(cat.ytdActual)}
+                            </td>
+                            <td className={`py-2.5 px-3 text-right font-bold ${cat.variance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                              {formatRupiah(cat.variance)}
+                            </td>
+                            <td className="py-2.5 px-2 text-center">
+                              <span className={`px-1.5 py-0.5 rounded font-sans text-[10px] font-bold ${
+                                parseFloat(cat.utilPct) > 100 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' :
+                                parseFloat(cat.utilPct) > 85 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' :
+                                'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300'
+                              }`}>
+                                {cat.utilPct}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                        {/* SUBTOTAL OPEX ROW */}
+                        <tr className="bg-blue-100/60 dark:bg-blue-950/60 font-black text-blue-900 dark:text-blue-100 border-t border-b border-blue-200 dark:border-blue-900">
+                          <td className="py-2.5 px-3.5 font-sans sticky left-0 bg-blue-100/90 dark:bg-blue-950/90 z-10">
+                            SUBTOTAL OPEX
+                          </td>
+                          <td className="py-2.5 px-3 text-right">{formatRupiah(opexBudgetTotal)}</td>
+                          {opexMonthsTotal.map((val, idx) => (
+                            <td key={idx} className="py-2.5 px-2 text-right">{val > 0 ? formatRupiah(val) : '-'}</td>
+                          ))}
+                          <td className="py-2.5 px-3 text-right text-emerald-700 dark:text-emerald-300">{formatRupiah(opexYtdTotal)}</td>
+                          <td className="py-2.5 px-3 text-right">{formatRupiah(opexVarianceTotal)}</td>
+                          <td className="py-2.5 px-2 text-center font-sans text-[10px]">
+                            {opexBudgetTotal > 0 ? ((opexYtdTotal/opexBudgetTotal)*100).toFixed(1) : 0}%
+                          </td>
+                        </tr>
+
+                        {/* HEADER SECTION 2: CAPEX */}
+                        <tr className="bg-purple-50/60 dark:bg-purple-950/30 text-purple-800 dark:text-purple-200 font-black text-[10px] uppercase tracking-wider">
+                          <td colSpan={17} className="py-2 px-3.5">
+                            🚀 Investasi &amp; Belanja Modal (CAPEX)
+                          </td>
+                        </tr>
+                        {capexCategories.map(cat => (
+                          <tr key={cat.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+                            <td className="py-2.5 px-3.5 font-sans font-bold text-slate-800 dark:text-slate-100 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-sm">
+                              {cat.name}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-bold text-slate-700 dark:text-slate-200">
+                              {formatRupiah(cat.budget)}
+                            </td>
+                            {cat.months.map((val, idx) => (
+                              <td key={idx} className={`py-2.5 px-2 text-right ${val > 0 ? 'text-slate-800 dark:text-slate-100 font-semibold' : 'text-slate-300 dark:text-slate-700'}`}>
+                                {val > 0 ? formatRupiah(val) : '-'}
+                              </td>
+                            ))}
+                            <td className="py-2.5 px-3 text-right font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
+                              {formatRupiah(cat.ytdActual)}
+                            </td>
+                            <td className={`py-2.5 px-3 text-right font-bold ${cat.variance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                              {formatRupiah(cat.variance)}
+                            </td>
+                            <td className="py-2.5 px-2 text-center">
+                              <span className={`px-1.5 py-0.5 rounded font-sans text-[10px] font-bold ${
+                                parseFloat(cat.utilPct) > 100 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' :
+                                parseFloat(cat.utilPct) > 85 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' :
+                                'bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-300'
+                              }`}>
+                                {cat.utilPct}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                        {/* SUBTOTAL CAPEX ROW */}
+                        <tr className="bg-purple-100/60 dark:bg-purple-950/60 font-black text-purple-900 dark:text-purple-100 border-t border-b border-purple-200 dark:border-purple-900">
+                          <td className="py-2.5 px-3.5 font-sans sticky left-0 bg-purple-100/90 dark:bg-purple-950/90 z-10">
+                            SUBTOTAL CAPEX
+                          </td>
+                          <td className="py-2.5 px-3 text-right">{formatRupiah(capexBudgetTotal)}</td>
+                          {capexMonthsTotal.map((val, idx) => (
+                            <td key={idx} className="py-2.5 px-2 text-right">{val > 0 ? formatRupiah(val) : '-'}</td>
+                          ))}
+                          <td className="py-2.5 px-3 text-right text-emerald-700 dark:text-emerald-300">{formatRupiah(capexYtdTotal)}</td>
+                          <td className="py-2.5 px-3 text-right">{formatRupiah(capexVarianceTotal)}</td>
+                          <td className="py-2.5 px-2 text-center font-sans text-[10px]">
+                            {capexBudgetTotal > 0 ? ((capexYtdTotal/capexBudgetTotal)*100).toFixed(1) : 0}%
+                          </td>
+                        </tr>
+
+                        {/* GRAND TOTAL ROW */}
+                        <tr className="bg-slate-900 text-white font-black text-xs border-t-2 border-slate-700">
+                          <td className="py-3 px-3.5 font-sans sticky left-0 bg-slate-900 z-10">
+                            GRAND TOTAL BIAYA IT
+                          </td>
+                          <td className="py-3 px-3 text-right text-indigo-300">{formatRupiah(grandBudgetTotal)}</td>
+                          {grandMonthsTotal.map((val, idx) => (
+                            <td key={idx} className="py-3 px-2 text-right text-slate-200">{val > 0 ? formatRupiah(val) : '-'}</td>
+                          ))}
+                          <td className="py-3 px-3 text-right text-emerald-400 bg-slate-800">{formatRupiah(grandYtdTotal)}</td>
+                          <td className={`py-3 px-3 text-right ${grandVarianceTotal < 0 ? 'text-rose-400' : 'text-teal-300'}`}>
+                            {formatRupiah(grandVarianceTotal)}
+                          </td>
+                          <td className="py-3 px-2 text-center font-sans text-[10px] text-emerald-400">
+                            {grandUtilPct}%
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* TAB 1: EXECUTIVE SUMMARY */}
           {activeTab === 'summary' && (
             <div className="space-y-6">
