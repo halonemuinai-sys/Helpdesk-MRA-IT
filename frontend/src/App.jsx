@@ -28,6 +28,7 @@ import Approvals from './pages/Approvals';
 import AuditTrail from './pages/AuditTrail';
 import SetupCompany from './pages/SetupCompany';
 import PublicTicketForm from './pages/PublicTicketForm';
+import ITBudget360 from './pages/ITBudget360';
 
 function ProtectedRoute({ user, allowedRoles, children }) {
   if (!user) {
@@ -271,6 +272,14 @@ export default function App() {
               element={
                 <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
                   <ITCostOverview user={user} token={token} darkMode={darkMode} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/it-budget-360"
+              element={
+                <ProtectedRoute user={user} allowedRoles={['AGENT', 'ADMIN']}>
+                  <ITBudget360 user={user} token={token} darkMode={darkMode} />
                 </ProtectedRoute>
               }
             />

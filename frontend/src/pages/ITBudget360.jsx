@@ -1,0 +1,550 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Wallet,
+  Building2,
+  Calendar,
+  Layers,
+  PieChart,
+  Plus,
+  RefreshCw,
+  Search,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  Zap,
+  ShieldCheck,
+  TrendingUp,
+  CreditCard,
+  Laptop,
+  Wifi,
+  Package,
+  ArrowUpRight,
+  Filter,
+  DollarSign,
+  Users,
+  ChevronRight,
+  Sparkles,
+  Sliders,
+  Check
+} from 'lucide-react';
+import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const formatRupiah = (val) => {
+  if (val === undefined || val === null) return 'Rp 0';
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(val);
+};
+
+export default function ITBudget360() {
+  const token = localStorage.getItem('token');
+
+  // Filters & State
+  const [selectedYear, setSelectedYear] = useState('2026');
+  const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
+  const [viewMode, setViewMode] = useState('accrual'); // 'accrual' (Prorated) vs 'cash' (Cash Outflow)
+  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'projects' | 'departmental' | 'consolidation'
+
+  // Data State
+  const [companies, setCompanies] = useState([]);
+  const [reportData, setReportData] = useState(null);
+  const [projectBudgets, setProjectBudgets] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Search & Filter for Projects Tab
+  const [projectSearch, setProjectSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  useEffect(() => {
+    fetchCompanyMasters();
+  }, []);
+
+  const fetchCompanyMasters = async () => {
+    try {
+      const res = await fetch(`${API_URL}/companies/masters`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCompanies(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch company masters:', err);
+    }
+  };
+
+  const handleLoadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // 1. Fetch IT Budget 360 Report
+      const params = new URLSearchParams();
+      if (selectedYear) params.append('year', selectedYear);
+      if (selectedCompanyMasterId) params.append('companyMasterId', selectedCompanyMasterId);
+      if (viewMode) params.append('viewMode', viewMode);
+
+      const repRes = await fetch(`${API_URL}/reports/it-budget-360?${params.toString()}`, { headers });
+      if (!repRes.ok) throw new Error('Gagal memuat laporan IT Budget 360.');
+      const repJson = await repRes.json();
+      setReportData(repJson);
+
+      // 2. Fetch Project Budgets List
+      const projParams = new URLSearchParams();
+      if (selectedYear) projParams.append('fiscalYear', selectedYear);
+      if (selectedCompanyMasterId) projParams.append('companyMasterId', selectedCompanyMasterId);
+
+      const projRes = await fetch(`${API_URL}/budgets?${projParams.toString()}`, { headers });
+      if (projRes.ok) {
+        const projJson = await projRes.json();
+        setProjectBudgets(projJson);
+      }
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setDataLoaded(true);
+    }
+  };
+
+  const handleGenerateBaseline2027 = async () => {
+    if (!window.confirm('Generate baseline anggaran rutin 2027 dari kontrak Subskripsi, ISP, dan Rental yang aktif?')) return;
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/budgets/generate-baseline-2027`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alert(data.message);
+        handleLoadData();
+      } else {
+        throw new Error('Gagal me-generate baseline.');
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProjects = projectBudgets.filter(p => {
+    const matchSearch = !projectSearch || 
+      p.projectName.toLowerCase().includes(projectSearch.toLowerCase()) ||
+      p.projectCode.toLowerCase().includes(projectSearch.toLowerCase()) ||
+      (p.brand && p.brand.toLowerCase().includes(projectSearch.toLowerCase()));
+    const matchCat = !selectedCategory || p.category === selectedCategory;
+    return matchSearch && matchCat;
+  });
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
+      
+      {/* Header Title */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-6 rounded-3xl border border-gray-250/60 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/55 shadow-sm">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 bg-indigo-600/10 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center">
+              <PieChart className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
+                IT Budget 360 &amp; Innovation Hub
+              </h1>
+              <p className="text-xs text-gray-500 font-medium">
+                Pusat Perencanaan Anggaran IT, Proyek Inovasi (CAPEX/OPEX), &amp; Analisis Realisasi 360-Derajat
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Controls & Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Year Selector */}
+          <div className="relative">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 shadow-sm"
+            >
+              <option value="2025">Tahun 2025</option>
+              <option value="2026">Tahun 2026 (Aktif)</option>
+              <option value="2027">Tahun 2027 (Proyeksi)</option>
+            </select>
+          </div>
+
+          {/* Entity Selector */}
+          <div className="relative">
+            <select
+              value={selectedCompanyMasterId}
+              onChange={(e) => setSelectedCompanyMasterId(e.target.value)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 shadow-sm max-w-[200px] truncate"
+            >
+              <option value="">Semua Entitas Induk MRA</option>
+              {companies.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Toggle Calculation Mode Switch */}
+          <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+            <button
+              onClick={() => setViewMode('accrual')}
+              className={`px-3 py-1.5 rounded-lg transition ${
+                viewMode === 'accrual'
+                  ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                  : 'text-gray-500 hover:text-slate-800 dark:hover:text-white'
+              }`}
+              title="Mode Amortisasi Prorated 12 Bulan (Accrual Basis)"
+            >
+              Accrual (Prorated 12 Bln)
+            </button>
+            <button
+              onClick={() => setViewMode('cash')}
+              className={`px-3 py-1.5 rounded-lg transition ${
+                viewMode === 'cash'
+                  ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                  : 'text-gray-500 hover:text-slate-800 dark:hover:text-white'
+              }`}
+              title="Mode Realisasi Kas Keluar (Cash Outflow)"
+            >
+              Cash Basis (Kas Keluar)
+            </button>
+          </div>
+
+          {/* Load Button */}
+          <button
+            onClick={handleLoadData}
+            disabled={loading}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Memuat...' : 'Proses Data'}
+          </button>
+
+          {/* Generate Baseline Button */}
+          {selectedYear === '2027' && (
+            <button
+              onClick={handleGenerateBaseline2027}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              Generate Baseline 2027
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs Bar */}
+      <div className="flex items-center gap-2 border-b border-slate-200/80 dark:border-slate-800/80 pb-3">
+        <button
+          onClick={() => setActiveTab('summary')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === 'summary'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
+          }`}
+        >
+          <PieChart className="w-4 h-4" />
+          360° Executive Summary
+        </button>
+        <button
+          onClick={() => setActiveTab('projects')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === 'projects'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          Proyek Inovasi &amp; CAPEX ({projectBudgets.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('departmental')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === 'departmental'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Departmental Rental Breakdown
+        </button>
+        <button
+          onClick={() => setActiveTab('consolidation')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === 'consolidation'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          Konsolidasi Group &amp; Intercompany
+        </button>
+      </div>
+
+      {!dataLoaded && !loading ? (
+        <PendingProcessPlaceholder
+          title="Proses Data IT Budget 360"
+          description={'Klik tombol "Proses Data" di atas untuk menampilkan analisis anggaran 360-derajat, alokasi proyek inovasi, dan breakdown departemen.'}
+        />
+      ) : !reportData ? null : (
+        <>
+          {/* TAB 1: EXECUTIVE SUMMARY */}
+          {activeTab === 'summary' && (
+            <div className="space-y-6">
+              {/* KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Pagu Budget ({selectedYear})</p>
+                    <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 rounded-xl flex items-center justify-center">
+                      <Wallet className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-2 truncate">
+                    {formatRupiah(reportData.grandTotal.total)}
+                  </h3>
+                  <p className="text-[9px] text-gray-450 font-semibold mt-1">Akumulasi 5 Pilar IT ({viewMode === 'accrual' ? 'Accrual Prorated' : 'Cash Basis'})</p>
+                </div>
+
+                <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyek &amp; Inovasi (Plan)</p>
+                    <div className="w-8 h-8 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 rounded-xl flex items-center justify-center">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-black text-emerald-600 dark:text-emerald-450 mt-2 truncate">
+                    {formatRupiah(reportData.projectBudgetsSummary.totalPlan)}
+                  </h3>
+                  <p className="text-[9px] text-gray-450 font-semibold mt-1">CAPEX: {formatRupiah(reportData.projectBudgetsSummary.capexTotal)}</p>
+                </div>
+
+                <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sewa Device &amp; ISP (OPEX)</p>
+                    <div className="w-8 h-8 bg-amber-50 dark:bg-amber-950/40 text-amber-500 rounded-xl flex items-center justify-center">
+                      <Laptop className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-black text-amber-500 dark:text-amber-400 mt-2 truncate">
+                    {formatRupiah(reportData.grandTotal.assetsRental + reportData.grandTotal.isp)}
+                  </h3>
+                  <p className="text-[9px] text-gray-450 font-semibold mt-1">Laptop Rental + Internet Toko/HO</p>
+                </div>
+
+                <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kas Keluar Netto Group</p>
+                    <div className="w-8 h-8 bg-rose-50 dark:bg-rose-950/40 text-rose-500 rounded-xl flex items-center justify-center">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-black text-rose-500 dark:text-rose-455 mt-2 truncate">
+                    {formatRupiah(reportData.intercompanyElimination.netCashOutflow)}
+                  </h3>
+                  <p className="text-[9px] text-gray-450 font-semibold mt-1">Setelah Eliminasi Intercompany</p>
+                </div>
+              </div>
+
+              {/* Industry Benchmark Health Indicator */}
+              <div className="glass-panel p-6 rounded-3xl border border-indigo-200/50 dark:border-indigo-900/40 bg-gradient-to-r from-indigo-50/50 via-white to-blue-50/50 dark:from-slate-900/90 dark:to-slate-900/90 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="text-sm font-black text-slate-800 dark:text-white">
+                      Evaluasi Kesehatan Alokasi Anggaran vs Benchmark Industri Ritel
+                    </h3>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                    reportData.benchmarks.isHealthy ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {reportData.benchmarks.isHealthy ? '✓ PERFORMA ALOKASI SEHAT (ON TRACK)' : '⚠ WARNING OVER-LIMIT'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+                  <div className="bg-white/70 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-700/40">
+                    <div className="flex justify-between font-bold text-gray-600 dark:text-slate-400 mb-1">
+                      <span>OPEX Rutin (Sewa, ISP, Subskripsi)</span>
+                      <span>{reportData.benchmarks.opexPct}% (Target 60-70%)</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-blue-600 h-full rounded-full" style={{ width: `${Math.min(reportData.benchmarks.opexPct, 100)}%` }}></div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/70 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-700/40">
+                    <div className="flex justify-between font-bold text-gray-600 dark:text-slate-400 mb-1">
+                      <span>CAPEX / Inovasi &amp; Transformasi</span>
+                      <span>{reportData.benchmarks.capexPct}% (Target 25-35%)</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(reportData.benchmarks.capexPct, 100)}%` }}></div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/70 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-700/40">
+                    <div className="flex justify-between font-bold text-gray-600 dark:text-slate-400 mb-1">
+                      <span>Cybersecurity, Audit &amp; Training</span>
+                      <span>{reportData.benchmarks.securityPct}% (Target 5-10%)</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(reportData.benchmarks.securityPct, 100)}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: PROYEK INOVASI & CAPEX */}
+          {activeTab === 'projects' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 glass-panel p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Cari proyek inovasi..."
+                      value={projectSearch}
+                      onChange={(e) => setProjectSearch(e.target.value)}
+                      className="pl-9 pr-4 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Projects Table */}
+              <div className="glass-panel rounded-3xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Kode &amp; Proyek</th>
+                      <th className="py-3.5 px-4">Kategori</th>
+                      <th className="py-3.5 px-4">Entitas &amp; Brand</th>
+                      <th className="py-3.5 px-4 text-right">Pagu Budget (Rp)</th>
+                      <th className="py-3.5 px-4 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/50 text-xs">
+                    {filteredProjects.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="py-8 text-center text-gray-400 font-semibold">
+                          Belum ada proyek inovasi terdaftar untuk filter ini.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredProjects.map(p => (
+                        <tr key={p.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-4 font-bold text-slate-800 dark:text-white">
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 font-mono mr-2">
+                              {p.projectCode}
+                            </span>
+                            {p.projectName}
+                          </td>
+                          <td className="py-3 px-4 text-gray-500 font-medium">
+                            {p.category}
+                          </td>
+                          <td className="py-3 px-4 font-medium text-slate-700 dark:text-slate-300">
+                            {p.companyMaster?.name || 'Group Wide'} {p.brand ? `(${p.brand})` : ''}
+                          </td>
+                          <td className="py-3 px-4 text-right font-black text-emerald-600 dark:text-emerald-450">
+                            {formatRupiah(p.allocatedBudget)}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                              {p.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: DEPARTMENTAL RENTAL BREAKDOWN */}
+          {activeTab === 'departmental' && (
+            <div className="space-y-4">
+              <div className="glass-panel p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/60">
+                <h3 className="text-sm font-black text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-indigo-600" />
+                  Rincian Biaya Sewa Perangkat (Device Rental) per Departemen
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {reportData.departmentBreakdown.map((dept, idx) => (
+                    <div key={idx} className="bg-white/80 dark:bg-slate-800/70 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-sm space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-800 dark:text-white truncate max-w-[180px]">
+                          {dept.name}
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
+                          {dept.unitCount} Unit
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-700/40 flex justify-between items-baseline">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">Biaya Bulanan</span>
+                        <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">
+                          {formatRupiah(dept.monthlyCost)}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-gray-400 text-right font-medium">
+                        Tahunan: {formatRupiah(dept.annualCost)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: KONSOLIDASI GROUP & INTERCOMPANY */}
+          {activeTab === 'consolidation' && (
+            <div className="glass-panel p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/60 space-y-4">
+              <h3 className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-rose-500" />
+                Laporan Konsolidasi IT Group 4 PT MRA Retail &amp; Eliminasi Intercompany
+              </h3>
+
+              <div className="bg-rose-50/60 dark:bg-rose-950/30 p-4 rounded-2xl border border-rose-200/60 dark:border-rose-900/40 space-y-2">
+                <p className="text-xs font-bold text-rose-800 dark:text-rose-300">
+                  📌 {reportData.intercompanyElimination.description}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Total Bruto Group</span>
+                    <span className="font-black text-slate-800 dark:text-white">{formatRupiah(reportData.intercompanyElimination.grossTotal)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Eliminasi Intercompany</span>
+                    <span className="font-black text-rose-600 dark:text-rose-400">- {formatRupiah(reportData.intercompanyElimination.eliminationAmount)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Beban Kas Keluar Netto</span>
+                    <span className="font-black text-emerald-600 dark:text-emerald-400">{formatRupiah(reportData.intercompanyElimination.netCashOutflow)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

@@ -139,6 +139,12 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
           roles: ['AGENT', 'ADMIN']
         },
         {
+          label: 'IT Budget 360',
+          path: '/it-budget-360',
+          icon: BarChart3,
+          roles: ['AGENT', 'ADMIN']
+        },
+        {
           label: 'Category Settings',
           path: '/categories',
           icon: FolderTree,

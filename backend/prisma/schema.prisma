@@ -42,6 +42,7 @@ model CompanyMaster {
   assets        Asset[]          // Assets leased by this master company
   peripheralAssets PeripheralAsset[]
   peripheralInvoices PeripheralInvoice[]
+  projectBudgets ITProjectBudget[]
 }
 
 model Company {
@@ -395,4 +396,96 @@ model PeripheralCategory {
   brands    String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum ProjectCategory {
+  INFRASTRUCTURE
+  SOFTWARE_DEVELOPMENT
+  CYBERSECURITY
+  DIGITAL_TRANSFORMATION
+  AI_INNOVATION
+  HARDWARE_REFRESH
+  OTHERS
+}
+
+enum ProjectStatus {
+  DRAFT
+  PROPOSED
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum BudgetPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model ITProjectBudget {
+  id                      String           @id @default(uuid())
+  projectCode             String           @unique // e.g. "PRJ-2027-001"
+  projectName             String
+  category                ProjectCategory  @default(DIGITAL_TRANSFORMATION)
+  description             String?
+  
+  // Entitas Pemilik & Sponsor Proyek
+  companyMasterId         Int?
+  companyMaster           CompanyMaster?   @relation(fields: [companyMasterId], references: [id], onDelete: SetNull)
+  brand                   String?          // e.g. "Bvlgari", "Wiggle Wiggle", "Cosmopolitan"
+  department              String?          // e.g. "Sales Advisor", "Finance", "Store Operations", "IT"
+  
+  // Anggaran & Realisasi
+  fiscalYear              Int              // e.g. 2026, 2027
+  allocatedBudget         Float            // Pagu Anggaran (CAPEX/OPEX)
+  actualCost              Float            @default(0) // Realisasi Pengeluaran Saat Ini
+  remainingBudget         Float            @default(0) // Sisa Anggaran
+  budgetType              String           @default("CAPEX") // CAPEX vs OPEX
+  accountType             String?          // e.g. "License & Permit", "Utilities", "Rental Expenses", "Repair & Maintenance"
+  timeline                String?          // e.g. "Januari", "Oktober", "Q1"
+  
+  priority                BudgetPriority   @default(MEDIUM)
+  status                  ProjectStatus    @default(PROPOSED)
+  
+  // Timeline dates
+  startDate               DateTime?
+  targetCompletionDate    DateTime?
+  actualCompletionDate    DateTime?
+  
+  // PIC & Vendor
+  projectManager          String?
+  vendor                  String?
+  notes                   String?
+  
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  
+  expenses                ITProjectExpense[]
+
+  @@index([companyMasterId])
+  @@index([fiscalYear])
+  @@index([category])
+  @@index([status])
+}
+
+model ITProjectExpense {
+  id                      String           @id @default(uuid())
+  projectId               String
+  project                 ITProjectBudget  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  description             String
+  amount                  Float
+  expenseDate             DateTime         @default(now())
+  invoiceNumber           String?
+  vendor                  String?
+  receiptLink             String?
+  status                  String           @default("PAID") // PAID, PENDING, REJECTED
+  
+  createdAt               DateTime         @default(now())
+
+  @@index([projectId])
+  @@index([expenseDate])
 }
