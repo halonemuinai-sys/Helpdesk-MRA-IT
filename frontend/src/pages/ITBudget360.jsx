@@ -278,7 +278,6 @@ export default function ITBudget360() {
         budgetType: formBudgetType,
         accountType: formAccountType,
         allocatedBudget: parseFloat(formAllocatedBudget),
-        actualCost: parseFloat(formActualCost || 0),
         priority: formPriority,
         status: formStatus,
         vendor: formVendor,
@@ -1066,13 +1065,9 @@ export default function ITBudget360() {
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Realisasi Riil (Rp)
                   </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={formActualCost}
-                    onChange={(e) => setFormActualCost(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white font-bold"
-                  />
+                  <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 font-bold text-xs">
+                    Dihitung otomatis dari transaksi yang di-tag
+                  </div>
                 </div>
               </div>
 

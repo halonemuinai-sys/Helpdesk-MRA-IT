@@ -77,7 +77,6 @@ router.post('/', async (req, res) => {
     const projectCode = `PRJ-${year}-${String(count + 1).padStart(3, '0')}`;
 
     const alloc = parseFloat(allocatedBudget) || 0;
-    const actual = parseFloat(actualCost) || 0;
 
     const budget = await prisma.iTProjectBudget.create({
       data: {
@@ -90,8 +89,8 @@ router.post('/', async (req, res) => {
         department,
         fiscalYear: year,
         allocatedBudget: alloc,
-        actualCost: actual,
-        remainingBudget: alloc - actual,
+        actualCost: 0,
+        remainingBudget: alloc,
         budgetType: budgetType || 'CAPEX',
         accountType,
         timeline,
@@ -124,7 +123,6 @@ router.put('/:id', async (req, res) => {
       department,
       fiscalYear,
       allocatedBudget,
-      actualCost,
       budgetType,
       accountType,
       timeline,
@@ -136,13 +134,13 @@ router.put('/:id', async (req, res) => {
     } = req.body;
 
     const alloc = allocatedBudget !== undefined ? parseFloat(allocatedBudget) : undefined;
-    const actual = actualCost !== undefined ? parseFloat(actualCost) : undefined;
 
     const existing = await prisma.iTProjectBudget.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: 'Anggaran proyek tidak ditemukan.' });
 
     const finalAlloc = alloc !== undefined ? alloc : existing.allocatedBudget;
-    const finalActual = actual !== undefined ? actual : existing.actualCost;
+    // actualCost hanya dihitung dari expenses yang di-tag, tidak dari form
+    const finalActual = existing.actualCost;
 
     const updated = await prisma.iTProjectBudget.update({
       where: { id },
@@ -155,7 +153,6 @@ router.put('/:id', async (req, res) => {
         department,
         ...(fiscalYear ? { fiscalYear: parseInt(fiscalYear) } : {}),
         allocatedBudget: finalAlloc,
-        actualCost: finalActual,
         remainingBudget: finalAlloc - finalActual,
         ...(budgetType ? { budgetType } : {}),
         accountType,
@@ -334,7 +331,31 @@ router.delete('/:id/expenses/:expenseId', async (req, res) => {
   }
 });
 
-// 9. POST Tag Subskripsi Aktif ke Budget Item
+// 9. POST Reset actualCost semua item yang tidak punya expenses ke 0
+router.post('/reset-actual-costs', async (req, res) => {
+  try {
+    const budgets = await prisma.iTProjectBudget.findMany({
+      include: { expenses: true }
+    });
+    let fixed = 0;
+    for (const b of budgets) {
+      const trueActual = b.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      if (b.actualCost !== trueActual) {
+        await prisma.iTProjectBudget.update({
+          where: { id: b.id },
+          data: { actualCost: trueActual, remainingBudget: b.allocatedBudget - trueActual }
+        });
+        fixed++;
+      }
+    }
+    res.json({ message: `Reset selesai. ${fixed} item diperbaiki.` });
+  } catch (err) {
+    console.error('Error resetting actual costs:', err);
+    res.status(500).json({ error: 'Gagal reset actual costs.' });
+  }
+});
+
+// 10. POST Tag Subskripsi Aktif ke Budget Item
 router.post('/:id/tag-subscription', async (req, res) => {
   try {
     const { id } = req.params;
