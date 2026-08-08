@@ -42,11 +42,13 @@ export default function useSubscriptions({ token }) {
   const [formCompanyId, setFormCompanyId] = useState('');
   const [replacedSubscriptionId, setReplacedSubscriptionId] = useState(null);
 
-  const headers = { 'Authorization': `Bearer ${token}` };
+  const getHeaders = () => ({ 'Authorization': `Bearer ${token}` });
 
   useEffect(() => {
-    fetchInitialData();
-  }, []);
+    if (token) {
+      fetchInitialData();
+    }
+  }, [token]);
 
   // ── Formatters ────────────────────────────────────────────────────────────
 
@@ -67,11 +69,25 @@ export default function useSubscriptions({ token }) {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/companies/master`, { headers });
-      if (!res.ok) throw new Error('Gagal memuat data perusahaan.');
-      const data = await res.json();
-      setCompanies(data);
-      setFormCompanyId(data[0]?.id || '');
+      setError(null);
+      const reqHeaders = getHeaders();
+      const [compRes, subRes] = await Promise.all([
+        fetch(`${API_URL}/companies/master`, { headers: reqHeaders }),
+        fetch(`${API_URL}/subscriptions`, { headers: reqHeaders })
+      ]);
+
+      if (!compRes.ok) throw new Error('Gagal memuat data perusahaan.');
+      if (!subRes.ok) throw new Error('Gagal memuat data subskripsi IT.');
+
+      const [compData, subData] = await Promise.all([
+        compRes.json(),
+        subRes.json()
+      ]);
+
+      setCompanies(compData);
+      setFormCompanyId(compData[0]?.id || '');
+      setSubscriptions(subData);
+      setHasProcessed(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -89,7 +105,7 @@ export default function useSubscriptions({ token }) {
       if (selectedCompanyMasterId) params.append('companyMasterId', selectedCompanyMasterId);
       if (searchQuery) params.append('search', searchQuery);
       const qs = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(`${API_URL}/subscriptions${qs}`, { headers });
+      const res = await fetch(`${API_URL}/subscriptions${qs}`, { headers: getHeaders() });
       if (!res.ok) throw new Error('Gagal memuat data subskripsi IT.');
       const data = await res.json();
       setSubscriptions(data);
@@ -227,7 +243,7 @@ export default function useSubscriptions({ token }) {
         updateJourney: formUpdateJourney || null,
       };
 
-      const fullHeaders = { ...headers, 'Content-Type': 'application/json' };
+      const fullHeaders = { ...getHeaders(), 'Content-Type': 'application/json' };
       const res = isEditMode
         ? await fetch(`${API_URL}/subscriptions/${formId}`, { method: 'PUT', headers: fullHeaders, body: JSON.stringify(payload) })
         : await fetch(`${API_URL}/subscriptions`, { method: 'POST', headers: fullHeaders, body: JSON.stringify(payload) });
@@ -264,7 +280,7 @@ export default function useSubscriptions({ token }) {
     }).then(async (result) => {
       if (!result.isConfirmed) return;
       try {
-        const res = await fetch(`${API_URL}/subscriptions/${sub.id}`, { method: 'DELETE', headers });
+        const res = await fetch(`${API_URL}/subscriptions/${sub.id}`, { method: 'DELETE', headers: getHeaders() });
         if (!res.ok) {
           const data = await res.json();
           throw new Error(data.error || 'Gagal menghapus layanan.');
