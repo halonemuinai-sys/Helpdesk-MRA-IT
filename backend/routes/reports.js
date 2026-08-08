@@ -540,18 +540,21 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
       include: { companyMaster: { select: { name: true } } }
     });
 
-    // 3. Subscriptions actually paid (started/renewed) within the window — cash basis,
-    // same as Peripherals invoices: the full cost lands in the month it was actually paid,
-    // not spread across the months the subscription happens to cover.
+    // 3. Subscriptions & ISP active at any point within the window
     const subscriptions = await prisma.iTSubscription.findMany({
       where: {
-        startDate: { gte: rangeStart, lte: rangeEnd },
+        startDate: { lte: rangeEnd },
+        expiryDate: { gte: rangeStart },
+        status: { in: ['ACTIVE', 'EXPIRED'] },
         ...(parsedCompanyMasterId ? { companyMasterId: parsedCompanyMasterId } : {})
       },
-      include: { companyMaster: { select: { name: true } } }
+      include: {
+        companyMaster: { select: { name: true } },
+        renewals: true
+      }
     });
 
-    // Per-entity-per-month buckets: bucket[yearMonth][entityName] = { peripherals, assetsRental, subscriptions }
+    // Per-entity-per-month buckets: bucket[yearMonth][entityName] = { peripherals, assetsRental, subscriptions, isp }
     const bucket = {};
     months.forEach(m => { bucket[m.yearMonth] = {}; });
     const ensureBucket = (yearMonth, entityName) => {
@@ -574,17 +577,35 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
       ensureBucket(ym, entityName).peripherals += inv.totalCost - linkedSubscriptionCost;
     });
 
-    // Subscriptions & ISP: cash basis, full cost in the month actually paid
-    subscriptions.forEach(s => {
-      const d = new Date(s.startDate);
-      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!bucket[ym]) return;
-      const entityName = s.companyMaster?.name || 'Tanpa Entitas';
-      if (s.category === 'ISP') {
-        ensureBucket(ym, entityName).isp += s.cost;
-      } else {
-        ensureBucket(ym, entityName).subscriptions += s.cost;
-      }
+    // Subscriptions & ISP: Allocate cost according to billing cycle and active period
+    months.forEach(m => {
+      const monthStart = new Date(m.year, m.month, 1);
+      const monthEnd = new Date(m.year, m.month + 1, 0, 23, 59, 59, 999);
+
+      subscriptions.forEach(s => {
+        const subStart = new Date(s.startDate);
+        const subExpiry = new Date(s.expiryDate);
+
+        if (subStart <= monthEnd && subExpiry >= monthStart) {
+          const entityName = s.companyMaster?.name || 'Tanpa Entitas';
+          const targetKey = s.category === 'ISP' ? 'isp' : 'subscriptions';
+
+          if (s.billingCycle === '1 Bulan') {
+            ensureBucket(m.yearMonth, entityName)[targetKey] += s.cost;
+          } else {
+            const isStartMonth = subStart.getFullYear() === m.year && subStart.getMonth() === m.month;
+            const isAnniversaryMonth = subStart.getMonth() === m.month && m.year >= subStart.getFullYear();
+            const hasRenewalThisMonth = Array.isArray(s.renewals) && s.renewals.some(r => {
+              const rd = new Date(r.renewedAt);
+              return rd.getFullYear() === m.year && rd.getMonth() === m.month;
+            });
+
+            if (isStartMonth || isAnniversaryMonth || hasRenewalThisMonth) {
+              ensureBucket(m.yearMonth, entityName)[targetKey] += s.cost;
+            }
+          }
+        }
+      });
     });
 
     // Rental assets: still spread across active months (these are genuinely billed monthly)
