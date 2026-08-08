@@ -540,12 +540,11 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
       include: { companyMaster: { select: { name: true } } }
     });
 
-    // 3. Subscriptions & ISP active at any point within the window
+    // 3. Subscriptions & ISP active at any point within the window (including INACTIVE ones that incurred costs)
     const subscriptions = await prisma.iTSubscription.findMany({
       where: {
         startDate: { lte: rangeEnd },
         expiryDate: { gte: rangeStart },
-        status: { in: ['ACTIVE', 'EXPIRED'] },
         ...(parsedCompanyMasterId ? { companyMasterId: parsedCompanyMasterId } : {})
       },
       include: {
