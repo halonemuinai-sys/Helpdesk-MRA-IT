@@ -132,12 +132,12 @@ export default function ITBudget360() {
     } catch (err) {
       console.error('Failed to fetch company masters:', err);
     }
-    // Fallback 4 PT MRA Utama
+    // Fallback 4 PT MRA Utama (Presisi 100% Sesuai Database)
     setCompanies([
-      { id: 1, name: 'PT Mogems Putri Int (Bvlgari / Retail)' },
-      { id: 2, name: 'PT Permata Landmarq Abadi (Property & HQ)' },
-      { id: 3, name: 'PT Jemma Putri Int (Wiggle Wiggle)' },
-      { id: 4, name: 'PT Amanda Arumdhani (Media & Publications)' }
+      { id: 14, name: 'PT Mogems Putri International' },
+      { id: 15, name: 'PT Permata Landmarq Abadi' },
+      { id: 13, name: 'PT Jemma Putri International' },
+      { id: 19, name: 'PT Amanda Arumdhani Aishwarya' }
     ]);
   };
 
