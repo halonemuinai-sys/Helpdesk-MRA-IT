@@ -11,9 +11,12 @@ import {
   TrendingUp,
   Building2,
   Calendar,
-  Wifi
+  Wifi,
+  FileDown,
+  FileSpreadsheet,
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
+import { exportPDF, exportExcel } from '../utils/itCostExport';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -30,6 +33,7 @@ export default function ITCostOverview({ user, token, darkMode }) {
   const [companyMasters, setCompanyMasters] = useState([]);
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [selectedYear, setSelectedYear] = useState(''); // '' = rolling trailing 12 months (default)
+  const [exporting, setExporting] = useState(null); // 'pdf' | 'excel' | null
 
   // Company master list is just a filter lookup, safe to load on mount (the main
   // cost data itself still only loads via the "Proses / Muat Data" button)
@@ -76,6 +80,28 @@ export default function ITCostOverview({ user, token, darkMode }) {
     } finally {
       setLoading(false);
       setDataLoaded(true);
+    }
+  };
+
+  const selectedCompanyMasterName = companyMasters.find(m => m.id === selectedCompanyMasterId)?.name || '';
+
+  const handleExportPDF = async () => {
+    if (!overview) return;
+    setExporting('pdf');
+    try {
+      exportPDF({ overview, periodLabel, selectedYear, selectedCompanyMasterName });
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!overview) return;
+    setExporting('excel');
+    try {
+      exportExcel({ overview, periodLabel, selectedYear, selectedCompanyMasterName });
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -238,14 +264,38 @@ export default function ITCostOverview({ user, token, darkMode }) {
             </select>
           </div>
         </div>
-        <button
-          onClick={handleLoadData}
-          disabled={loading}
-          className="flex items-center justify-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition shrink-0"
-        >
-          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
-          Proses / Muat Data
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {overview && (
+            <>
+              <button
+                onClick={handleExportExcel}
+                disabled={!!exporting}
+                title="Download Excel"
+                className="flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
+              >
+                {exporting === 'excel' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+                Excel
+              </button>
+              <button
+                onClick={handleExportPDF}
+                disabled={!!exporting}
+                title="Download PDF"
+                className="flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
+              >
+                {exporting === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                PDF
+              </button>
+            </>
+          )}
+          <button
+            onClick={handleLoadData}
+            disabled={loading}
+            className="flex items-center justify-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+            Proses / Muat Data
+          </button>
+        </div>
       </div>
 
       {!dataLoaded && !loading ? (
