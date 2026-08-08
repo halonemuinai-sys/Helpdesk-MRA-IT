@@ -433,5 +433,40 @@ router.post('/:id/tag-rental', async (req, res) => {
   }
 });
 
+// 12. POST Tag Invoice Peripheral ke Budget Item
+router.post('/:id/tag-peripheral', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { peripheralInvoiceId } = req.body;
+
+    const invoice = await prisma.peripheralInvoice.findUnique({
+      where: { id: peripheralInvoiceId },
+      include: { items: true }
+    });
+    if (!invoice) return res.status(404).json({ error: 'Invoice peripheral tidak ditemukan.' });
+
+    const description = `[Periferal] ${invoice.invoiceRef} — ${invoice.supplier} (${invoice.items.length} item)`;
+
+    await prisma.iTProjectExpense.create({
+      data: {
+        projectId: id,
+        description,
+        amount: invoice.totalCost,
+        expenseDate: invoice.purchaseDate || new Date(),
+        invoiceNumber: invoice.invoiceRef,
+        vendor: invoice.supplier,
+        receiptLink: invoice.fileLink,
+        status: 'PAID'
+      }
+    });
+
+    const updatedBudget = await recalculateBudgetActualCost(id);
+    res.status(201).json(updatedBudget);
+  } catch (err) {
+    console.error('Error tagging peripheral invoice:', err);
+    res.status(500).json({ error: 'Gagal me-tag invoice peripheral ke item anggaran.' });
+  }
+});
+
 module.exports = router;
 

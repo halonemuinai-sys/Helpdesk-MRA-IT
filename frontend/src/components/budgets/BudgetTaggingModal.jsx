@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Tag, Plus, Trash2, ExternalLink, CreditCard, Receipt, AlertCircle, CheckCircle2, DollarSign, Laptop } from 'lucide-react';
+import { X, Tag, Plus, Trash2, ExternalLink, CreditCard, Receipt, AlertCircle, CheckCircle2, DollarSign, Laptop, ShoppingCart } from 'lucide-react';
 
 export default function BudgetTaggingModal({
   isOpen,
@@ -31,11 +31,16 @@ export default function BudgetTaggingModal({
   const [rentalAssets, setRentalAssets] = useState([]);
   const [selectedAssetIds, setSelectedAssetIds] = useState([]);
 
+  // Peripheral Invoice Quick Tag (multi)
+  const [peripheralInvoices, setPeripheralInvoices] = useState([]);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
+
   useEffect(() => {
     if (isOpen && budget) {
       fetchExpenses();
       fetchSubscriptions();
       fetchRentalAssets();
+      fetchPeripheralInvoices();
     }
   }, [isOpen, budget]);
 
@@ -71,6 +76,52 @@ export default function BudgetTaggingModal({
       }
     } catch (err) {
       console.error('Error fetching subscriptions for tagging:', err);
+    }
+  };
+
+  const fetchPeripheralInvoices = async () => {
+    if (!budget) return;
+    try {
+      const params = new URLSearchParams({ limit: '100' });
+      if (budget.companyMasterId) params.append('companyMasterId', budget.companyMasterId);
+      const res = await fetch(`${apiUrl}/peripherals/invoices?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setPeripheralInvoices(await res.json());
+    } catch (err) {
+      console.error('Error fetching peripheral invoices for tagging:', err);
+    }
+  };
+
+  const handleQuickTagPeripheral = async () => {
+    if (selectedInvoiceIds.length === 0) return;
+    try {
+      setSubmitting(true);
+      setError('');
+      let lastBudget = null;
+      for (const peripheralInvoiceId of selectedInvoiceIds) {
+        const res = await fetch(`${apiUrl}/budgets/${budget.id}/tag-peripheral`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ peripheralInvoiceId })
+        });
+        if (res.ok) {
+          lastBudget = await res.json();
+        } else {
+          const errData = await res.json();
+          setError(errData.error || 'Gagal me-tag invoice peripheral.');
+          break;
+        }
+      }
+      if (lastBudget) {
+        onUpdateBudget(lastBudget);
+        setExpenses(lastBudget.expenses || []);
+        setSelectedInvoiceIds([]);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -404,6 +455,60 @@ export default function BudgetTaggingModal({
                   >
                     <Tag className="w-3.5 h-3.5" />
                     Tag {selectedAssetIds.length > 1 ? `${selectedAssetIds.length} Aset Sewa` : 'Aset Sewa'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Quick Tag Invoice Peripheral */}
+          <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 space-y-3">
+            <h3 className="text-xs font-black text-blue-700 dark:text-blue-400 flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-blue-500" />
+              Quick Tag dari Invoice Pembelian Periferal
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Pilih invoice pembelian periferal untuk ditambatkan sebagai realisasi pengeluaran item anggaran ini.
+            </p>
+            {peripheralInvoices.length === 0 ? (
+              <p className="text-[11px] text-slate-400 italic">Tidak ada invoice periferal untuk entitas ini.</p>
+            ) : (
+              <>
+                <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                  {peripheralInvoices.map((inv) => {
+                    const checked = selectedInvoiceIds.includes(inv.id);
+                    return (
+                      <label key={inv.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition text-xs ${checked ? 'bg-blue-50 dark:bg-blue-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setSelectedInvoiceIds(prev => checked ? prev.filter(id => id !== inv.id) : [...prev, inv.id])}
+                          className="accent-blue-600 w-3.5 h-3.5 shrink-0"
+                        />
+                        <span className="flex-1 font-semibold text-slate-700 dark:text-slate-200 truncate">
+                          <span className="text-blue-600 font-bold">{inv.invoiceRef}</span>
+                          <span className="text-slate-400 font-normal"> — {inv.supplier}</span>
+                          {inv._count?.items > 0 && <span className="text-slate-400 font-normal"> ({inv._count.items} item)</span>}
+                        </span>
+                        <span className="font-mono text-[10px] text-slate-500 shrink-0">
+                          {formatRupiah(inv.totalCost)}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400">
+                    {selectedInvoiceIds.length > 0 ? `${selectedInvoiceIds.length} invoice dipilih` : 'Centang invoice yang ingin di-tag'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleQuickTagPeripheral}
+                    disabled={selectedInvoiceIds.length === 0 || submitting}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-blue-500/10 flex items-center gap-1.5"
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    Tag {selectedInvoiceIds.length > 1 ? `${selectedInvoiceIds.length} Invoice` : 'Invoice'}
                   </button>
                 </div>
               </>
