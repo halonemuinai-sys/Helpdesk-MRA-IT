@@ -966,7 +966,6 @@ export default function ITBudget360() {
                         <tr className="bg-slate-50/80 dark:bg-slate-800/50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
                           <th className="py-3 px-4">Account Type (Kategori Akun)</th>
                           <th className="py-3 px-4 text-center">Klasifikasi</th>
-                          <th className="py-3 px-4 text-center">Jumlah Item</th>
                           <th className="py-3 px-4 text-right">Pagu Anggaran</th>
                           <th className="py-3 px-4 text-right">Realisasi</th>
                           <th className="py-3 px-4 text-right">Selisih</th>
@@ -999,7 +998,6 @@ export default function ITBudget360() {
                                   {costType}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-4 text-center font-bold text-slate-500">{group.items.length}</td>
                               <td className="py-3.5 px-4 text-right font-bold text-slate-700 dark:text-slate-200">{formatRupiah(group.totalPagu)}</td>
                               <td className={`py-3.5 px-4 text-right font-black ${group.totalActual > group.totalPagu ? 'text-rose-500' : 'text-emerald-600'}`}>
                                 {formatRupiah(group.totalActual)}
@@ -1024,7 +1022,6 @@ export default function ITBudget360() {
                         })}
                         <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-t-2 border-slate-300 dark:border-slate-700 text-xs font-black">
                           <td className="py-3.5 px-4 text-slate-800 dark:text-white" colSpan={2}>TOTAL</td>
-                          <td className="py-3.5 px-4 text-center text-slate-500">{projectBudgets.length}</td>
                           <td className="py-3.5 px-4 text-right text-slate-700 dark:text-slate-200">{formatRupiah(grandPagu)}</td>
                           <td className={`py-3.5 px-4 text-right ${grandActual > grandPagu ? 'text-rose-500' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatRupiah(grandActual)}</td>
                           <td className="py-3.5 px-4 text-right">
