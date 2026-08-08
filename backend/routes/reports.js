@@ -593,7 +593,8 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
             ensureBucket(m.yearMonth, entityName)[targetKey] += s.cost;
           } else {
             const isStartMonth = subStart.getFullYear() === m.year && subStart.getMonth() === m.month;
-            const isAnniversaryMonth = subStart.getMonth() === m.month && m.year >= subStart.getFullYear();
+            // Skip anniversary projection for INACTIVE subs — they were already paid; no future renewal will happen
+            const isAnniversaryMonth = s.status !== 'INACTIVE' && subStart.getMonth() === m.month && m.year > subStart.getFullYear();
             const hasRenewalThisMonth = Array.isArray(s.renewals) && s.renewals.some(r => {
               const rd = new Date(r.renewedAt);
               return rd.getFullYear() === m.year && rd.getMonth() === m.month;
