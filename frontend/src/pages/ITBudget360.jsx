@@ -551,16 +551,7 @@ export default function ITBudget360() {
             const buildMonthlyRowForAccountType = (accType, isCapexType) => {
               const months = Array(12).fill(0);
 
-              // 1. Populate system module monthly breakdown (Rental Assets, Subscriptions, ISP)
-              if (accType === 'Rental Expenses') {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] += (m.assetsRental || 0); });
-              } else if (accType === 'License & Permit') {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] += (m.subscriptions || 0); });
-              } else if (accType === 'Telecommunication') {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] += (m.isp || 0); });
-              }
-
-              // 2. Add granular expenses from projectBudgets
+              // 1. Add granular expenses from projectBudgets if tagged
               let hasProjectExpenses = false;
               projectBudgets.forEach(pb => {
                 const isMatch = isCapexType
@@ -580,6 +571,17 @@ export default function ITBudget360() {
                   }
                 }
               });
+
+              // 2. If no granular project expenses tagged, use system module monthly breakdown (Rental Assets, Subscriptions, ISP)
+              if (!hasProjectExpenses) {
+                if (accType === 'Rental Expenses') {
+                  monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.assetsRental || 0; });
+                } else if (accType === 'License & Permit') {
+                  monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.subscriptions || 0; });
+                } else if (accType === 'Telecommunication') {
+                  monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.isp || 0; });
+                }
+              }
 
               // 3. Fallback: If months is still completely 0 and matching projectBudgets have actualCost > 0
               if (!hasProjectExpenses && months.every(v => v === 0)) {
