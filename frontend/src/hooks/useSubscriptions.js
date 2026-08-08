@@ -30,6 +30,7 @@ export default function useSubscriptions({ token }) {
   const [formId, setFormId] = useState('');
   const [formCategory, setFormCategory] = useState('');
   const [formVendor, setFormVendor] = useState('');
+  const [formName, setFormName] = useState('');
   const [formBrand, setFormBrand] = useState('');
   const [formLocation, setFormLocation] = useState('');
   const [formBillingCycle, setFormBillingCycle] = useState('1 Tahun');
