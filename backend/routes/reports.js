@@ -556,7 +556,7 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
     months.forEach(m => { bucket[m.yearMonth] = {}; });
     const ensureBucket = (yearMonth, entityName) => {
       if (!bucket[yearMonth][entityName]) {
-        bucket[yearMonth][entityName] = { peripherals: 0, assetsRental: 0, subscriptions: 0 };
+        bucket[yearMonth][entityName] = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0 };
       }
       return bucket[yearMonth][entityName];
     };
@@ -574,13 +574,17 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
       ensureBucket(ym, entityName).peripherals += inv.totalCost - linkedSubscriptionCost;
     });
 
-    // Subscriptions: cash basis, full cost in the month actually paid (same as Peripherals above)
+    // Subscriptions & ISP: cash basis, full cost in the month actually paid
     subscriptions.forEach(s => {
       const d = new Date(s.startDate);
       const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!bucket[ym]) return;
       const entityName = s.companyMaster?.name || 'Tanpa Entitas';
-      ensureBucket(ym, entityName).subscriptions += s.cost;
+      if (s.category === 'ISP') {
+        ensureBucket(ym, entityName).isp += s.cost;
+      } else {
+        ensureBucket(ym, entityName).subscriptions += s.cost;
+      }
     });
 
     // Rental assets: still spread across active months (these are genuinely billed monthly)
@@ -600,18 +604,20 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
 
     // Derive monthly trend (summed across entities)
     const monthlyTrend = months.map(m => {
-      let peripherals = 0, assetsRental = 0, subscriptions = 0;
+      let peripherals = 0, assetsRental = 0, subscriptions = 0, isp = 0;
       Object.values(bucket[m.yearMonth]).forEach(e => {
         peripherals += e.peripherals;
         assetsRental += e.assetsRental;
         subscriptions += e.subscriptions;
+        isp += e.isp;
       });
       return {
         yearMonth: m.yearMonth,
         peripherals: Math.round(peripherals),
         assetsRental: Math.round(assetsRental),
         subscriptions: Math.round(subscriptions),
-        total: Math.round(peripherals + assetsRental + subscriptions)
+        isp: Math.round(isp),
+        total: Math.round(peripherals + assetsRental + subscriptions + isp)
       };
     });
 
@@ -619,10 +625,11 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
     const entityTotals = {};
     months.forEach(m => {
       Object.entries(bucket[m.yearMonth]).forEach(([name, vals]) => {
-        if (!entityTotals[name]) entityTotals[name] = { peripherals: 0, assetsRental: 0, subscriptions: 0 };
+        if (!entityTotals[name]) entityTotals[name] = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0 };
         entityTotals[name].peripherals += vals.peripherals;
         entityTotals[name].assetsRental += vals.assetsRental;
         entityTotals[name].subscriptions += vals.subscriptions;
+        entityTotals[name].isp += vals.isp;
       });
     });
     const byEntity = Object.entries(entityTotals)
@@ -631,7 +638,8 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
         peripherals: Math.round(vals.peripherals),
         assetsRental: Math.round(vals.assetsRental),
         subscriptions: Math.round(vals.subscriptions),
-        total: Math.round(vals.peripherals + vals.assetsRental + vals.subscriptions)
+        isp: Math.round(vals.isp),
+        total: Math.round(vals.peripherals + vals.assetsRental + vals.subscriptions + vals.isp)
       }))
       .sort((a, b) => b.total - a.total);
 
@@ -641,8 +649,9 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
       peripherals: acc.peripherals + m.peripherals,
       assetsRental: acc.assetsRental + m.assetsRental,
       subscriptions: acc.subscriptions + m.subscriptions,
+      isp: acc.isp + m.isp,
       total: acc.total + m.total
-    }), { peripherals: 0, assetsRental: 0, subscriptions: 0, total: 0 });
+    }), { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, total: 0 });
 
     res.json({
       currentMonthSummary,

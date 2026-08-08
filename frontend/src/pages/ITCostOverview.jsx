@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   TrendingUp,
   Building2,
-  Calendar
+  Calendar,
+  Wifi
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
 
@@ -89,6 +90,7 @@ export default function ITCostOverview({ user, token, darkMode }) {
     { name: 'Peripherals', type: 'column', data: monthlyTrend.map(m => m.peripherals) },
     { name: 'Sewa Aset', type: 'column', data: monthlyTrend.map(m => m.assetsRental) },
     { name: 'Subscription', type: 'column', data: monthlyTrend.map(m => m.subscriptions) },
+    { name: 'Internet (ISP)', type: 'column', data: monthlyTrend.map(m => m.isp || 0) },
     { name: 'Total', type: 'line', data: monthlyTrend.map(m => m.total) }
   ];
 
@@ -113,9 +115,9 @@ export default function ITCostOverview({ user, token, darkMode }) {
       background: 'transparent'
     },
     theme: { mode: darkMode ? 'dark' : 'light' },
-    colors: ['#3b82f6', '#f59e0b', '#10b981', '#f43f5e'],
+    colors: ['#3b82f6', '#f59e0b', '#10b981', '#06b6d4', '#f43f5e'],
     fill: {
-      type: ['gradient', 'gradient', 'gradient', 'solid'],
+      type: ['gradient', 'gradient', 'gradient', 'gradient', 'solid'],
       gradient: {
         shade: darkMode ? 'dark' : 'light',
         type: 'vertical',
@@ -126,11 +128,11 @@ export default function ITCostOverview({ user, token, darkMode }) {
       }
     },
     stroke: {
-      width: [0, 0, 0, 3],
+      width: [0, 0, 0, 0, 3],
       curve: 'smooth'
     },
     markers: {
-      size: [0, 0, 0, 4],
+      size: [0, 0, 0, 0, 4],
       colors: ['#f43f5e'],
       strokeColors: '#fff',
       strokeWidth: 2,
@@ -259,7 +261,7 @@ export default function ITCostOverview({ user, token, darkMode }) {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Total Bulan Terakhir</p>
@@ -297,10 +299,21 @@ export default function ITCostOverview({ user, token, darkMode }) {
               <div>
                 <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Subscription (Bulan Ini)</p>
                 <h3 className="text-md font-black text-emerald-600 dark:text-emerald-450 mt-1.5 truncate max-w-[150px]">{formatRupiah(overview.currentMonthSummary.subscriptions)}</h3>
-                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">Dibayar Bulan Ini (Bukan Rata-rata)</p>
+                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">Software / Cloud / Hosting</p>
               </div>
               <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-455 rounded-xl flex items-center justify-center">
                 <CreditCard className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Internet ISP (Bulan Ini)</p>
+                <h3 className="text-md font-black text-cyan-600 dark:text-cyan-400 mt-1.5 truncate max-w-[150px]">{formatRupiah(overview.currentMonthSummary.isp || 0)}</h3>
+                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">Koneksi Internet &amp; CID</p>
+              </div>
+              <div className="w-9 h-9 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 rounded-xl flex items-center justify-center">
+                <Wifi className="w-4 h-4" />
               </div>
             </div>
           </div>
@@ -333,6 +346,7 @@ export default function ITCostOverview({ user, token, darkMode }) {
                       <th className="py-3 px-3 text-right">Peripherals</th>
                       <th className="py-3 px-3 text-right">Sewa Aset</th>
                       <th className="py-3 px-3 text-right">Subscription</th>
+                      <th className="py-3 px-3 text-right">Internet (ISP)</th>
                       <th className="py-3 px-3 text-right font-extrabold text-rose-500">Total</th>
                     </tr>
                   </thead>
@@ -343,6 +357,7 @@ export default function ITCostOverview({ user, token, darkMode }) {
                         <td className="py-3 px-3 text-right text-blue-600 dark:text-blue-400">{formatRupiah(entity.peripherals)}</td>
                         <td className="py-3 px-3 text-right text-amber-600 dark:text-amber-400">{formatRupiah(entity.assetsRental)}</td>
                         <td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">{formatRupiah(entity.subscriptions)}</td>
+                        <td className="py-3 px-3 text-right text-cyan-600 dark:text-cyan-400">{formatRupiah(entity.isp || 0)}</td>
                         <td className="py-3 px-3 text-right font-black text-rose-500 dark:text-rose-455">{formatRupiah(entity.total)}</td>
                       </tr>
                     ))}
@@ -353,6 +368,7 @@ export default function ITCostOverview({ user, token, darkMode }) {
                       <td className="py-3 px-3 text-right text-blue-600 dark:text-blue-400">{formatRupiah(overview.grandTotal.peripherals)}</td>
                       <td className="py-3 px-3 text-right text-amber-600 dark:text-amber-400">{formatRupiah(overview.grandTotal.assetsRental)}</td>
                       <td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">{formatRupiah(overview.grandTotal.subscriptions)}</td>
+                      <td className="py-3 px-3 text-right text-cyan-600 dark:text-cyan-400">{formatRupiah(overview.grandTotal.isp || 0)}</td>
                       <td className="py-3 px-3 text-right text-rose-500 dark:text-rose-455">{formatRupiah(overview.grandTotal.total)}</td>
                     </tr>
                   </tfoot>
