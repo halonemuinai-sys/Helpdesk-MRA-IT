@@ -200,7 +200,7 @@ export default function BudgetTaggingModal({
       if (res.ok) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.assets || []);
-        setRentalAssets(list.filter(a => a.ownershipType === 'RENTAL' && a.rentalStatus !== 'EXPIRED'));
+        setRentalAssets(list.filter(a => a.ownershipType === 'RENTAL'));
       }
     } catch (err) {
       console.error('Error fetching rental assets for tagging:', err);
@@ -423,6 +423,12 @@ export default function BudgetTaggingModal({
                 <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
                   {rentalAssets.map((asset) => {
                     const checked = selectedAssetIds.includes(asset.id);
+                    const rs = asset.rentalStatus;
+                    const statusBadge = rs === 'EXPIRED'
+                      ? <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400 shrink-0">Expired</span>
+                      : rs === 'EXPIRING_SOON'
+                      ? <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 shrink-0">Segera Habis</span>
+                      : <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 shrink-0">Aktif</span>;
                     return (
                       <label key={asset.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition text-xs ${checked ? 'bg-amber-50 dark:bg-amber-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
                         <input
@@ -436,6 +442,7 @@ export default function BudgetTaggingModal({
                           <span className="text-slate-400 font-normal"> — {asset.assetTag}</span>
                           {asset.vendor && <span className="text-slate-400 font-normal"> ({asset.vendor})</span>}
                         </span>
+                        {statusBadge}
                         <span className="font-mono text-[10px] text-slate-500 shrink-0">
                           {formatRupiah((asset.rentalCost || 0) * 12)}/thn
                         </span>
