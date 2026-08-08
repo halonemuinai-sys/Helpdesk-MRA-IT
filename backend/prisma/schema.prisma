@@ -37,8 +37,7 @@ model CompanyMaster {
   sharedBudget  Float            @default(0) // Budget for shared/branch devices (monthly)
   createdAt     DateTime         @default(now())
   companies     Company[]        // Branches belonging to this master company
-  subscriptions ITSubscription[] @relation("SubscriptionOwner") // Subscriptions belonging to this master company
-  brandedSubscriptions ITSubscription[] @relation("SubscriptionBrand") // Subscriptions where this entity is the authorized brand
+  subscriptions ITSubscription[] // Subscriptions belonging to this master company
   assets        Asset[]          // Assets leased by this master company
   peripheralAssets PeripheralAsset[]
   peripheralInvoices PeripheralInvoice[]
@@ -194,11 +193,10 @@ model ITSubscription {
   
   // Relasi ke Master Company (Company Entity Tagging)
   companyMasterId         Int?
-  companyMaster           CompanyMaster?   @relation("SubscriptionOwner", fields: [companyMasterId], references: [id])
+  companyMaster           CompanyMaster?   @relation(fields: [companyMasterId], references: [id])
 
-  // Relasi Otorisasi Brand / Anak Perusahaan yang diotorisasi
-  brandId                 Int?
-  brand                   CompanyMaster?   @relation("SubscriptionBrand", fields: [brandId], references: [id])
+  // Nama Brand / Merek Dagang yang dipegang anak perusahaan (e.g. "Bvlgari", "Cosmopolitan")
+  brand                   String?
 
   // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
   replacedSubscriptionId  String?          @unique

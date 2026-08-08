@@ -30,8 +30,7 @@ export default function useSubscriptions({ token }) {
   const [formId, setFormId] = useState('');
   const [formCategory, setFormCategory] = useState('');
   const [formVendor, setFormVendor] = useState('');
-  const [formName, setFormName] = useState('');
-  const [formBrandId, setFormBrandId] = useState('');
+  const [formBrand, setFormBrand] = useState('');
   const [formBillingCycle, setFormBillingCycle] = useState('1 Tahun');
   const [formCost, setFormCost] = useState('');
   const [formStartDate, setFormStartDate] = useState('');
@@ -122,7 +121,7 @@ export default function useSubscriptions({ token }) {
     setFormCategory('');
     setFormVendor('');
     setFormName('');
-    setFormBrandId('');
+    setFormBrand('');
     setFormBillingCycle('1 Tahun');
     setFormCost('');
     const today = new Date().toISOString().split('T')[0];
@@ -147,7 +146,7 @@ export default function useSubscriptions({ token }) {
     setFormCategory(sub.category);
     setFormVendor(sub.vendor);
     setFormName(sub.name);
-    setFormBrandId(sub.brandId || '');
+    setFormBrand(sub.brand || '');
     setFormBillingCycle(sub.billingCycle);
     setFormCost(formatNumberForInput(sub.cost));
     setFormStartDate(sub.startDate.split('T')[0]);
@@ -169,7 +168,7 @@ export default function useSubscriptions({ token }) {
     setFormCategory(sub.category);
     setFormVendor(sub.vendor);
     setFormName(sub.name + ' (Baru)');
-    setFormBrandId(sub.brandId || '');
+    setFormBrand(sub.brand || '');
     setFormBillingCycle(sub.billingCycle);
     setFormCost(formatNumberForInput(sub.cost));
     const oldExpiry = new Date(sub.expiryDate);
@@ -215,7 +214,7 @@ export default function useSubscriptions({ token }) {
         category: formCategory,
         vendor: formVendor,
         name: formName,
-        brandId: formBrandId ? parseInt(formBrandId) : null,
+        brand: formBrand || null,
         billingCycle: formBillingCycle,
         cost: parseFloat(formCost.toString().replace(/\./g, '')) || 0,
         startDate: new Date(formStartDate).toISOString(),
@@ -297,7 +296,7 @@ export default function useSubscriptions({ token }) {
     const matchesSearch =
       sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sub.vendor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (sub.brand?.name && sub.brand.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (sub.brand && sub.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (sub.notes && sub.notes.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = !selectedCategory || sub.category === selectedCategory;
     const matchesCompany = !selectedCompanyMasterId || sub.companyMasterId === parseInt(selectedCompanyMasterId, 10);
@@ -327,7 +326,7 @@ export default function useSubscriptions({ token }) {
     formId, formCategory, setFormCategory,
     formVendor, setFormVendor,
     formName, setFormName,
-    formBrandId, setFormBrandId,
+    formBrand, setFormBrand,
     formBillingCycle, setFormBillingCycle,
     formCost, setFormCost,
     formStartDate, setFormStartDate,
