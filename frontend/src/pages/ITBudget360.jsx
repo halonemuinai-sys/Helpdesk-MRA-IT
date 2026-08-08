@@ -534,86 +534,88 @@ export default function ITBudget360() {
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
             const monthlyTrend = reportData?.monthlyTrend || [];
 
-            // Helper to build 12-month array for specific category
-            const buildMonthlyRow = (catId, catType, accountTypeMatch) => {
+            // Exact Account Types matching system matrix & user's Rekapitulasi Budget vs Realisasi
+            const OPEX_ACCOUNT_TYPES = [
+              { id: 'Utilities', name: 'Utilities', type: 'OPEX' },
+              { id: 'License & Permit', name: 'License & Permit', type: 'OPEX' },
+              { id: 'Repair & Maintenance', name: 'Repair & Maintenance', type: 'OPEX' },
+              { id: 'Rental Expenses', name: 'Rental Expenses', type: 'OPEX' },
+              { id: 'Telecommunication', name: 'Telecommunication', type: 'OPEX' }
+            ];
+
+            const CAPEX_ACCOUNT_TYPES = [
+              { id: 'Proyek & Inovasi', name: 'Proyek & Inovasi', type: 'CAPEX' }
+            ];
+
+            const buildMonthlyRowForAccountType = (accType, isCapexType) => {
               const months = Array(12).fill(0);
 
-              if (catId === 'isp') {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.isp || 0; });
-              } else if (catId === 'software') {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.subscriptions || 0; });
-              } else if (catId === 'rental') {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.assetsRental || 0; });
-              } else if (catId === 'peripherals') {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.peripherals || 0; });
-              } else {
-                projectBudgets.forEach(pb => {
-                  const isMatch = (pb.budgetType === catType) && (
-                    !accountTypeMatch || pb.accountType === accountTypeMatch || pb.category === accountTypeMatch
-                  );
-                  if (isMatch) {
-                    if (Array.isArray(pb.expenses) && pb.expenses.length > 0) {
-                      pb.expenses.forEach(exp => {
-                        const d = new Date(exp.expenseDate);
-                        if (d.getFullYear() === parseInt(selectedYear)) {
-                          const mIdx = d.getMonth();
-                          if (mIdx >= 0 && mIdx < 12) months[mIdx] += (exp.amount || 0);
-                        }
-                      });
-                    } else if (pb.actualCost > 0) {
-                      const perMonth = (pb.actualCost || 0) / 12;
-                      for (let i = 0; i < 12; i++) months[i] += perMonth;
-                    }
+              projectBudgets.forEach(pb => {
+                const isMatch = isCapexType
+                  ? (pb.budgetType === 'CAPEX' || pb.accountType === 'Proyek & Inovasi')
+                  : (pb.budgetType !== 'CAPEX' && (pb.accountType === accType || (!pb.accountType && accType === 'Utilities')));
+
+                if (isMatch) {
+                  if (Array.isArray(pb.expenses) && pb.expenses.length > 0) {
+                    pb.expenses.forEach(exp => {
+                      const d = new Date(exp.expenseDate);
+                      if (d.getFullYear() === parseInt(selectedYear)) {
+                        const mIdx = d.getMonth();
+                        if (mIdx >= 0 && mIdx < 12) months[mIdx] += (parseFloat(exp.amount) || 0);
+                      }
+                    });
+                  } else if (pb.actualCost > 0) {
+                    const perMonth = (parseFloat(pb.actualCost) || 0) / 12;
+                    for (let i = 0; i < 12; i++) months[i] += perMonth;
                   }
-                });
+                }
+              });
+
+              if (accType === 'Rental Expenses' && months.every(v => v === 0)) {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.assetsRental || 0; });
               }
+              if (accType === 'License & Permit' && months.every(v => v === 0)) {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.subscriptions || 0; });
+              }
+              if (accType === 'Telecommunication' && months.every(v => v === 0)) {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.isp || 0; });
+              }
+
               return months;
             };
 
-            const getCategoryBudget = (catId, catType, accountTypeMatch) => {
-              if (catId === 'isp') return reportData?.grandTotal?.isp || 0;
-              if (catId === 'software') return reportData?.grandTotal?.subscriptions || 0;
-              if (catId === 'rental') return reportData?.grandTotal?.assetsRental || 0;
-              if (catId === 'peripherals') return reportData?.grandTotal?.peripherals || 0;
-
+            const getPaguForAccountType = (accType, isCapexType) => {
               let sum = 0;
               projectBudgets.forEach(pb => {
-                const isMatch = (pb.budgetType === catType) && (
-                  !accountTypeMatch || pb.accountType === accountTypeMatch || pb.category === accountTypeMatch
-                );
-                if (isMatch) sum += (pb.allocatedBudget || 0);
+                const isMatch = isCapexType
+                  ? (pb.budgetType === 'CAPEX' || pb.accountType === 'Proyek & Inovasi')
+                  : (pb.budgetType !== 'CAPEX' && (pb.accountType === accType || (!pb.accountType && accType === 'Utilities')));
+                if (isMatch) sum += (parseFloat(pb.allocatedBudget) || 0);
               });
+
+              if (accType === 'Rental Expenses' && sum === 0) sum = reportData?.grandTotal?.assetsRental || 0;
+              if (accType === 'License & Permit' && sum === 0) sum = reportData?.grandTotal?.subscriptions || 0;
+              if (accType === 'Telecommunication' && sum === 0) sum = reportData?.grandTotal?.isp || 0;
+
               return sum;
             };
 
-            // Define Categories
-            const opexCategories = [
-              { id: 'isp', name: 'Connectivity & Network ISP', type: 'OPEX', accountType: 'Network/ISP' },
-              { id: 'software', name: 'Subskripsi & Software SaaS / Cloud', type: 'OPEX', accountType: 'Software License' },
-              { id: 'rental', name: 'Sewa Perangkat Laptop & Aset (Rentals)', type: 'OPEX', accountType: 'Utilities' },
-              { id: 'maintenance', name: 'Maintenance Hardware & Support SLA', type: 'OPEX', accountType: 'Maintenance' },
-              { id: 'peripherals', name: 'Pembelian Periferal & Consumables', type: 'OPEX', accountType: 'Consumables' },
-              { id: 'opex_projects', name: 'Proyek Operasional & Utilitas IT', type: 'OPEX', accountType: 'Operations' }
-            ].map(cat => {
-              const months = buildMonthlyRow(cat.id, cat.type, cat.accountType);
-              const budget = getCategoryBudget(cat.id, cat.type, cat.accountType);
+            const opexCategories = OPEX_ACCOUNT_TYPES.map(acc => {
+              const months = buildMonthlyRowForAccountType(acc.id, false);
+              const budget = getPaguForAccountType(acc.id, false);
               const ytdActual = months.reduce((a, b) => a + b, 0);
               const variance = budget - ytdActual;
-              const utilPct = budget > 0 ? ((ytdActual / budget) * 100).toFixed(1) : (ytdActual > 0 ? '100' : '0');
-              return { ...cat, budget, months, ytdActual, variance, utilPct };
+              const utilPct = budget > 0 ? ((ytdActual / budget) * 100).toFixed(0) : (ytdActual > 0 ? '100' : '0');
+              return { ...acc, budget, months, ytdActual, variance, utilPct };
             });
 
-            const capexCategories = [
-              { id: 'hardware_capex', name: 'Pembelian Hardware & Perangkat Utama', type: 'CAPEX', accountType: 'Hardware' },
-              { id: 'infra_capex', name: 'Infrastruktur Data Center & Server', type: 'CAPEX', accountType: 'Infrastructure' },
-              { id: 'digital_capex', name: 'Proyek Inovasi & Transformasi Digital', type: 'CAPEX', accountType: 'Digital Transformation' }
-            ].map(cat => {
-              const months = buildMonthlyRow(cat.id, cat.type, cat.accountType);
-              const budget = getCategoryBudget(cat.id, cat.type, cat.accountType);
+            const capexCategories = CAPEX_ACCOUNT_TYPES.map(acc => {
+              const months = buildMonthlyRowForAccountType(acc.id, true);
+              const budget = getPaguForAccountType(acc.id, true);
               const ytdActual = months.reduce((a, b) => a + b, 0);
               const variance = budget - ytdActual;
-              const utilPct = budget > 0 ? ((ytdActual / budget) * 100).toFixed(1) : (ytdActual > 0 ? '100' : '0');
-              return { ...cat, budget, months, ytdActual, variance, utilPct };
+              const utilPct = budget > 0 ? ((ytdActual / budget) * 100).toFixed(0) : (ytdActual > 0 ? '100' : '0');
+              return { ...acc, budget, months, ytdActual, variance, utilPct };
             });
 
             // Subtotals
@@ -637,12 +639,12 @@ export default function ITBudget360() {
             const grandMonthsTotal = opexMonthsTotal.map((v, i) => v + capexMonthsTotal[i]);
             const grandYtdTotal = opexYtdTotal + capexYtdTotal;
             const grandVarianceTotal = grandBudgetTotal - grandYtdTotal;
-            const grandUtilPct = grandBudgetTotal > 0 ? ((grandYtdTotal / grandBudgetTotal) * 100).toFixed(1) : '0';
+            const grandUtilPct = grandBudgetTotal > 0 ? ((grandYtdTotal / grandBudgetTotal) * 100).toFixed(0) : '0';
 
             const maxMonthlyVal = Math.max(...grandMonthsTotal, 1);
 
             const handleExportCSV = () => {
-              const headers = ['Kategori Akun', 'Tipe', 'Pagu Budget 1 Tahun', ...monthNames, 'Total YTD', 'Sisa Budget', '% Terpakai'];
+              const headers = ['Account Type (Kategori Akun)', 'Klasifikasi', 'Pagu Anggaran', ...monthNames, 'Total YTD', 'Selisih', '% Serapan'];
               const rows = [];
 
               const addRow = (name, type, budget, months, ytd, varVal, pct) => {
@@ -653,14 +655,14 @@ export default function ITBudget360() {
 
               rows.push('--- OPEX ---');
               opexCategories.forEach(c => addRow(c.name, c.type, c.budget, c.months, c.ytdActual, c.variance, c.utilPct));
-              addRow('SUBTOTAL OPEX', 'OPEX', opexBudgetTotal, opexMonthsTotal, opexYtdTotal, opexVarianceTotal, opexBudgetTotal > 0 ? ((opexYtdTotal/opexBudgetTotal)*100).toFixed(1) : '0');
+              addRow('SUBTOTAL OPEX', 'OPEX', opexBudgetTotal, opexMonthsTotal, opexYtdTotal, opexVarianceTotal, opexBudgetTotal > 0 ? ((opexYtdTotal/opexBudgetTotal)*100).toFixed(0) : '0');
 
               rows.push('--- CAPEX ---');
               capexCategories.forEach(c => addRow(c.name, c.type, c.budget, c.months, c.ytdActual, c.variance, c.utilPct));
-              addRow('SUBTOTAL CAPEX', 'CAPEX', capexBudgetTotal, capexMonthsTotal, capexYtdTotal, capexVarianceTotal, capexBudgetTotal > 0 ? ((capexYtdTotal/capexBudgetTotal)*100).toFixed(1) : '0');
+              addRow('SUBTOTAL CAPEX', 'CAPEX', capexBudgetTotal, capexMonthsTotal, capexYtdTotal, capexVarianceTotal, capexBudgetTotal > 0 ? ((capexYtdTotal/capexBudgetTotal)*100).toFixed(0) : '0');
 
               rows.push('--- GRAND TOTAL ---');
-              addRow('GRAND TOTAL BIAYA IT', 'TOTAL', grandBudgetTotal, grandMonthsTotal, grandYtdTotal, grandVarianceTotal, grandUtilPct);
+              addRow('TOTAL', 'TOTAL', grandBudgetTotal, grandMonthsTotal, grandYtdTotal, grandVarianceTotal, grandUtilPct);
 
               const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
               const encodedUri = encodeURI(csvContent);
