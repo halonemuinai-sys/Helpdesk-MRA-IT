@@ -398,7 +398,7 @@ router.post('/:id/tag-subscription', async (req, res) => {
 router.post('/:id/tag-rental', async (req, res) => {
   try {
     const { id } = req.params;
-    const { assetId } = req.body;
+    const { assetId, overrideMonths } = req.body;
 
     const asset = await prisma.asset.findUnique({
       where: { id: assetId },
@@ -423,15 +423,21 @@ router.post('/:id/tag-rental', async (req, res) => {
     const effectiveEnd   = rentalEnd   < yearEnd   ? rentalEnd   : yearEnd;
 
     // Hitung bulan aktif dalam tahun fiskal (minimal 1 bulan)
-    let activeMonths = 0;
+    let autoMonths = 0;
     if (effectiveEnd >= effectiveStart) {
-      activeMonths = (effectiveEnd.getFullYear() - effectiveStart.getFullYear()) * 12
+      autoMonths = (effectiveEnd.getFullYear() - effectiveStart.getFullYear()) * 12
         + (effectiveEnd.getMonth() - effectiveStart.getMonth()) + 1;
     }
-    activeMonths = Math.min(Math.max(activeMonths, 1), 12);
+    autoMonths = Math.min(Math.max(autoMonths, 1), 12);
+
+    // Gunakan override jika dikirim dari frontend, fallback ke auto
+    const activeMonths = (overrideMonths && overrideMonths >= 1 && overrideMonths <= 12)
+      ? Math.round(overrideMonths)
+      : autoMonths;
 
     const proratedCost = Math.round((asset.rentalCost || 0) * activeMonths);
-    const description = `[Sewa Aset] ${asset.brand} ${asset.model} — ${asset.assetTag}${asset.vendor ? ` (${asset.vendor})` : ''} (${activeMonths} bln di ${fiscalYear})`;
+    const customLabel = overrideMonths && overrideMonths !== autoMonths ? ' ✎' : '';
+    const description = `[Sewa Aset] ${asset.brand} ${asset.model} — ${asset.assetTag}${asset.vendor ? ` (${asset.vendor})` : ''} (${activeMonths} bln di ${fiscalYear}${customLabel})`;
 
     await prisma.iTProjectExpense.create({
       data: {

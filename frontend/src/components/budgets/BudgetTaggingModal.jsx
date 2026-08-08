@@ -30,6 +30,7 @@ export default function BudgetTaggingModal({
   // Rental Asset Quick Tag (multi)
   const [rentalAssets, setRentalAssets] = useState([]);
   const [selectedAssetIds, setSelectedAssetIds] = useState([]);
+  const [overrideMonths, setOverrideMonths] = useState({});  // { assetId: number }
 
   // Peripheral Invoice Quick Tag (multi)
   const [peripheralInvoices, setPeripheralInvoices] = useState([]);
@@ -189,6 +190,20 @@ export default function BudgetTaggingModal({
     }
   };
 
+  const calcAutoMonths = (asset) => {
+    const fiscalYear = budget?.fiscalYear || new Date().getFullYear();
+    const yearStart = new Date(fiscalYear, 0, 1);
+    const yearEnd   = new Date(fiscalYear, 11, 31);
+    const rStart = asset.rentalStart ? new Date(asset.rentalStart) : yearStart;
+    const rEnd   = asset.rentalEnd   ? new Date(asset.rentalEnd)   : yearEnd;
+    const effStart = rStart > yearStart ? rStart : yearStart;
+    const effEnd   = rEnd   < yearEnd   ? rEnd   : yearEnd;
+    if (effEnd < effStart) return 1;
+    const months = (effEnd.getFullYear() - effStart.getFullYear()) * 12
+      + (effEnd.getMonth() - effStart.getMonth()) + 1;
+    return Math.min(Math.max(months, 1), 12);
+  };
+
   const fetchRentalAssets = async () => {
     if (!budget) return;
     try {
@@ -214,10 +229,11 @@ export default function BudgetTaggingModal({
       setError('');
       let lastBudget = null;
       for (const assetId of selectedAssetIds) {
+        const months = overrideMonths[assetId];
         const res = await fetch(`${apiUrl}/budgets/${budget.id}/tag-rental`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ assetId })
+          body: JSON.stringify({ assetId, ...(months ? { overrideMonths: parseInt(months) } : {}) })
         });
         if (res.ok) {
           lastBudget = await res.json();
@@ -231,6 +247,7 @@ export default function BudgetTaggingModal({
         onUpdateBudget(lastBudget);
         setExpenses(lastBudget.expenses || []);
         setSelectedAssetIds([]);
+        setOverrideMonths({});
       }
     } catch (err) {
       setError(err.message);
@@ -424,29 +441,46 @@ export default function BudgetTaggingModal({
                   {rentalAssets.map((asset) => {
                     const checked = selectedAssetIds.includes(asset.id);
                     const rs = asset.rentalStatus;
+                    const autoMonths = calcAutoMonths(asset);
+                    const months = overrideMonths[asset.id] !== undefined ? overrideMonths[asset.id] : autoMonths;
+                    const isCustom = overrideMonths[asset.id] !== undefined && overrideMonths[asset.id] !== autoMonths;
                     const statusBadge = rs === 'EXPIRED'
                       ? <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400 shrink-0">Expired</span>
                       : rs === 'EXPIRING_SOON'
                       ? <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 shrink-0">Segera Habis</span>
                       : <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 shrink-0">Aktif</span>;
                     return (
-                      <label key={asset.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition text-xs ${checked ? 'bg-amber-50 dark:bg-amber-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
+                      <div key={asset.id} className={`flex items-center gap-2 px-3 py-2 transition text-xs ${checked ? 'bg-amber-50 dark:bg-amber-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => setSelectedAssetIds(prev => checked ? prev.filter(id => id !== asset.id) : [...prev, asset.id])}
-                          className="accent-amber-500 w-3.5 h-3.5 shrink-0"
+                          className="accent-amber-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
                         />
-                        <span className="flex-1 font-semibold text-slate-700 dark:text-slate-200 truncate">
+                        <span className="flex-1 font-semibold text-slate-700 dark:text-slate-200 truncate cursor-pointer" onClick={() => setSelectedAssetIds(prev => checked ? prev.filter(id => id !== asset.id) : [...prev, asset.id])}>
                           <span className="text-amber-600 font-bold">{asset.brand} {asset.model}</span>
                           <span className="text-slate-400 font-normal"> — {asset.assetTag}</span>
                           {asset.vendor && <span className="text-slate-400 font-normal"> ({asset.vendor})</span>}
                         </span>
                         {statusBadge}
-                        <span className="font-mono text-[10px] text-slate-500 shrink-0">
-                          {formatRupiah((asset.rentalCost || 0) * 12)}/thn
+                        {/* Input override bulan */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <input
+                            type="number"
+                            min="1"
+                            max="12"
+                            value={months}
+                            onChange={(e) => setOverrideMonths(prev => ({ ...prev, [asset.id]: parseInt(e.target.value) || 1 }))}
+                            onClick={(e) => e.stopPropagation()}
+                            title={`Auto: ${autoMonths} bln. Edit untuk override.`}
+                            className={`w-10 px-1.5 py-0.5 text-center text-[10px] font-black rounded border ${isCustom ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500'} focus:outline-none focus:border-amber-500`}
+                          />
+                          <span className="text-[9px] text-slate-400">bln</span>
+                        </div>
+                        <span className="font-mono text-[10px] text-slate-500 shrink-0 w-20 text-right">
+                          {formatRupiah((asset.rentalCost || 0) * months)}
                         </span>
-                      </label>
+                      </div>
                     );
                   })}
                 </div>
