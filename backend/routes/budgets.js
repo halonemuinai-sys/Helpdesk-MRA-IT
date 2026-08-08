@@ -245,4 +245,133 @@ router.post('/generate-baseline-2027', async (req, res) => {
   }
 });
 
+// Helper function to recalculate actualCost for a budget item
+async function recalculateBudgetActualCost(projectId) {
+  const expenses = await prisma.iTProjectExpense.findMany({
+    where: { projectId }
+  });
+  const totalActual = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+
+  const budget = await prisma.iTProjectBudget.findUnique({ where: { id: projectId } });
+  if (budget) {
+    return await prisma.iTProjectBudget.update({
+      where: { id: projectId },
+      data: {
+        actualCost: totalActual,
+        remainingBudget: budget.allocatedBudget - totalActual
+      },
+      include: {
+        companyMaster: { select: { id: true, name: true } },
+        expenses: { orderBy: { expenseDate: 'desc' } }
+      }
+    });
+  }
+  return null;
+}
+
+// 6. GET expenses for a specific project budget
+router.get('/:id/expenses', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expenses = await prisma.iTProjectExpense.findMany({
+      where: { projectId: id },
+      orderBy: { expenseDate: 'desc' }
+    });
+    res.json(expenses);
+  } catch (err) {
+    console.error('Error fetching expenses:', err);
+    res.status(500).json({ error: 'Gagal mengambil data rincian transaksi realisasi.' });
+  }
+});
+
+// 7. POST add/tag new expense transaction to budget
+router.post('/:id/expenses', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { description, amount, expenseDate, invoiceNumber, vendor, receiptLink } = req.body;
+
+    if (!description || amount === undefined) {
+      return res.status(400).json({ error: 'Deskripsi transaksi dan nominal wajib diisi.' });
+    }
+
+    const budget = await prisma.iTProjectBudget.findUnique({ where: { id } });
+    if (!budget) return res.status(404).json({ error: 'Anggaran proyek tidak ditemukan.' });
+
+    await prisma.iTProjectExpense.create({
+      data: {
+        projectId: id,
+        description,
+        amount: parseFloat(amount) || 0,
+        expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
+        invoiceNumber,
+        vendor,
+        receiptLink,
+        status: 'PAID'
+      }
+    });
+
+    const updatedBudget = await recalculateBudgetActualCost(id);
+    res.status(201).json(updatedBudget);
+  } catch (err) {
+    console.error('Error creating expense:', err);
+    res.status(500).json({ error: 'Gagal mencatat rincian transaksi realisasi.' });
+  }
+});
+
+// 8. DELETE tagged expense transaction from budget
+router.delete('/:id/expenses/:expenseId', async (req, res) => {
+  try {
+    const { id, expenseId } = req.params;
+    await prisma.iTProjectExpense.delete({
+      where: { id: expenseId }
+    });
+
+    const updatedBudget = await recalculateBudgetActualCost(id);
+    res.json(updatedBudget);
+  } catch (err) {
+    console.error('Error deleting expense:', err);
+    res.status(500).json({ error: 'Gagal menghapus rincian transaksi.' });
+  }
+});
+
+// 9. POST Tag Subskripsi Aktif ke Budget Item
+router.post('/:id/tag-subscription', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { subscriptionId } = req.body;
+
+    const sub = await prisma.iTSubscription.findUnique({
+      where: { id: subscriptionId },
+      include: { companyMaster: true }
+    });
+    if (!sub) return res.status(404).json({ error: 'Subskripsi tidak ditemukan.' });
+
+    const description = `[Subskripsi ${sub.category}] ${sub.name || sub.providerName} (${sub.billingCycle})`;
+    let amount = sub.cost;
+    if (sub.billingCycle === '1 Bulan') {
+      amount = sub.cost * 12; // Tag annual total
+    }
+
+    await prisma.iTProjectExpense.create({
+      data: {
+        projectId: id,
+        description,
+        amount,
+        expenseDate: sub.startDate || new Date(),
+        invoiceNumber: sub.contractNumber || `SUB-${sub.id.substring(0, 6)}`,
+        vendor: sub.providerName || sub.brand,
+        receiptLink: sub.evidenceLink,
+        status: 'PAID'
+      }
+    });
+
+    const updatedBudget = await recalculateBudgetActualCost(id);
+    res.status(201).json(updatedBudget);
+  } catch (err) {
+    console.error('Error tagging subscription:', err);
+    res.status(500).json({ error: 'Gagal me-tag subskripsi ke item anggaran.' });
+  }
+});
+
 module.exports = router;
+

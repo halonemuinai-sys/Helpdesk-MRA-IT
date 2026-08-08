@@ -30,9 +30,11 @@ import {
   Trash2,
   X,
   FileSpreadsheet,
-  Save
+  Save,
+  Tag
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
+import BudgetTaggingModal from '../components/budgets/BudgetTaggingModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -112,6 +114,23 @@ export default function ITBudget360() {
   const [formVendor, setFormVendor] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // Expense & Tagging Modal State
+  const [isTaggingModalOpen, setIsTaggingModalOpen] = useState(false);
+  const [taggingBudget, setTaggingBudget] = useState(null);
+
+  const handleOpenTaggingModal = (budget) => {
+    setTaggingBudget(budget);
+    setIsTaggingModalOpen(true);
+  };
+
+  const handleUpdateBudgetFromTagging = (updatedBudget) => {
+    setProjectBudgets((prev) =>
+      prev.map((item) => (item.id === updatedBudget.id ? updatedBudget : item))
+    );
+    setTaggingBudget(updatedBudget);
+    fetchReportData();
+  };
 
   useEffect(() => {
     fetchCompanyMasters();
@@ -741,28 +760,40 @@ export default function ITBudget360() {
                             {formatRupiah(p.allocatedBudget)}
                           </td>
                           <td className="py-3.5 px-4 text-right">
-                            <div className="font-black text-slate-700 dark:text-slate-350">
-                              {formatRupiah(p.actualCost || 0)}
-                            </div>
-                            <div className="mt-1">
-                              {p.actualCost === 0 ? (
-                                <span className="inline-block px-1.5 py-0.5 text-[9px] font-black bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400 rounded">
-                                  Belum Dipakai (0%)
-                                </span>
-                              ) : p.actualCost < p.allocatedBudget ? (
-                                <span className="inline-block px-1.5 py-0.5 text-[9px] font-black bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 rounded">
-                                  Sebagian ({((p.actualCost / p.allocatedBudget) * 100).toFixed(0)}%)
-                                </span>
-                              ) : p.actualCost === p.allocatedBudget ? (
-                                <span className="inline-block px-1.5 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 rounded">
-                                  Terpakai Penuh
-                                </span>
-                              ) : (
-                                <span className="inline-block px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 rounded animate-pulse">
-                                  Over-Budget ({((p.actualCost / p.allocatedBudget) * 100).toFixed(0)}%)
-                                </span>
-                              )}
-                            </div>
+                            <button
+                              onClick={() => handleOpenTaggingModal(p)}
+                              className="w-full text-right group cursor-pointer hover:opacity-90 transition"
+                              title="Klik untuk lihat / tag rincian transaksi realisasi"
+                            >
+                              <div className="font-black text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 flex items-center justify-end gap-1">
+                                {formatRupiah(p.actualCost || 0)}
+                                <Tag className="w-3 h-3 text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                              <div className="mt-1 flex items-center justify-end gap-1">
+                                {p.actualCost === 0 ? (
+                                  <span className="inline-block px-1.5 py-0.5 text-[9px] font-black bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400 rounded">
+                                    Belum Dipakai (0%)
+                                  </span>
+                                ) : p.actualCost < p.allocatedBudget ? (
+                                  <span className="inline-block px-1.5 py-0.5 text-[9px] font-black bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 rounded">
+                                    Sebagian ({((p.actualCost / p.allocatedBudget) * 100).toFixed(0)}%)
+                                  </span>
+                                ) : p.actualCost === p.allocatedBudget ? (
+                                  <span className="inline-block px-1.5 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 rounded">
+                                    Terpakai Penuh
+                                  </span>
+                                ) : (
+                                  <span className="inline-block px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 rounded animate-pulse">
+                                    Over-Budget ({((p.actualCost / p.allocatedBudget) * 100).toFixed(0)}%)
+                                  </span>
+                                )}
+                                {p.expenses && p.expenses.length > 0 && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 rounded-full">
+                                    {p.expenses.length} tx
+                                  </span>
+                                )}
+                              </div>
+                            </button>
                           </td>
                           <td className="py-3.5 px-4 text-center">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -777,6 +808,14 @@ export default function ITBudget360() {
                           </td>
                           <td className="py-3.5 px-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenTaggingModal(p)}
+                                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition flex items-center gap-1 text-[11px] font-bold"
+                                title="Tag & Catat Realisasi Transaksi"
+                              >
+                                <Tag className="w-3.5 h-3.5" />
+                                {p.expenses?.length ? `(${p.expenses.length})` : ''}
+                              </button>
                               <button
                                 onClick={() => handleOpenEditModal(p)}
                                 className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition"
@@ -1106,6 +1145,20 @@ export default function ITBudget360() {
           </div>
         </div>
       )}
+
+      {/* Tagging / Realisasi Expenses Modal */}
+      <BudgetTaggingModal
+        isOpen={isTaggingModalOpen}
+        onClose={() => {
+          setIsTaggingModalOpen(false);
+          setTaggingBudget(null);
+        }}
+        budget={taggingBudget}
+        token={token}
+        apiUrl={API_URL}
+        onUpdateBudget={handleUpdateBudgetFromTagging}
+        formatRupiah={formatRupiah}
+      />
     </div>
   );
 }
