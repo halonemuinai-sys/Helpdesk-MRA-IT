@@ -55,7 +55,7 @@ enum ProjectCategory {
 
 ## 3. Arsitektur Data Modul IT Cost Overview & Project Budgeting (Helpdesk MRA)
 
-Data anggaran disinkronkan secara langsung dari database **Helpdesk MRA** (`D:\Private Project\Helpdesk MRA`) melalui 2 model utama:
+Data anggaran disinkronkan secara langsung dari database **Helpdesk MRA** (`D:\Private Project\Helpdesk MRA`) melalui 5 pilar utama:
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -108,22 +108,7 @@ model ITProjectBudget {
 
 ---
 
-## 5. Breakdown Kategori Khusus PT Mogems Putri International
-
-- **IT Rental (24 Unit Device):** **Rp 24,20 Juta/bulan** (**Rp 290,38 Juta/tahun**)
-  - *15 Unit iPhone 15 Sales Advisor:* Rp 20,25 Juta/bulan (12 unit disewa dari PT Permata @ Rp 1,35M/bln = Rp 194,40M/thn intercompany).
-  - *8 Unit Laptop Operasional:* Rp 3,35 Juta/bulan (Rp 40,18 Juta/tahun).
-  - *1 Unit Tablet VIP (Samsung Tab S9 FE 5G):* Rp 600 Ribu/bulan (Rp 7,20 Juta/tahun - Expired June 2027).
-- **Network & ISP Toko:** **Rp 3,26 Juta/bulan** (**Rp 39,15 Juta/tahun**)
-  - Padi Dedicated FO 54Mbps HO (Rp 15,15M/thn) + Biznet 100Mbps Store PI (Rp 12M/thn) + Biznet 100Mbps Store Bali (Rp 12M/thn).
-- **Periferal Hardware Toko:** **Rp 20,21 Juta**
-  - Megacount 3D People Counter + Bracket (Rp 12,95M), WD Purple 4TB HDD (Rp 3,40M), NVR Hikvision 16CH (Rp 2,55M), UPS APC 1000VA (Rp 1,31M).
-- **Lisensi & OMEGA Cloud:** **Rp 3,75 Juta/tahun**
-  - OMEGA Cloud Services 3 Counter Store (@ Rp 1,25M/thn). *(Hemat Rp 36M dari maintenance Bvlgari App internal)*.
-
----
-
-## 6. Audit Unbudgeted Items 2026 (Temuan Kunci)
+## 5. Audit Unbudgeted Items 2026 (Temuan Kunci)
 
 1. **Item Unbudgeted Murni Ritel 2026 (~Rp 20,21 Juta Periferal + Rp 7,20 Juta Tablet):**
    - Megacount 3D People Counter (Rp 12.95M) atas permintaan *store traffic analytics*.
@@ -134,23 +119,14 @@ model ITProjectBudget {
 
 ---
 
-## 7. Logika Khusus Perhitungan IT Rental (Expired & Unit Replacement)
-
-$$\text{Total Anggaran Slot 2027} = \sum_{\text{Jan}}^{M_{\text{expired}}} \text{Cost(Unit A)} + \sum_{M_{\text{expired}}+1}^{\text{Des}} \text{Cost(Unit B)}$$
-
-*Contoh Perangkat Fall-due 2027:*
-- `LP13590` (Samsung Tab S9 FE 5G - PT Mogems) -> Expired 16 Juni 2027.
-- `LP14143` (HP ProBook 430 - PT Amanda) -> Expired 03 Oktober 2027.
-- `LP12403` (Dell Latitude 5310 - PT Jemma) -> Expired 09 November 2027.
-
----
-
-## 8. Standar Penulisan 5 File Excel Budget 2027
+## 6. Standar Penulisan 5 File Excel Budget 2027 di `D:\Ares Project\Budget MRA`
 
 - **Satuan Angka:** Juta Rupiah (Rp 150.000.000 ditulis **150** | Rp 22.923.550 ditulis **22.92**).
-- **Daftar File Output di `d:\Ares Project\Budget MRA`:**
-  1. `Request Data for Budget 2027 - PT Permata Landmarq Abadi.xlsx`
-  2. `Request Data for Budget 2027 - PT Mogems Putri International.xlsx`
-  3. `Request Data for Budget 2027 - PT Jemma Putri International.xlsx`
-  4. `Request Data for Budget 2027 - PT Amanda Arumdhani Aishwarya.xlsx`
-  5. `Request Data for Budget 2027 - KONSOLIDASI IT GROUP.xlsx`
+- **Daftar File Excel Terkait (`D:\Ares Project\Budget MRA`):**
+  1. `Budget 2026.xlsx`
+  2. `Request Data for Budget 2027.xlsx`
+  3. `Request Data for Budget 2027 - KONSOLIDASI IT GROUP.xlsx`
+  4. `Request Data for Budget 2027 - PT Permata Landmarq Abadi.xlsx`
+  5. `Request Data for Budget 2027 - PT Mogems Putri International.xlsx`
+  6. `Request Data for Budget 2027 - PT Jemma Putri International.xlsx`
+  7. `Request Data for Budget 2027 - PT Amanda Arumdhani Aishwarya.xlsx`
