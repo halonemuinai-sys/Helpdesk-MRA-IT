@@ -67,6 +67,18 @@ Untuk memberikan transparansi penuh biaya rental perangkat (Laptop, Tablet VIP, 
 
 ---
 
+### E. Fitur Toggle Button Mode Akuntansi (Accrual vs Cash Basis View)
+
+Menu **Budget 360** menyediakan tombol beralih (*Toggle Button Switch*) untuk memilih metode kalkulasi biaya sesuai kebutuhan pengguna:
+1. **Mode Accrual Basis / Amortisasi 12 Bulan (Prorated):**
+   - Tagihan besar berjangka panjang (misal: Hosting/Cloud Rp 120.000.000 / tahun atau Lisensi Software Rp 60.000.000 / tahun) dipecah dan diamortisasi secara merata menjadi **Rp 10.000.000 / bulan** dan **Rp 5.000.000 / bulan**.
+   - **Target User:** Head of Finance, Accounting, & Executive Management untuk analisis P&L (Profit & Loss) bulanan yang stabil.
+2. **Mode Cash Basis / Realisasi Arus Kas Keluar (Actual Cash Outflow):**
+   - Seluruh biaya tagihan diakui utuh pada bulan terjadinya pembayaran kas keluar (misal: Rp 120 Jt di bulan Januari, Rp 0 di bulan Feb-Des).
+   - **Target User:** IT Manager, Purchasing, & Treasury untuk pencocokan arus kas keluar dengan invoice bank.
+
+---
+
 ## 3. Arsitektur Data Modul IT Cost Overview & Project Budgeting (Helpdesk MRA)
 
 Data anggaran disinkronkan secara langsung dari database **Helpdesk MRA** (`D:\Private Project\Helpdesk MRA`) melalui 5 pilar utama:

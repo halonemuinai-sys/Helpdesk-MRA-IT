@@ -156,6 +156,14 @@ Setiap aset rental (Laptop, Mobile/iPhone 15 Sales Advisor, Tablet VIP, POS Term
 
 ---
 
+## 7.2. Fitur Toggle Button Mode Akuntansi (Accrual vs Cash Basis Switch)
+
+Menu **Budget 360** dilengkapi dengan tombol beralih mode kalkulasi biaya (*Toggle Switch*):
+- **Mode Accrual (Prorated 12 Bulan):** Tagihan tahunan besar (Hosting, Software, Cloud) otomatis dipecah rata per 12 bulan untuk analisa stabil tim Accounting & P&L.
+- **Mode Cash Basis (Kas Keluar):** Tagihan diakui utuh pada bulan pembayaran kas keluar untuk pencocokan transaksi bank tim Treasury & IT.
+
+---
+
 ## 8. Standar Penulisan 5 File Excel Budget 2027
 
 - **Satuan Angka:** Juta Rupiah (Rp 150.000.000 ditulis **150** | Rp 22.923.550 ditulis **22.92**).
