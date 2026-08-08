@@ -551,6 +551,17 @@ export default function ITBudget360() {
             const buildMonthlyRowForAccountType = (accType, isCapexType) => {
               const months = Array(12).fill(0);
 
+              // 1. Populate system module monthly breakdown (Rental Assets, Subscriptions, ISP)
+              if (accType === 'Rental Expenses') {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] += (m.assetsRental || 0); });
+              } else if (accType === 'License & Permit') {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] += (m.subscriptions || 0); });
+              } else if (accType === 'Telecommunication') {
+                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] += (m.isp || 0); });
+              }
+
+              // 2. Add granular expenses from projectBudgets
+              let hasProjectExpenses = false;
               projectBudgets.forEach(pb => {
                 const isMatch = isCapexType
                   ? (pb.budgetType === 'CAPEX' || pb.accountType === 'Proyek & Inovasi')
@@ -558,6 +569,7 @@ export default function ITBudget360() {
 
                 if (isMatch) {
                   if (Array.isArray(pb.expenses) && pb.expenses.length > 0) {
+                    hasProjectExpenses = true;
                     pb.expenses.forEach(exp => {
                       const d = new Date(exp.expenseDate);
                       if (d.getFullYear() === parseInt(selectedYear)) {
@@ -565,21 +577,22 @@ export default function ITBudget360() {
                         if (mIdx >= 0 && mIdx < 12) months[mIdx] += (parseFloat(exp.amount) || 0);
                       }
                     });
-                  } else if (pb.actualCost > 0) {
-                    const perMonth = (parseFloat(pb.actualCost) || 0) / 12;
-                    for (let i = 0; i < 12; i++) months[i] += perMonth;
                   }
                 }
               });
 
-              if (accType === 'Rental Expenses' && months.every(v => v === 0)) {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.assetsRental || 0; });
-              }
-              if (accType === 'License & Permit' && months.every(v => v === 0)) {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.subscriptions || 0; });
-              }
-              if (accType === 'Telecommunication' && months.every(v => v === 0)) {
-                monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.isp || 0; });
+              // 3. Fallback: If months is still completely 0 and matching projectBudgets have actualCost > 0
+              if (!hasProjectExpenses && months.every(v => v === 0)) {
+                projectBudgets.forEach(pb => {
+                  const isMatch = isCapexType
+                    ? (pb.budgetType === 'CAPEX' || pb.accountType === 'Proyek & Inovasi')
+                    : (pb.budgetType !== 'CAPEX' && (pb.accountType === accType || (!pb.accountType && accType === 'Utilities')));
+
+                  if (isMatch && pb.actualCost > 0) {
+                    const perMonth = (parseFloat(pb.actualCost) || 0) / 12;
+                    for (let i = 0; i < 12; i++) months[i] += perMonth;
+                  }
+                });
               }
 
               return months;
