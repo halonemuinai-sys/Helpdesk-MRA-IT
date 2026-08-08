@@ -31,7 +31,8 @@ import {
   X,
   FileSpreadsheet,
   Save,
-  Tag
+  Tag,
+  BarChart2
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
 import BudgetTaggingModal from '../components/budgets/BudgetTaggingModal';
@@ -81,7 +82,7 @@ export default function ITBudget360() {
   const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [viewMode, setViewMode] = useState('accrual'); // 'accrual' (Prorated) vs 'cash' (Cash Outflow)
-  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'projects' | 'departmental' | 'consolidation'
+  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'projects' | 'departmental' | 'consolidation' | 'pillar-recap'
 
   // Data State
   const [companies, setCompanies] = useState([]);
@@ -480,6 +481,17 @@ export default function ITBudget360() {
         >
           <Building2 className="w-4 h-4" />
           Konsolidasi Group &amp; Intercompany
+        </button>
+        <button
+          onClick={() => setActiveTab('pillar-recap')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === 'pillar-recap'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
+          }`}
+        >
+          <BarChart2 className="w-4 h-4" />
+          5 Pilar: Budget vs Realisasi
         </button>
       </div>
 
@@ -905,6 +917,255 @@ export default function ITBudget360() {
               </div>
             </div>
           )}
+
+          {/* TAB 5: 5 PILAR IT — BUDGET VS REALISASI */}
+          {activeTab === 'pillar-recap' && (() => {
+            const CATEGORY_META = {
+              INFRASTRUCTURE: { label: 'Infrastructure & Networking', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' },
+              SOFTWARE_DEVELOPMENT: { label: 'Software Development', color: 'bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300' },
+              CYBERSECURITY: { label: 'Cybersecurity & Audit', color: 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300' },
+              DIGITAL_TRANSFORMATION: { label: 'Digital Transformation', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' },
+              AI_INNOVATION: { label: 'AI & Innovation', color: 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300' },
+              HARDWARE_REFRESH: { label: 'Hardware Refresh', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' },
+              OTHERS: { label: 'Lainnya', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300' },
+            };
+
+            // Map OPEX projectBudgets to operational pillars by accountType
+            const pillarPagu = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
+            projectBudgets.forEach(pb => {
+              const alloc = pb.allocatedBudget || 0;
+              if (pb.budgetType === 'CAPEX') {
+                pillarPagu.projects += alloc;
+              } else {
+                if (pb.accountType === 'Rental Expenses') pillarPagu.assetsRental += alloc;
+                else if (pb.accountType === 'License & Permit') pillarPagu.subscriptions += alloc;
+                else if (pb.accountType === 'Utilities') pillarPagu.isp += alloc;
+                else if (pb.accountType === 'Repair & Maintenance') pillarPagu.peripherals += alloc;
+                else pillarPagu.projects += alloc;
+              }
+            });
+
+            const pillars = [
+              { key: 'peripherals', label: 'Periferal Hardware', icon: Package, colorClass: 'text-blue-600 dark:text-blue-400', bgClass: 'bg-blue-50 dark:bg-blue-950/40', barClass: 'bg-blue-500', realisasi: reportData.grandTotal.peripherals, pagu: pillarPagu.peripherals },
+              { key: 'assetsRental', label: 'Sewa Aset Device', icon: Laptop, colorClass: 'text-amber-600 dark:text-amber-400', bgClass: 'bg-amber-50 dark:bg-amber-950/40', barClass: 'bg-amber-500', realisasi: reportData.grandTotal.assetsRental, pagu: pillarPagu.assetsRental },
+              { key: 'subscriptions', label: 'Subscriptions & Lisensi', icon: CreditCard, colorClass: 'text-violet-600 dark:text-violet-400', bgClass: 'bg-violet-50 dark:bg-violet-950/40', barClass: 'bg-violet-500', realisasi: reportData.grandTotal.subscriptions, pagu: pillarPagu.subscriptions },
+              { key: 'isp', label: 'Internet & Jaringan (ISP)', icon: Wifi, colorClass: 'text-cyan-600 dark:text-cyan-400', bgClass: 'bg-cyan-50 dark:bg-cyan-950/40', barClass: 'bg-cyan-500', realisasi: reportData.grandTotal.isp, pagu: pillarPagu.isp },
+              { key: 'projects', label: 'Proyek & Inovasi IT', icon: Sparkles, colorClass: 'text-emerald-600 dark:text-emerald-400', bgClass: 'bg-emerald-50 dark:bg-emerald-950/40', barClass: 'bg-emerald-500', realisasi: reportData.projectBudgetsSummary.totalActual, pagu: reportData.projectBudgetsSummary.totalPlan },
+            ];
+
+            const totalPagu = pillars.reduce((s, p) => s + p.pagu, 0);
+            const totalRealisasi = pillars.reduce((s, p) => s + p.realisasi, 0);
+
+            const catGroups = {};
+            projectBudgets.forEach(pb => {
+              const cat = pb.category || 'OTHERS';
+              if (!catGroups[cat]) catGroups[cat] = { items: [], totalPagu: 0, totalActual: 0 };
+              catGroups[cat].items.push(pb);
+              catGroups[cat].totalPagu += pb.allocatedBudget || 0;
+              catGroups[cat].totalActual += pb.actualCost || 0;
+            });
+
+            return (
+              <div className="space-y-6">
+                {/* Section 1: 5 Pillar Cards */}
+                <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
+                  {pillars.map((p, i) => {
+                    const serapanPct = p.pagu > 0 ? Math.round((p.realisasi / p.pagu) * 100) : null;
+                    const IconComp = p.icon;
+                    return (
+                      <div key={p.key} className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className={`w-8 h-8 ${p.bgClass} rounded-xl flex items-center justify-center`}>
+                            <IconComp className={`w-4 h-4 ${p.colorClass}`} />
+                          </div>
+                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Pilar {i + 1}</span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-500 mb-0.5">{p.label}</p>
+                          <h4 className={`text-sm font-black ${p.colorClass}`}>{formatRupiah(p.realisasi)}</h4>
+                          {p.pagu > 0
+                            ? <p className="text-[9px] text-gray-400 mt-0.5">Pagu: {formatRupiah(p.pagu)}</p>
+                            : <p className="text-[9px] text-gray-400 mt-0.5">Pagu: Tidak Dianggarkan</p>
+                          }
+                        </div>
+                        {serapanPct !== null && (
+                          <div>
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                              <div className={`${serapanPct > 100 ? 'bg-rose-500' : p.barClass} h-full rounded-full transition-all`} style={{ width: `${Math.min(serapanPct, 100)}%` }}></div>
+                            </div>
+                            <p className={`text-[9px] font-bold mt-1 ${serapanPct > 100 ? 'text-rose-500' : serapanPct > 90 ? 'text-amber-500' : p.colorClass}`}>{serapanPct}% Terpakai</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Section 2: Comparison Table */}
+                <div className="glass-panel rounded-3xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60 shadow-sm">
+                  <div className="px-5 py-4 border-b border-slate-200/50 dark:border-slate-800/40 flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4 text-indigo-500" />
+                    <h3 className="text-sm font-black text-slate-800 dark:text-white">Perbandingan Pagu vs Realisasi per Pilar IT</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 dark:bg-slate-800/50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                          <th className="py-3 px-4">Pilar IT</th>
+                          <th className="py-3 px-4 text-right">Pagu Anggaran</th>
+                          <th className="py-3 px-4 text-right">Realisasi</th>
+                          <th className="py-3 px-4 text-right">Selisih</th>
+                          <th className="py-3 px-4">% Serapan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/50 text-xs">
+                        {pillars.map((p, i) => {
+                          const selisih = p.pagu - p.realisasi;
+                          const serapanPct = p.pagu > 0 ? Math.round((p.realisasi / p.pagu) * 100) : null;
+                          const IconComp = p.icon;
+                          return (
+                            <tr key={p.key} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-6 h-6 ${p.bgClass} rounded-lg flex items-center justify-center shrink-0`}>
+                                    <IconComp className={`w-3.5 h-3.5 ${p.colorClass}`} />
+                                  </div>
+                                  <span className="font-bold text-slate-800 dark:text-white">{p.label}</span>
+                                  <span className="text-[9px] text-gray-400 font-semibold">#{i + 1}</span>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 text-right font-bold text-slate-700 dark:text-slate-200">
+                                {p.pagu > 0 ? formatRupiah(p.pagu) : <span className="text-gray-400">—</span>}
+                              </td>
+                              <td className={`py-3.5 px-4 text-right font-black ${p.colorClass}`}>
+                                {formatRupiah(p.realisasi)}
+                              </td>
+                              <td className="py-3.5 px-4 text-right font-bold">
+                                {p.pagu > 0
+                                  ? <span className={selisih >= 0 ? 'text-emerald-600' : 'text-rose-500'}>{selisih >= 0 ? '+' : ''}{formatRupiah(selisih)}</span>
+                                  : <span className="text-gray-400">—</span>
+                                }
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {serapanPct !== null ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-20 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                      <div className={`${serapanPct > 100 ? 'bg-rose-500' : serapanPct > 90 ? 'bg-amber-500' : p.barClass} h-full rounded-full`} style={{ width: `${Math.min(serapanPct, 100)}%` }}></div>
+                                    </div>
+                                    <span className={`font-black text-[10px] ${serapanPct > 100 ? 'text-rose-500' : serapanPct > 90 ? 'text-amber-500' : 'text-emerald-600'}`}>{serapanPct}%</span>
+                                  </div>
+                                ) : <span className="text-gray-400 text-[10px]">N/A</span>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-t-2 border-slate-300 dark:border-slate-700 text-xs font-black">
+                          <td className="py-3.5 px-4 text-slate-800 dark:text-white">TOTAL 5 PILAR IT</td>
+                          <td className="py-3.5 px-4 text-right text-slate-700 dark:text-slate-200">
+                            {totalPagu > 0 ? formatRupiah(totalPagu) : '—'}
+                          </td>
+                          <td className="py-3.5 px-4 text-right text-indigo-600 dark:text-indigo-400">{formatRupiah(totalRealisasi)}</td>
+                          <td className="py-3.5 px-4 text-right">
+                            {totalPagu > 0
+                              ? <span className={totalPagu - totalRealisasi >= 0 ? 'text-emerald-600' : 'text-rose-500'}>{formatRupiah(totalPagu - totalRealisasi)}</span>
+                              : '—'
+                            }
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {totalPagu > 0
+                              ? <span className="font-black text-[10px] text-indigo-600 dark:text-indigo-400">{Math.round((totalRealisasi / totalPagu) * 100)}%</span>
+                              : <span className="text-gray-400 text-[10px]">N/A</span>
+                            }
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="px-5 py-2.5 border-t border-slate-200/40 dark:border-slate-800/40">
+                    <p className="text-[10px] text-gray-400">
+                      * Realisasi Pilar 1–4 diambil dari IT Cost Overview (total transaksi aktual). Pilar 5 (Proyek & Inovasi) diambil dari realisasi yang di-tag di Budget 360. Pagu Pilar 1–4 dari item OPEX Budget 360 yang sesuai tipe akun.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Section 3: Budget Items by Category */}
+                {Object.keys(catGroups).length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 text-sm font-semibold">Belum ada item anggaran terdaftar.</div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                      <Tag className="w-4 h-4 text-indigo-500" />
+                      <h3 className="text-sm font-black text-slate-800 dark:text-white">Rincian per Kategori Proyek IT (Budget vs Realisasi)</h3>
+                    </div>
+                    {Object.entries(catGroups).map(([cat, group]) => {
+                      const catMeta = CATEGORY_META[cat] || CATEGORY_META.OTHERS;
+                      const serapanPct = group.totalPagu > 0 ? Math.round((group.totalActual / group.totalPagu) * 100) : 0;
+                      return (
+                        <div key={cat} className="glass-panel rounded-2xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60 shadow-sm">
+                          <div className="flex items-center justify-between px-5 py-3 bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-800/40">
+                            <div className="flex items-center gap-3">
+                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${catMeta.color}`}>{cat}</span>
+                              <span className="text-xs font-black text-slate-700 dark:text-slate-200">{catMeta.label}</span>
+                              <span className="text-[10px] text-gray-400 font-semibold">{group.items.length} item</span>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs">
+                              <div className="text-right hidden sm:block">
+                                <div className="text-[10px] text-gray-400">Pagu</div>
+                                <div className="font-black text-slate-700 dark:text-slate-200">{formatRupiah(group.totalPagu)}</div>
+                              </div>
+                              <div className="text-right hidden sm:block">
+                                <div className="text-[10px] text-gray-400">Realisasi</div>
+                                <div className={`font-black ${group.totalActual > group.totalPagu ? 'text-rose-500' : 'text-emerald-600'}`}>{formatRupiah(group.totalActual)}</div>
+                              </div>
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${serapanPct > 100 ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400' : serapanPct > 90 ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'}`}>
+                                {serapanPct}% Terserap
+                              </span>
+                            </div>
+                          </div>
+                          <div className="divide-y divide-slate-200/40 dark:divide-slate-800/40">
+                            {group.items.map(pb => {
+                              const pct = pb.allocatedBudget > 0 ? Math.round(((pb.actualCost || 0) / pb.allocatedBudget) * 100) : 0;
+                              const statusColor = {
+                                'PROPOSED': 'bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-400',
+                                'APPROVED': 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400',
+                                'IN_PROGRESS': 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400',
+                                'COMPLETED': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400',
+                              }[pb.status] || 'bg-slate-100 text-slate-600';
+                              return (
+                                <div key={pb.id} className="px-5 py-3 flex flex-wrap items-center gap-3 text-xs hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-slate-800 dark:text-white truncate">{pb.projectCode} — {pb.projectName}</p>
+                                    <p className="text-[10px] text-gray-400 mt-0.5">{pb.companyMaster?.name || '—'} · {pb.budgetType} · {pb.accountType || '—'}</p>
+                                  </div>
+                                  <div className="flex items-center gap-4 shrink-0">
+                                    <div className="text-right">
+                                      <div className="text-[10px] text-gray-400">Pagu</div>
+                                      <div className="font-black text-slate-700 dark:text-slate-200">{formatRupiah(pb.allocatedBudget)}</div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-[10px] text-gray-400">Realisasi</div>
+                                      <div className={`font-black ${(pb.actualCost || 0) > pb.allocatedBudget ? 'text-rose-500' : 'text-emerald-600'}`}>{formatRupiah(pb.actualCost || 0)}</div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-16 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                        <div className={`${pct > 100 ? 'bg-rose-500' : pct > 90 ? 'bg-amber-500' : 'bg-emerald-500'} h-full rounded-full`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                                      </div>
+                                      <span className={`font-black text-[9px] min-w-[28px] ${pct > 100 ? 'text-rose-500' : pct > 90 ? 'text-amber-500' : 'text-emerald-600'}`}>{pct}%</span>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black ${statusColor}`}>{pb.status}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </>
       )}
 
