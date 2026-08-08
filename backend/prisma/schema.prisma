@@ -213,6 +213,9 @@ model ITSubscription {
   // Kapasitas Bandwidth (khususnya untuk ISP, e.g. "100 Mbps Dedicated 1:1", "1 Gbps")
   bandwidth               String?
 
+  // Status Anggaran Tahunan (Budgeted vs Unbudgeted / Non-Budget)
+  isBudgeted              Boolean          @default(true)
+
   // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
   replacedSubscriptionId  String?          @unique
   replacedSubscription    ITSubscription?  @relation("SubscriptionReplacement", fields: [replacedSubscriptionId], references: [id])
@@ -263,6 +266,9 @@ model Asset {
   rentalCost      Float         // Monthly rental fee in IDR
   rentalStart     DateTime      // Lease start date
   rentalEnd       DateTime      // Lease end date
+  
+  // Status Anggaran Tahunan (Budgeted vs Unbudgeted / Non-Budget)
+  isBudgeted      Boolean       @default(true)
   
   notes           String?       // Additional remarks
   journey         String?       @default("") // Timeline of handovers, returns, and repairs

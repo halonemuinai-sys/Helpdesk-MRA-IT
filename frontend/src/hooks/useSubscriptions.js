@@ -35,6 +35,7 @@ export default function useSubscriptions({ token }) {
   const [formLocation, setFormLocation] = useState('');
   const [formContractNumber, setFormContractNumber] = useState('');
   const [formBandwidth, setFormBandwidth] = useState('');
+  const [formIsBudgeted, setFormIsBudgeted] = useState(true);
   const [formBillingCycle, setFormBillingCycle] = useState('1 Tahun');
   const [formCost, setFormCost] = useState('');
   const [formStartDate, setFormStartDate] = useState('');
@@ -136,6 +137,7 @@ export default function useSubscriptions({ token }) {
     setFormLocation('');
     setFormContractNumber('');
     setFormBandwidth('');
+    setFormIsBudgeted(true);
     setFormBillingCycle('1 Tahun');
     setFormCost('');
     const today = new Date().toISOString().split('T')[0];
@@ -165,6 +167,7 @@ export default function useSubscriptions({ token }) {
     setFormLocation(sub.location || '');
     setFormContractNumber(sub.contractNumber || '');
     setFormBandwidth(sub.bandwidth || '');
+    setFormIsBudgeted(sub.isBudgeted !== undefined ? sub.isBudgeted : true);
     setFormBillingCycle(sub.billingCycle);
     setFormCost(formatNumberForInput(sub.cost));
     setFormStartDate(sub.startDate.split('T')[0]);
@@ -191,6 +194,7 @@ export default function useSubscriptions({ token }) {
     setFormLocation(sub.location || '');
     setFormContractNumber(sub.contractNumber || '');
     setFormBandwidth(sub.bandwidth || '');
+    setFormIsBudgeted(sub.isBudgeted !== undefined ? sub.isBudgeted : true);
     setFormBillingCycle(sub.billingCycle);
     setFormCost(formatNumberForInput(sub.cost));
     const oldExpiry = new Date(sub.expiryDate);
@@ -241,6 +245,7 @@ export default function useSubscriptions({ token }) {
         location: formLocation || null,
         contractNumber: formContractNumber || null,
         bandwidth: formBandwidth || null,
+        isBudgeted: formIsBudgeted,
         billingCycle: formBillingCycle,
         cost: parseFloat(formCost.toString().replace(/\./g, '')) || 0,
         startDate: new Date(formStartDate).toISOString(),
@@ -361,6 +366,7 @@ export default function useSubscriptions({ token }) {
     formLocation, setFormLocation,
     formContractNumber, setFormContractNumber,
     formBandwidth, setFormBandwidth,
+    formIsBudgeted, setFormIsBudgeted,
     formBillingCycle, setFormBillingCycle,
     formCost, setFormCost,
     formStartDate, setFormStartDate,

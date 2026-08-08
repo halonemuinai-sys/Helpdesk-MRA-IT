@@ -107,6 +107,7 @@ export default function Subscriptions({ user, token }) {
         formLocation={h.formLocation} setFormLocation={h.setFormLocation}
         formContractNumber={h.formContractNumber} setFormContractNumber={h.setFormContractNumber}
         formBandwidth={h.formBandwidth} setFormBandwidth={h.setFormBandwidth}
+        formIsBudgeted={h.formIsBudgeted} setFormIsBudgeted={h.setFormIsBudgeted}
         formBillingCycle={h.formBillingCycle} setFormBillingCycle={h.setFormBillingCycle}
         formCost={h.formCost} setFormCost={h.setFormCost}
         formStartDate={h.formStartDate} setFormStartDate={h.setFormStartDate}

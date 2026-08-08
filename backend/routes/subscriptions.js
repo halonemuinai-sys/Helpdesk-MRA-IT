@@ -83,6 +83,7 @@ router.post('/', verifyToken, async (req, res, next) => {
       location,
       contractNumber,
       bandwidth,
+      isBudgeted,
       billingCycle, 
       cost, 
       startDate, 
@@ -119,6 +120,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         location: location || null,
         contractNumber: contractNumber || null,
         bandwidth: bandwidth || null,
+        isBudgeted: isBudgeted !== undefined ? Boolean(isBudgeted) : true,
         billingCycle,
         cost: parseFloat(cost),
         startDate: new Date(startDate),
@@ -163,6 +165,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       location,
       contractNumber,
       bandwidth,
+      isBudgeted,
       billingCycle,
       cost,
       startDate,
@@ -193,6 +196,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (location !== undefined) updateData.location = location || null;
     if (contractNumber !== undefined) updateData.contractNumber = contractNumber || null;
     if (bandwidth !== undefined) updateData.bandwidth = bandwidth || null;
+    if (isBudgeted !== undefined) updateData.isBudgeted = Boolean(isBudgeted);
     if (billingCycle !== undefined) updateData.billingCycle = billingCycle;
     if (cost !== undefined) updateData.cost = parseFloat(cost);
     if (startDate !== undefined) updateData.startDate = new Date(startDate);

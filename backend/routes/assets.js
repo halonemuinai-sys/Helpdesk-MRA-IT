@@ -360,6 +360,7 @@ router.post('/', verifyToken, async (req, res, next) => {
       rentalCost,
       rentalStart,
       rentalEnd,
+      isBudgeted,
       notes,
       userId,
       companyId,
@@ -426,6 +427,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         rentalCost: parseFloat(rentalCost),
         rentalStart: new Date(rentalStart),
         rentalEnd: new Date(rentalEnd),
+        isBudgeted: isBudgeted !== undefined ? Boolean(isBudgeted) : true,
         notes: notes || null,
         journey: journeyLog,
         userId: userId || null,
@@ -475,6 +477,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       rentalCost,
       rentalStart,
       rentalEnd,
+      isBudgeted,
       notes,
       userId,
       companyId,
@@ -527,6 +530,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (rentalCost !== undefined) updateData.rentalCost = parseFloat(rentalCost);
     if (rentalStart !== undefined) updateData.rentalStart = new Date(rentalStart);
     if (rentalEnd !== undefined) updateData.rentalEnd = new Date(rentalEnd);
+    if (isBudgeted !== undefined) updateData.isBudgeted = Boolean(isBudgeted);
     if (notes !== undefined) updateData.notes = notes || null;
     if (vendor !== undefined) updateData.vendor = vendor || null;
     

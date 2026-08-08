@@ -103,9 +103,16 @@ export default function SubscriptionTable({
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <span className="inline-block bg-slate-100 dark:bg-slate-850 px-2 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300">
-                          {sub.category}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="inline-block bg-slate-100 dark:bg-slate-850 px-2 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300">
+                            {sub.category}
+                          </span>
+                          {sub.isBudgeted === false && (
+                            <span className="inline-block bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded text-[9px] font-extrabold" title="Diluar Anggaran Tahunan">
+                              Unbudgeted
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-6 text-slate-500 dark:text-slate-400">{sub.billingCycle}</td>
                       <td className="py-4 px-6 font-mono text-gray-850 dark:text-slate-100 font-bold">{formatRupiah(sub.cost)}</td>
