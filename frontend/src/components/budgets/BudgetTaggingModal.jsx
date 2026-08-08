@@ -294,6 +294,30 @@ export default function BudgetTaggingModal({
   const remaining = budget.allocatedBudget - totalActual;
   const usagePercentage = budget.allocatedBudget > 0 ? ((totalActual / budget.allocatedBudget) * 100) : 0;
 
+  // Filter out items that are ALREADY tagged in expenses so they disappear from selection lists
+  const availableSubscriptions = subscriptions.filter(sub => {
+    return !expenses.some(exp =>
+      (exp.invoiceNumber && sub.contractNumber && exp.invoiceNumber === sub.contractNumber) ||
+      (exp.invoiceNumber && exp.invoiceNumber.includes(`SUB-${sub.id.substring(0, 6)}`)) ||
+      (exp.description && sub.name && exp.description.toLowerCase().includes(sub.name.toLowerCase())) ||
+      (exp.description && sub.providerName && exp.description.toLowerCase().includes(sub.providerName.toLowerCase()))
+    );
+  });
+
+  const availableRentalAssets = rentalAssets.filter(asset => {
+    return !expenses.some(exp =>
+      (exp.invoiceNumber && exp.invoiceNumber === asset.assetTag) ||
+      (exp.description && asset.assetTag && exp.description.includes(asset.assetTag))
+    );
+  });
+
+  const availablePeripheralInvoices = peripheralInvoices.filter(inv => {
+    return !expenses.some(exp =>
+      (exp.invoiceNumber && inv.invoiceRef && exp.invoiceNumber === inv.invoiceRef) ||
+      (exp.description && inv.invoiceRef && exp.description.includes(inv.invoiceRef))
+    );
+  });
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex justify-end animate-fade-in">
       <div className="bg-white dark:bg-slate-900 w-full max-w-2xl min-h-screen shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 transition-all duration-300">
@@ -381,12 +405,14 @@ export default function BudgetTaggingModal({
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Pilih kontrak subskripsi/ISP yang aktif untuk langsung ditambatkan sebagai realisasi pengeluaran item budget ini.
             </p>
-            {subscriptions.length === 0 ? (
-              <p className="text-[11px] text-slate-400 italic">Tidak ada subskripsi aktif untuk entitas ini.</p>
+            {availableSubscriptions.length === 0 ? (
+              <p className="text-[11px] text-slate-400 italic">
+                {subscriptions.length === 0 ? 'Tidak ada subskripsi aktif untuk entitas ini.' : '✓ Seluruh layanan subskripsi yang tersedia telah ditambatkan.'}
+              </p>
             ) : (
               <>
                 <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
-                  {subscriptions.map((sub) => {
+                  {availableSubscriptions.map((sub) => {
                     const checked = selectedSubIds.includes(sub.id);
                     return (
                       <label key={sub.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition text-xs ${checked ? 'bg-indigo-50 dark:bg-indigo-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
@@ -433,12 +459,14 @@ export default function BudgetTaggingModal({
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Pilih aset sewa aktif untuk ditambatkan sebagai realisasi sewa tahunan pada item anggaran ini.
             </p>
-            {rentalAssets.length === 0 ? (
-              <p className="text-[11px] text-slate-400 italic">Tidak ada aset sewa aktif untuk entitas ini.</p>
+            {availableRentalAssets.length === 0 ? (
+              <p className="text-[11px] text-slate-400 italic">
+                {rentalAssets.length === 0 ? 'Tidak ada aset sewa aktif untuk entitas ini.' : '✓ Seluruh aset sewa aktif yang tersedia telah ditambatkan.'}
+              </p>
             ) : (
               <>
                 <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
-                  {rentalAssets.map((asset) => {
+                  {availableRentalAssets.map((asset) => {
                     const checked = selectedAssetIds.includes(asset.id);
                     const rs = asset.rentalStatus;
                     const autoMonths = calcAutoMonths(asset);
@@ -511,12 +539,14 @@ export default function BudgetTaggingModal({
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Pilih invoice pembelian periferal untuk ditambatkan sebagai realisasi pengeluaran item anggaran ini.
             </p>
-            {peripheralInvoices.length === 0 ? (
-              <p className="text-[11px] text-slate-400 italic">Tidak ada invoice periferal untuk entitas ini.</p>
+            {availablePeripheralInvoices.length === 0 ? (
+              <p className="text-[11px] text-slate-400 italic">
+                {peripheralInvoices.length === 0 ? 'Tidak ada invoice periferal untuk entitas ini.' : '✓ Seluruh invoice periferal yang tersedia telah ditambatkan.'}
+              </p>
             ) : (
               <>
                 <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
-                  {peripheralInvoices.map((inv) => {
+                  {availablePeripheralInvoices.map((inv) => {
                     const checked = selectedInvoiceIds.includes(inv.id);
                     return (
                       <label key={inv.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition text-xs ${checked ? 'bg-blue-50 dark:bg-blue-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
