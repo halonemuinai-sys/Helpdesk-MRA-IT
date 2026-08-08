@@ -773,68 +773,6 @@ export default function ITBudget360() {
                   </div>
                 </div>
 
-                {/* Visual Chart: Tren Realisasi Biaya Bulanan (Jan - Des) */}
-                <div className="bg-white/80 dark:bg-slate-900/60 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                      <BarChart2 className="w-4 h-4 text-emerald-500" />
-                      Grafik Realisasi Biaya IT Bulanan (Januari - Desember {selectedYear})
-                    </h3>
-                    <div className="flex items-center gap-4 text-[10px] font-bold">
-                      <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                        <span className="w-2.5 h-2.5 bg-blue-500 rounded-sm inline-block" /> OPEX
-                      </span>
-                      <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
-                        <span className="w-2.5 h-2.5 bg-purple-500 rounded-sm inline-block" /> CAPEX
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Visual Monthly Bar Chart */}
-                  <div className="pt-4 pb-2">
-                    <div className="h-44 flex items-end justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-                      {monthNames.map((mName, idx) => {
-                        const opexVal = opexMonthsTotal[idx] || 0;
-                        const capexVal = capexMonthsTotal[idx] || 0;
-                        const totalVal = opexVal + capexVal;
-
-                        const opexH = maxMonthlyVal > 0 ? (opexVal / maxMonthlyVal) * 100 : 0;
-                        const capexH = maxMonthlyVal > 0 ? (capexVal / maxMonthlyVal) * 100 : 0;
-
-                        return (
-                          <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative h-full justify-end">
-                            {/* Hover Tooltip */}
-                            <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-mono py-1 px-2.5 rounded-lg whitespace-nowrap z-20 pointer-events-none shadow-xl border border-slate-700">
-                              <p className="font-bold border-b border-slate-700 pb-0.5 mb-0.5">{mName} {selectedYear}</p>
-                              <p className="text-blue-300">OPEX: {formatRupiah(opexVal)}</p>
-                              <p className="text-purple-300">CAPEX: {formatRupiah(capexVal)}</p>
-                              <p className="text-emerald-400 font-bold mt-0.5">Total: {formatRupiah(totalVal)}</p>
-                            </div>
-
-                            {/* Bar Stack */}
-                            <div className="w-full max-w-[28px] flex flex-col items-center justify-end rounded-t-lg overflow-hidden bg-slate-100 dark:bg-slate-800/60 transition-all group-hover:ring-2 group-hover:ring-emerald-500/50">
-                              {capexVal > 0 && (
-                                <div
-                                  className="w-full bg-purple-500 transition-all duration-500"
-                                  style={{ height: `${capexH}%` }}
-                                />
-                              )}
-                              {opexVal > 0 && (
-                                <div
-                                  className="w-full bg-blue-500 transition-all duration-500"
-                                  style={{ height: `${opexH}%` }}
-                                />
-                              )}
-                            </div>
-
-                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{mName}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Tabel Matriks 12 Bulan (Matrix Table 1 Tahun per Bulan) */}
                 <div className="bg-white/80 dark:bg-slate-900/60 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
