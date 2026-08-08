@@ -36,6 +36,7 @@ echo "[3/4] Menyiapkan Dependensi Backend & Prisma..."
 cd "$APP_DIR/backend"
 npm install --prefer-offline
 npx prisma generate
+npx prisma migrate deploy
 echo "✓ Dependensi backend & Prisma Client siap."
 echo ""
 
