@@ -37,6 +37,12 @@ import {
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
 import BudgetTaggingModal from '../components/budgets/BudgetTaggingModal';
+import {
+  OPEX_ACCOUNT_TYPES,
+  CAPEX_ACCOUNT_TYPES,
+  buildMonthlyRowForAccountType,
+  getPaguForAccountType
+} from '../utils/costOverviewCalculations';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -535,90 +541,9 @@ export default function ITBudget360() {
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
             const monthlyTrend = reportData?.monthlyTrend || [];
 
-            // Exact Account Types matching system matrix & user's Rekapitulasi Budget vs Realisasi
-            const OPEX_ACCOUNT_TYPES = [
-              { id: 'Utilities', name: 'Utilities', type: 'OPEX' },
-              { id: 'License & Permit', name: 'License & Permit', type: 'OPEX' },
-              { id: 'Repair & Maintenance', name: 'Repair & Maintenance', type: 'OPEX' },
-              { id: 'Rental Expenses', name: 'Rental Expenses', type: 'OPEX' },
-              { id: 'Telecommunication', name: 'Telecommunication', type: 'OPEX' }
-            ];
-
-            const CAPEX_ACCOUNT_TYPES = [
-              { id: 'Proyek & Inovasi', name: 'Proyek & Inovasi', type: 'CAPEX' }
-            ];
-
-            const buildMonthlyRowForAccountType = (accType, isCapexType) => {
-              const months = Array(12).fill(0);
-
-              // 1. Add granular expenses from projectBudgets if tagged
-              let hasProjectExpenses = false;
-              projectBudgets.forEach(pb => {
-                const isMatch = isCapexType
-                  ? (pb.budgetType === 'CAPEX' || pb.accountType === 'Proyek & Inovasi')
-                  : (pb.budgetType !== 'CAPEX' && (pb.accountType === accType || (!pb.accountType && accType === 'Utilities')));
-
-                if (isMatch) {
-                  if (Array.isArray(pb.expenses) && pb.expenses.length > 0) {
-                    hasProjectExpenses = true;
-                    pb.expenses.forEach(exp => {
-                      const d = new Date(exp.expenseDate);
-                      if (d.getFullYear() === parseInt(selectedYear)) {
-                        const mIdx = d.getMonth();
-                        if (mIdx >= 0 && mIdx < 12) months[mIdx] += (parseFloat(exp.amount) || 0);
-                      }
-                    });
-                  }
-                }
-              });
-
-              // 2. If no granular project expenses tagged, use system module monthly breakdown (Rental Assets, Subscriptions, ISP)
-              if (!hasProjectExpenses) {
-                if (accType === 'Rental Expenses') {
-                  monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.assetsRental || 0; });
-                } else if (accType === 'License & Permit') {
-                  monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.subscriptions || 0; });
-                } else if (accType === 'Telecommunication') {
-                  monthlyTrend.forEach((m, idx) => { if (idx < 12) months[idx] = m.isp || 0; });
-                }
-              }
-
-              // 3. Fallback: If months is still completely 0 and matching projectBudgets have actualCost > 0
-              if (!hasProjectExpenses && months.every(v => v === 0)) {
-                projectBudgets.forEach(pb => {
-                  const isMatch = isCapexType
-                    ? (pb.budgetType === 'CAPEX' || pb.accountType === 'Proyek & Inovasi')
-                    : (pb.budgetType !== 'CAPEX' && (pb.accountType === accType || (!pb.accountType && accType === 'Utilities')));
-
-                  if (isMatch && pb.actualCost > 0) {
-                    const perMonth = (parseFloat(pb.actualCost) || 0) / 12;
-                    for (let i = 0; i < 12; i++) months[i] += perMonth;
-                  }
-                });
-              }
-
-              return months;
-            };
-
-            const getPaguForAccountType = (accType, isCapexType) => {
-              let sum = 0;
-              projectBudgets.forEach(pb => {
-                const isMatch = isCapexType
-                  ? (pb.budgetType === 'CAPEX' || pb.accountType === 'Proyek & Inovasi')
-                  : (pb.budgetType !== 'CAPEX' && (pb.accountType === accType || (!pb.accountType && accType === 'Utilities')));
-                if (isMatch) sum += (parseFloat(pb.allocatedBudget) || 0);
-              });
-
-              if (accType === 'Rental Expenses' && sum === 0) sum = reportData?.grandTotal?.assetsRental || 0;
-              if (accType === 'License & Permit' && sum === 0) sum = reportData?.grandTotal?.subscriptions || 0;
-              if (accType === 'Telecommunication' && sum === 0) sum = reportData?.grandTotal?.isp || 0;
-
-              return sum;
-            };
-
             const opexCategories = OPEX_ACCOUNT_TYPES.map(acc => {
-              const months = buildMonthlyRowForAccountType(acc.id, false);
-              const budget = getPaguForAccountType(acc.id, false);
+              const months = buildMonthlyRowForAccountType(acc.id, false, projectBudgets, monthlyTrend, selectedYear);
+              const budget = getPaguForAccountType(acc.id, false, projectBudgets, reportData);
               const ytdActual = months.reduce((a, b) => a + b, 0);
               const variance = budget - ytdActual;
               const utilPct = budget > 0 ? ((ytdActual / budget) * 100).toFixed(0) : (ytdActual > 0 ? '100' : '0');
@@ -626,8 +551,8 @@ export default function ITBudget360() {
             });
 
             const capexCategories = CAPEX_ACCOUNT_TYPES.map(acc => {
-              const months = buildMonthlyRowForAccountType(acc.id, true);
-              const budget = getPaguForAccountType(acc.id, true);
+              const months = buildMonthlyRowForAccountType(acc.id, true, projectBudgets, monthlyTrend, selectedYear);
+              const budget = getPaguForAccountType(acc.id, true, projectBudgets, reportData);
               const ytdActual = months.reduce((a, b) => a + b, 0);
               const variance = budget - ytdActual;
               const utilPct = budget > 0 ? ((ytdActual / budget) * 100).toFixed(0) : (ytdActual > 0 ? '100' : '0');
