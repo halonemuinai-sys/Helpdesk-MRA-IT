@@ -409,15 +409,35 @@ router.post('/:id/tag-rental', async (req, res) => {
       return res.status(400).json({ error: 'Aset ini bukan tipe sewa (RENTAL).' });
     }
 
-    // Hitung biaya sewa tahunan dari rentalCost bulanan
-    const annualCost = (asset.rentalCost || 0) * 12;
-    const description = `[Sewa Aset] ${asset.brand} ${asset.model} — ${asset.assetTag}${asset.vendor ? ` (${asset.vendor})` : ''}`;
+    // Ambil fiscalYear dari budget untuk prorate
+    const budgetItem = await prisma.iTProjectBudget.findUnique({ where: { id }, select: { fiscalYear: true } });
+    const fiscalYear = budgetItem?.fiscalYear || new Date().getFullYear();
+
+    const yearStart = new Date(fiscalYear, 0, 1);   // 1 Jan
+    const yearEnd   = new Date(fiscalYear, 11, 31);  // 31 Des
+
+    const rentalStart = asset.rentalStart ? new Date(asset.rentalStart) : yearStart;
+    const rentalEnd   = asset.rentalEnd   ? new Date(asset.rentalEnd)   : yearEnd;
+
+    const effectiveStart = rentalStart > yearStart ? rentalStart : yearStart;
+    const effectiveEnd   = rentalEnd   < yearEnd   ? rentalEnd   : yearEnd;
+
+    // Hitung bulan aktif dalam tahun fiskal (minimal 1 bulan)
+    let activeMonths = 0;
+    if (effectiveEnd >= effectiveStart) {
+      activeMonths = (effectiveEnd.getFullYear() - effectiveStart.getFullYear()) * 12
+        + (effectiveEnd.getMonth() - effectiveStart.getMonth()) + 1;
+    }
+    activeMonths = Math.min(Math.max(activeMonths, 1), 12);
+
+    const proratedCost = Math.round((asset.rentalCost || 0) * activeMonths);
+    const description = `[Sewa Aset] ${asset.brand} ${asset.model} — ${asset.assetTag}${asset.vendor ? ` (${asset.vendor})` : ''} (${activeMonths} bln di ${fiscalYear})`;
 
     await prisma.iTProjectExpense.create({
       data: {
         projectId: id,
         description,
-        amount: annualCost,
+        amount: proratedCost,
         expenseDate: asset.rentalStart || new Date(),
         invoiceNumber: asset.vendorRef || asset.assetTag,
         vendor: asset.vendor || null,
