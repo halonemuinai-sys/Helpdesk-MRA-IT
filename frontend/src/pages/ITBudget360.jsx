@@ -542,7 +542,7 @@ export default function ITBudget360() {
             const monthlyTrend = reportData?.monthlyTrend || [];
 
             const opexCategories = OPEX_ACCOUNT_TYPES.map(acc => {
-              const months = buildMonthlyRowForAccountType(acc.id, false, projectBudgets, monthlyTrend, selectedYear);
+              const months = buildMonthlyRowForAccountType(acc.id, false, projectBudgets, monthlyTrend, selectedYear, viewMode);
               const budget = getPaguForAccountType(acc.id, false, projectBudgets, reportData);
               const ytdActual = months.reduce((a, b) => a + b, 0);
               const variance = budget - ytdActual;
@@ -551,7 +551,7 @@ export default function ITBudget360() {
             });
 
             const capexCategories = CAPEX_ACCOUNT_TYPES.map(acc => {
-              const months = buildMonthlyRowForAccountType(acc.id, true, projectBudgets, monthlyTrend, selectedYear);
+              const months = buildMonthlyRowForAccountType(acc.id, true, projectBudgets, monthlyTrend, selectedYear, viewMode);
               const budget = getPaguForAccountType(acc.id, true, projectBudgets, reportData);
               const ytdActual = months.reduce((a, b) => a + b, 0);
               const variance = budget - ytdActual;
