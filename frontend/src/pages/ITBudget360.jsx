@@ -491,7 +491,7 @@ export default function ITBudget360() {
           }`}
         >
           <BarChart2 className="w-4 h-4" />
-          5 Pilar: Budget vs Realisasi
+          Budget vs Realisasi
         </button>
       </div>
 
@@ -918,16 +918,16 @@ export default function ITBudget360() {
             </div>
           )}
 
-          {/* TAB 5: BUDGET VS REALISASI — DIKELOMPOKKAN PER ACCOUNT TYPE */}
+          {/* TAB 5: BUDGET VS REALISASI — DIKELOMPOKKAN PER ACCOUNT TYPE (OPEX vs CAPEX) */}
           {activeTab === 'pillar-recap' && (() => {
             // Kelompokkan projectBudgets berdasarkan accountType (nilai dari dropdown)
-            // CAPEX tanpa accountType spesifik dikelompokkan ke "CAPEX – Proyek & Inovasi"
-            const CAPEX_KEY = 'CAPEX – Proyek & Inovasi';
+            // CAPEX tanpa accountType spesifik dikelompokkan ke "Proyek & Inovasi"
+            const CAPEX_KEY = 'Proyek & Inovasi';
 
             const groups = {};
             projectBudgets.forEach(pb => {
               const key = pb.budgetType === 'CAPEX' ? CAPEX_KEY : (pb.accountType || 'Lainnya');
-              if (!groups[key]) groups[key] = { items: [], totalPagu: 0, totalActual: 0 };
+              if (!groups[key]) groups[key] = { items: [], totalPagu: 0, totalActual: 0, isCapex: pb.budgetType === 'CAPEX' || key === CAPEX_KEY };
               groups[key].items.push(pb);
               groups[key].totalPagu  += pb.allocatedBudget || 0;
               groups[key].totalActual += pb.actualCost || 0;
@@ -941,12 +941,12 @@ export default function ITBudget360() {
             });
 
             const GROUP_META = {
-              'Utilities':               { icon: Wifi,      color: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400',     badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',     bar: 'bg-cyan-500'    },
-              'License & Permit':        { icon: CreditCard, color: 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400', badge: 'bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300', bar: 'bg-violet-500'  },
-              'Repair & Maintenance':    { icon: Package,   color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',       badge: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',       bar: 'bg-blue-500'    },
-              'Rental Expenses':         { icon: Laptop,    color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400',   badge: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',   bar: 'bg-amber-500'   },
-              [CAPEX_KEY]:               { icon: Sparkles,  color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300', bar: 'bg-emerald-500' },
-              'Lainnya':                 { icon: Layers,    color: 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400',  badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300',  bar: 'bg-slate-400'   },
+              'Utilities':               { icon: Wifi,      color: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400',     badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',     bar: 'bg-cyan-500',    type: 'OPEX'  },
+              'License & Permit':        { icon: CreditCard, color: 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400', badge: 'bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300', bar: 'bg-violet-500',  type: 'OPEX'  },
+              'Repair & Maintenance':    { icon: Package,   color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',       badge: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',       bar: 'bg-blue-500',    type: 'OPEX'  },
+              'Rental Expenses':         { icon: Laptop,    color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400',   badge: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',   bar: 'bg-amber-500',   type: 'OPEX'  },
+              [CAPEX_KEY]:               { icon: Sparkles,  color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300', bar: 'bg-emerald-500', type: 'CAPEX' },
+              'Lainnya':                 { icon: Layers,    color: 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400',  badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300',  bar: 'bg-slate-400',   type: 'OPEX'  },
             };
 
             const grandPagu     = sortedGroups.reduce((s, [, g]) => s + g.totalPagu, 0);
@@ -958,13 +958,14 @@ export default function ITBudget360() {
                 <div className="glass-panel rounded-3xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60 shadow-sm">
                   <div className="px-5 py-4 border-b border-slate-200/50 dark:border-slate-800/40 flex items-center gap-2">
                     <BarChart2 className="w-4 h-4 text-indigo-500" />
-                    <h3 className="text-sm font-black text-slate-800 dark:text-white">Rekapitulasi Budget vs Realisasi per Kategori Akun</h3>
+                    <h3 className="text-sm font-black text-slate-800 dark:text-white">Rekapitulasi Budget vs Realisasi per Kategori Akun (OPEX & CAPEX)</h3>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50/80 dark:bg-slate-800/50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
                           <th className="py-3 px-4">Account Type (Kategori Akun)</th>
+                          <th className="py-3 px-4 text-center">Klasifikasi</th>
                           <th className="py-3 px-4 text-center">Jumlah Item</th>
                           <th className="py-3 px-4 text-right">Pagu Anggaran</th>
                           <th className="py-3 px-4 text-right">Realisasi</th>
@@ -978,6 +979,7 @@ export default function ITBudget360() {
                           const IconComp = meta.icon;
                           const selisih = group.totalPagu - group.totalActual;
                           const pct = group.totalPagu > 0 ? Math.round((group.totalActual / group.totalPagu) * 100) : null;
+                          const costType = group.isCapex || meta.type === 'CAPEX' ? 'CAPEX' : 'OPEX';
                           return (
                             <tr key={key} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
                               <td className="py-3.5 px-4">
@@ -987,6 +989,15 @@ export default function ITBudget360() {
                                   </div>
                                   <span className="font-bold text-slate-800 dark:text-white">{key}</span>
                                 </div>
+                              </td>
+                              <td className="py-3.5 px-4 text-center">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                                  costType === 'CAPEX'
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                    : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300'
+                                }`}>
+                                  {costType}
+                                </span>
                               </td>
                               <td className="py-3.5 px-4 text-center font-bold text-slate-500">{group.items.length}</td>
                               <td className="py-3.5 px-4 text-right font-bold text-slate-700 dark:text-slate-200">{formatRupiah(group.totalPagu)}</td>
@@ -1012,7 +1023,7 @@ export default function ITBudget360() {
                           );
                         })}
                         <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-t-2 border-slate-300 dark:border-slate-700 text-xs font-black">
-                          <td className="py-3.5 px-4 text-slate-800 dark:text-white">TOTAL</td>
+                          <td className="py-3.5 px-4 text-slate-800 dark:text-white" colSpan={2}>TOTAL</td>
                           <td className="py-3.5 px-4 text-center text-slate-500">{projectBudgets.length}</td>
                           <td className="py-3.5 px-4 text-right text-slate-700 dark:text-slate-200">{formatRupiah(grandPagu)}</td>
                           <td className={`py-3.5 px-4 text-right ${grandActual > grandPagu ? 'text-rose-500' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatRupiah(grandActual)}</td>
