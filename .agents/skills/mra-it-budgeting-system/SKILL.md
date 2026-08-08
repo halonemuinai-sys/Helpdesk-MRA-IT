@@ -53,6 +53,18 @@ enum ProjectCategory {
 
 ---
 
+### D. Breakdown Biaya Sewa Aset per Departemen (Departmental Asset Rental Cost Breakdown)
+
+Untuk memberikan transparansi penuh biaya rental perangkat (Laptop, Tablet VIP, iPhone 15 Sales, POS Terminal) bagi Manajemen:
+1. **Atribusi Departemen (User & Department Relation):**
+   - Setiap aset rental (`Asset`) dihubungkan dengan penggunanya (`User`) dan entitas departemen/divisi (misal: `Sales Advisor / Store Staff`, `VIP Sales Bvlgari`, `Store Operations`, `Finance & Accounting`, `General Affairs`, `IT`, `Marketing & CRM`, `Executive / Directors`).
+2. **Visual & Tabel Analytics per Departemen di Budget 360:**
+   - **Rekapitulasi Biaya per Departemen:** Menampilkan jumlah unit rental & alokasi biaya bulanan/tahunan per departemen (misal: *PT Mogems - Sales Advisor 15 unit iPhone 15 = Rp 20,25 Jt/bulan = Rp 243 Jt/tahun*).
+   - **Intercompany Elimination per Departemen:** Memisahkan perangkat rental yang disewa dari PT Permata Landmarq Abadi (Lessor Holding) ke departemen operasional anak perusahaan.
+   - **Detail Unit Expired per Departemen:** Menampilkan daftar perangkat rental per departemen yang akan jatuh tempo di tahun 2027 beserta rekomendasi slot biaya penggantian (*replacement unit*).
+
+---
+
 ## 3. Arsitektur Data Modul IT Cost Overview & Project Budgeting (Helpdesk MRA)
 
 Data anggaran disinkronkan secara langsung dari database **Helpdesk MRA** (`D:\Private Project\Helpdesk MRA`) melalui 5 pilar utama:

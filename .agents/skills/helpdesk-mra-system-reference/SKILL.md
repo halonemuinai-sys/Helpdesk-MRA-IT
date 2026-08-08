@@ -139,9 +139,17 @@ model ITProjectBudget {
 $$\text{Total Anggaran Slot 2027} = \sum_{\text{Jan}}^{M_{\text{expired}}} \text{Cost(Unit A)} + \sum_{M_{\text{expired}}+1}^{\text{Des}} \text{Cost(Unit B)}$$
 
 *Contoh Perangkat Fall-due 2027:*
-- `LP13590` (Samsung Tab S9 FE 5G - PT Mogems) -> Expired 16 Juni 2027.
-- `LP14143` (HP ProBook 430 - PT Amanda) -> Expired 03 Oktober 2027.
-- `LP12403` (Dell Latitude 5310 - PT Jemma) -> Expired 09 November 2027.
+- `LP13590` (Samsung Tab S9 FE 5G - PT Mogems - VIP Sales Bvlgari) -> Expired 16 Juni 2027.
+- `LP14143` (HP ProBook 430 - PT Amanda - Store Operations) -> Expired 03 Oktober 2027.
+- `LP12403` (Dell Latitude 5310 - PT Jemma - Finance & Accounting) -> Expired 09 November 2027.
+
+---
+
+## 7.1. Breakdown Biaya Sewa Perangkat per Departemen (Departmental Rental Breakdown)
+
+Setiap aset rental (Laptop, Mobile/iPhone 15 Sales Advisor, Tablet VIP, POS Terminal) dihubungkan dengan pengguna/divisi departemen pengguna:
+- **Departemen Standar MRA Retail:** `Sales Advisor / Store Staff`, `VIP Sales Bvlgari`, `Store Operations`, `Finance & Accounting`, `General Affairs`, `IT Department`, `Marketing & CRM`, `Executive / Directors`.
+- **Modul Budget 360:** Menyediakan filter dan grafik pie/tabel breakdown alokasi biaya sewa perangkat per departemen per entitas PT MRA Retail.
 
 ---
 
