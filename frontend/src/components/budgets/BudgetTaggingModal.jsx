@@ -24,12 +24,12 @@ export default function BudgetTaggingModal({
   const [formExpenseDate, setFormExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   const [formReceiptLink, setFormReceiptLink] = useState('');
 
-  // Selected Subscription Quick Tag
-  const [selectedSubId, setSelectedSubId] = useState('');
+  // Selected Subscription Quick Tag (multi)
+  const [selectedSubIds, setSelectedSubIds] = useState([]);
 
-  // Rental Asset Quick Tag
+  // Rental Asset Quick Tag (multi)
   const [rentalAssets, setRentalAssets] = useState([]);
-  const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [selectedAssetIds, setSelectedAssetIds] = useState([]);
 
   useEffect(() => {
     if (isOpen && budget) {
@@ -157,22 +157,29 @@ export default function BudgetTaggingModal({
   };
 
   const handleQuickTagRental = async () => {
-    if (!selectedAssetId) return;
+    if (selectedAssetIds.length === 0) return;
     try {
       setSubmitting(true);
-      const res = await fetch(`${apiUrl}/budgets/${budget.id}/tag-rental`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ assetId: selectedAssetId })
-      });
-      if (res.ok) {
-        const updatedBudget = await res.json();
-        onUpdateBudget(updatedBudget);
-        setExpenses(updatedBudget.expenses || []);
-        setSelectedAssetId('');
-      } else {
-        const errData = await res.json();
-        setError(errData.error || 'Gagal me-tag aset sewa.');
+      setError('');
+      let lastBudget = null;
+      for (const assetId of selectedAssetIds) {
+        const res = await fetch(`${apiUrl}/budgets/${budget.id}/tag-rental`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ assetId })
+        });
+        if (res.ok) {
+          lastBudget = await res.json();
+        } else {
+          const errData = await res.json();
+          setError(errData.error || 'Gagal me-tag salah satu aset sewa.');
+          break;
+        }
+      }
+      if (lastBudget) {
+        onUpdateBudget(lastBudget);
+        setExpenses(lastBudget.expenses || []);
+        setSelectedAssetIds([]);
       }
     } catch (err) {
       setError(err.message);
@@ -182,25 +189,29 @@ export default function BudgetTaggingModal({
   };
 
   const handleQuickTagSub = async () => {
-    if (!selectedSubId) return;
+    if (selectedSubIds.length === 0) return;
     try {
       setSubmitting(true);
-      const res = await fetch(`${apiUrl}/budgets/${budget.id}/tag-subscription`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ subscriptionId: selectedSubId })
-      });
-      if (res.ok) {
-        const updatedBudget = await res.json();
-        onUpdateBudget(updatedBudget);
-        setExpenses(updatedBudget.expenses || []);
-        setSelectedSubId('');
-      } else {
-        const errData = await res.json();
-        setError(errData.error || 'Gagal me-tag subskripsi.');
+      setError('');
+      let lastBudget = null;
+      for (const subscriptionId of selectedSubIds) {
+        const res = await fetch(`${apiUrl}/budgets/${budget.id}/tag-subscription`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ subscriptionId })
+        });
+        if (res.ok) {
+          lastBudget = await res.json();
+        } else {
+          const errData = await res.json();
+          setError(errData.error || 'Gagal me-tag salah satu subskripsi.');
+          break;
+        }
+      }
+      if (lastBudget) {
+        onUpdateBudget(lastBudget);
+        setExpenses(lastBudget.expenses || []);
+        setSelectedSubIds([]);
       }
     } catch (err) {
       setError(err.message);
@@ -302,29 +313,47 @@ export default function BudgetTaggingModal({
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Pilih kontrak subskripsi/ISP yang aktif untuk langsung ditambatkan sebagai realisasi pengeluaran item budget ini.
             </p>
-            <div className="flex gap-2">
-              <select
-                value={selectedSubId}
-                onChange={(e) => setSelectedSubId(e.target.value)}
-                className="flex-1 px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
-              >
-                <option value="">-- Pilih Layanan Subskripsi --</option>
-                {subscriptions.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    [{sub.category}] {sub.providerName || sub.name} ({sub.companyMaster?.name || 'Group'}) - {formatRupiah(sub.billingCycle === '1 Bulan' ? sub.cost * 12 : sub.cost)}/thn
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleQuickTagSub}
-                disabled={!selectedSubId || submitting}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-indigo-500/10 flex items-center gap-1.5 shrink-0"
-              >
-                <Tag className="w-3.5 h-3.5" />
-                Tag Subskripsi
-              </button>
-            </div>
+            {subscriptions.length === 0 ? (
+              <p className="text-[11px] text-slate-400 italic">Tidak ada subskripsi aktif untuk entitas ini.</p>
+            ) : (
+              <>
+                <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                  {subscriptions.map((sub) => {
+                    const checked = selectedSubIds.includes(sub.id);
+                    return (
+                      <label key={sub.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition text-xs ${checked ? 'bg-indigo-50 dark:bg-indigo-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setSelectedSubIds(prev => checked ? prev.filter(id => id !== sub.id) : [...prev, sub.id])}
+                          className="accent-indigo-600 w-3.5 h-3.5 shrink-0"
+                        />
+                        <span className="flex-1 font-semibold text-slate-700 dark:text-slate-200 truncate">
+                          <span className="text-indigo-500 font-bold">[{sub.category}]</span> {sub.providerName || sub.name}
+                        </span>
+                        <span className="font-mono text-[10px] text-slate-500 shrink-0">
+                          {formatRupiah(sub.billingCycle === '1 Bulan' ? sub.cost * 12 : sub.cost)}/thn
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400">
+                    {selectedSubIds.length > 0 ? `${selectedSubIds.length} item dipilih` : 'Centang item yang ingin di-tag'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleQuickTagSub}
+                    disabled={selectedSubIds.length === 0 || submitting}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-indigo-500/10 flex items-center gap-1.5"
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    Tag {selectedSubIds.length > 1 ? `${selectedSubIds.length} Subskripsi` : 'Subskripsi'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Quick Tag Aset Sewa Aktif */}
@@ -336,29 +365,49 @@ export default function BudgetTaggingModal({
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Pilih aset sewa aktif untuk ditambatkan sebagai realisasi sewa tahunan pada item anggaran ini.
             </p>
-            <div className="flex gap-2">
-              <select
-                value={selectedAssetId}
-                onChange={(e) => setSelectedAssetId(e.target.value)}
-                className="flex-1 px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500"
-              >
-                <option value="">-- Pilih Aset Sewa --</option>
-                {rentalAssets.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.brand} {asset.model} — {asset.assetTag}{asset.vendor ? ` (${asset.vendor})` : ''} · {formatRupiah((asset.rentalCost || 0) * 12)}/thn
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleQuickTagRental}
-                disabled={!selectedAssetId || submitting}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-amber-500/10 flex items-center gap-1.5 shrink-0"
-              >
-                <Tag className="w-3.5 h-3.5" />
-                Tag Sewa
-              </button>
-            </div>
+            {rentalAssets.length === 0 ? (
+              <p className="text-[11px] text-slate-400 italic">Tidak ada aset sewa aktif untuk entitas ini.</p>
+            ) : (
+              <>
+                <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                  {rentalAssets.map((asset) => {
+                    const checked = selectedAssetIds.includes(asset.id);
+                    return (
+                      <label key={asset.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition text-xs ${checked ? 'bg-amber-50 dark:bg-amber-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setSelectedAssetIds(prev => checked ? prev.filter(id => id !== asset.id) : [...prev, asset.id])}
+                          className="accent-amber-500 w-3.5 h-3.5 shrink-0"
+                        />
+                        <span className="flex-1 font-semibold text-slate-700 dark:text-slate-200 truncate">
+                          <span className="text-amber-600 font-bold">{asset.brand} {asset.model}</span>
+                          <span className="text-slate-400 font-normal"> — {asset.assetTag}</span>
+                          {asset.vendor && <span className="text-slate-400 font-normal"> ({asset.vendor})</span>}
+                        </span>
+                        <span className="font-mono text-[10px] text-slate-500 shrink-0">
+                          {formatRupiah((asset.rentalCost || 0) * 12)}/thn
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400">
+                    {selectedAssetIds.length > 0 ? `${selectedAssetIds.length} aset dipilih` : 'Centang aset yang ingin di-tag'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleQuickTagRental}
+                    disabled={selectedAssetIds.length === 0 || submitting}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-amber-500/10 flex items-center gap-1.5"
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    Tag {selectedAssetIds.length > 1 ? `${selectedAssetIds.length} Aset Sewa` : 'Aset Sewa'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Form Tambah Transaksi Realisasi Manual */}
