@@ -181,6 +181,7 @@ model ITSubscription {
   category                String           // e.g. "Hosting", "Domain", "VPN", "ISP", "Subscription", "Others"
   vendor                  String           // Penyedia jasa (e.g. Google, Niagahoster)
   name                    String           // Nama layanan / Domain (e.g. "Google Workspace", "mra.co.id")
+  brand                   String?          // Nama brand/merek produk (e.g. "Google Workspace", "Adobe Creative Cloud")
   billingCycle            String           // Siklus penagihan: "1 Bulan", "3 Bulan", "6 Bulan", "1 Tahun", "2 Tahun", "3 Tahun"
   cost                    Float            // Biaya layanan dalam Rupiah (e.g. 150000)
   startDate               DateTime         // Tanggal mulai aktif kontrak
