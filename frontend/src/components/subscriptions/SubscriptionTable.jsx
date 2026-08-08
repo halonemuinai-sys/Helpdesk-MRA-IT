@@ -73,6 +73,9 @@ export default function SubscriptionTable({
                           <div className="overflow-hidden">
                             <h4 className="font-bold text-gray-800 dark:text-slate-100 text-xs truncate max-w-[200px]">{sub.name}</h4>
                             <p className="text-[10px] text-gray-400 font-medium truncate max-w-[180px]">Provider: {sub.vendor}</p>
+                            {sub.contractNumber && (
+                              <p className="text-[9px] text-amber-600 dark:text-amber-400 font-bold truncate max-w-[180px]">CID/Kontrak: {sub.contractNumber}</p>
+                            )}
                           </div>
                         </div>
                       </td>

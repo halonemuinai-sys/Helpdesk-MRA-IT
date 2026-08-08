@@ -14,6 +14,7 @@ export default function SubscriptionFormDrawer({
   formName, setFormName,
   formBrand, setFormBrand,
   formLocation, setFormLocation,
+  formContractNumber, setFormContractNumber,
   formBillingCycle, setFormBillingCycle,
   formCost, setFormCost,
   formStartDate, setFormStartDate,
@@ -142,31 +143,15 @@ export default function SubscriptionFormDrawer({
               {/* Brand / Unit Bisnis */}
               <div className="space-y-1 md:col-span-2">
                 <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                  Brand / Merek Business Unit (Opsional)
+                  Brand Vendor / Merek Business Unit (Opsional)
                 </label>
                 <input
                   type="text"
-                  list="mra-brand-list"
-                  placeholder="Ketik atau pilih brand (Ex: Bvlgari, Cosmopolitan, Hard Rock FM)"
+                  placeholder="Ketik nama brand (Ex: Bvlgari, Cosmopolitan, Hard Rock FM, Biznet Metronet)"
                   value={formBrand}
                   onChange={(e) => setFormBrand(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                 />
-                <datalist id="mra-brand-list">
-                  <option value="Bvlgari" />
-                  <option value="Bang & Olufsen" />
-                  <option value="Cosmopolitan" />
-                  <option value="Harper's Bazaar" />
-                  <option value="Her World" />
-                  <option value="Hard Rock FM" />
-                  <option value="Trax FM" />
-                  <option value="iRadio" />
-                  <option value="Brava Radio" />
-                  <option value="Häagen-Dazs" />
-                  <option value="Hard Rock Cafe" />
-                  <option value="Parentalk" />
-                  <option value="MRA Group / HQ" />
-                </datalist>
               </div>
 
               {/* Lokasi / Cabang */}
@@ -180,6 +165,25 @@ export default function SubscriptionFormDrawer({
                   value={formLocation}
                   onChange={(e) => setFormLocation(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                />
+              </div>
+
+              {/* No Kontrak / Billing ID (Highlight jika kategori ISP) */}
+              <div className={`space-y-1 md:col-span-2 transition-all ${formCategory === 'ISP' ? 'p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30' : ''}`}>
+                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                  <span>Nomor Kontrak / ID Pelanggan Billing / Circuit ID</span>
+                  {formCategory === 'ISP' && (
+                    <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide">
+                      Kontrak ISP / Billing ID
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  placeholder={formCategory === 'ISP' ? "Ex: Customer ID Biznet: 123456, SID Astinet: 0012398" : "Ex: No Kontrak Billing, Customer ID, Circuit ID ISP"}
+                  value={formContractNumber}
+                  onChange={(e) => setFormContractNumber(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
                 />
               </div>
 
