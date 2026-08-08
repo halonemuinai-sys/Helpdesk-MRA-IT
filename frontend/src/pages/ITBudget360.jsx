@@ -75,6 +75,22 @@ const formatRupiah = (val) => {
   }).format(val);
 };
 
+const formatCompactRupiah = (val) => {
+  if (val === undefined || val === null || val === 0) return '-';
+  const num = Math.abs(val);
+  let formatted = '';
+  if (num >= 1_000_000_000) {
+    formatted = (num / 1_000_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + 'M';
+  } else if (num >= 1_000_000) {
+    formatted = (num / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + 'Jt';
+  } else if (num >= 1_000) {
+    formatted = (num / 1_000).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + 'Rb';
+  } else {
+    formatted = num.toLocaleString('id-ID');
+  }
+  return val < 0 ? `-${formatted}` : formatted;
+};
+
 export default function ITBudget360() {
   const token = localStorage.getItem('token');
 
@@ -819,7 +835,7 @@ export default function ITBudget360() {
 
                 {/* Tabel Matriks 12 Bulan (Matrix Table 1 Tahun per Bulan) */}
                 <div className="bg-white/80 dark:bg-slate-900/60 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                     <div>
                       <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -827,50 +843,53 @@ export default function ITBudget360() {
                       </h3>
                       <p className="text-[11px] text-slate-400 mt-0.5">Perincian Pagu Anggaran &amp; Realisasi Biaya Bulanan per Kategori Akun OPEX &amp; CAPEX</p>
                     </div>
+                    <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg font-medium">
+                      💡 Angka disingkat (Jt/M). Hover kursor pada angka untuk detail nominal lengkap.
+                    </span>
                   </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b-2 border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 bg-slate-50 dark:bg-slate-850">
-                          <th className="py-3 px-3.5 sticky left-0 bg-slate-50 dark:bg-slate-850 z-10 min-w-[220px]">Kategori Akun IT</th>
-                          <th className="py-3 px-3 font-mono text-right min-w-[110px]">Pagu Budget (1Th)</th>
+                          <th className="py-2.5 px-2.5 sticky left-0 bg-slate-50 dark:bg-slate-850 z-10 min-w-[170px]">Kategori Akun IT</th>
+                          <th className="py-2.5 px-1.5 font-mono text-right min-w-[70px]">Pagu</th>
                           {monthNames.map(m => (
-                            <th key={m} className="py-3 px-2 font-mono text-right min-w-[85px]">{m}</th>
+                            <th key={m} className="py-2.5 px-1 font-mono text-right min-w-[44px]">{m}</th>
                           ))}
-                          <th className="py-3 px-3 font-mono text-right min-w-[115px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300">Total YTD</th>
-                          <th className="py-3 px-3 font-mono text-right min-w-[115px]">Sisa Budget</th>
-                          <th className="py-3 px-2 text-center min-w-[70px]">% Terpakai</th>
+                          <th className="py-2.5 px-1.5 font-mono text-right min-w-[75px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300">Total YTD</th>
+                          <th className="py-2.5 px-1.5 font-mono text-right min-w-[75px]">Sisa Budget</th>
+                          <th className="py-2.5 px-1 text-center min-w-[50px]">%</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-[11px]">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-[10px]">
                         {/* HEADER SECTION 1: OPEX */}
                         <tr className="bg-blue-50/60 dark:bg-blue-950/30 text-blue-800 dark:text-blue-200 font-black text-[10px] uppercase tracking-wider">
-                          <td colSpan={17} className="py-2 px-3.5">
+                          <td colSpan={17} className="py-2 px-2.5">
                             📊 Biaya Operasional (OPEX)
                           </td>
                         </tr>
                         {opexCategories.map(cat => (
                           <tr key={cat.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                            <td className="py-2.5 px-3.5 font-sans font-bold text-slate-800 dark:text-slate-100 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-sm">
+                            <td className="py-2 px-2.5 font-sans font-bold text-slate-800 dark:text-slate-100 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-sm">
                               {cat.name}
                             </td>
-                            <td className="py-2.5 px-3 text-right font-bold text-slate-700 dark:text-slate-200">
-                              {formatRupiah(cat.budget)}
+                            <td className="py-2 px-1.5 text-right font-bold text-slate-700 dark:text-slate-200" title={formatRupiah(cat.budget)}>
+                              {formatCompactRupiah(cat.budget)}
                             </td>
                             {cat.months.map((val, idx) => (
-                              <td key={idx} className={`py-2.5 px-2 text-right ${val > 0 ? 'text-slate-800 dark:text-slate-100 font-semibold' : 'text-slate-300 dark:text-slate-700'}`}>
-                                {val > 0 ? formatRupiah(val) : '-'}
+                              <td key={idx} title={val > 0 ? formatRupiah(val) : 'Rp 0'} className={`py-2 px-1 text-right ${val > 0 ? 'text-slate-800 dark:text-slate-100 font-bold' : 'text-slate-300 dark:text-slate-700'}`}>
+                                {formatCompactRupiah(val)}
                               </td>
                             ))}
-                            <td className="py-2.5 px-3 text-right font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
-                              {formatRupiah(cat.ytdActual)}
+                            <td className="py-2 px-1.5 text-right font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10" title={formatRupiah(cat.ytdActual)}>
+                              {formatCompactRupiah(cat.ytdActual)}
                             </td>
-                            <td className={`py-2.5 px-3 text-right font-bold ${cat.variance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>
-                              {formatRupiah(cat.variance)}
+                            <td className={`py-2 px-1.5 text-right font-bold ${cat.variance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`} title={formatRupiah(cat.variance)}>
+                              {formatCompactRupiah(cat.variance)}
                             </td>
-                            <td className="py-2.5 px-2 text-center">
-                              <span className={`px-1.5 py-0.5 rounded font-sans text-[10px] font-bold ${
+                            <td className="py-2 px-1 text-center">
+                              <span className={`px-1 py-0.5 rounded font-sans text-[9px] font-bold ${
                                 parseFloat(cat.utilPct) > 100 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' :
                                 parseFloat(cat.utilPct) > 85 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' :
                                 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300'
@@ -882,47 +901,47 @@ export default function ITBudget360() {
                         ))}
                         {/* SUBTOTAL OPEX ROW */}
                         <tr className="bg-blue-100/60 dark:bg-blue-950/60 font-black text-blue-900 dark:text-blue-100 border-t border-b border-blue-200 dark:border-blue-900">
-                          <td className="py-2.5 px-3.5 font-sans sticky left-0 bg-blue-100/90 dark:bg-blue-950/90 z-10">
+                          <td className="py-2 px-2.5 font-sans sticky left-0 bg-blue-100/90 dark:bg-blue-950/90 z-10">
                             SUBTOTAL OPEX
                           </td>
-                          <td className="py-2.5 px-3 text-right">{formatRupiah(opexBudgetTotal)}</td>
+                          <td className="py-2 px-1.5 text-right" title={formatRupiah(opexBudgetTotal)}>{formatCompactRupiah(opexBudgetTotal)}</td>
                           {opexMonthsTotal.map((val, idx) => (
-                            <td key={idx} className="py-2.5 px-2 text-right">{val > 0 ? formatRupiah(val) : '-'}</td>
+                            <td key={idx} title={val > 0 ? formatRupiah(val) : 'Rp 0'} className="py-2 px-1 text-right">{formatCompactRupiah(val)}</td>
                           ))}
-                          <td className="py-2.5 px-3 text-right text-emerald-700 dark:text-emerald-300">{formatRupiah(opexYtdTotal)}</td>
-                          <td className="py-2.5 px-3 text-right">{formatRupiah(opexVarianceTotal)}</td>
-                          <td className="py-2.5 px-2 text-center font-sans text-[10px]">
+                          <td className="py-2 px-1.5 text-right text-emerald-700 dark:text-emerald-300" title={formatRupiah(opexYtdTotal)}>{formatCompactRupiah(opexYtdTotal)}</td>
+                          <td className="py-2 px-1.5 text-right" title={formatRupiah(opexVarianceTotal)}>{formatCompactRupiah(opexVarianceTotal)}</td>
+                          <td className="py-2 px-1 text-center font-sans text-[9px]">
                             {opexBudgetTotal > 0 ? ((opexYtdTotal/opexBudgetTotal)*100).toFixed(1) : 0}%
                           </td>
                         </tr>
 
                         {/* HEADER SECTION 2: CAPEX */}
                         <tr className="bg-purple-50/60 dark:bg-purple-950/30 text-purple-800 dark:text-purple-200 font-black text-[10px] uppercase tracking-wider">
-                          <td colSpan={17} className="py-2 px-3.5">
+                          <td colSpan={17} className="py-2 px-2.5">
                             🚀 Investasi &amp; Belanja Modal (CAPEX)
                           </td>
                         </tr>
                         {capexCategories.map(cat => (
                           <tr key={cat.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                            <td className="py-2.5 px-3.5 font-sans font-bold text-slate-800 dark:text-slate-100 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-sm">
+                            <td className="py-2 px-2.5 font-sans font-bold text-slate-800 dark:text-slate-100 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-sm">
                               {cat.name}
                             </td>
-                            <td className="py-2.5 px-3 text-right font-bold text-slate-700 dark:text-slate-200">
-                              {formatRupiah(cat.budget)}
+                            <td className="py-2 px-1.5 text-right font-bold text-slate-700 dark:text-slate-200" title={formatRupiah(cat.budget)}>
+                              {formatCompactRupiah(cat.budget)}
                             </td>
                             {cat.months.map((val, idx) => (
-                              <td key={idx} className={`py-2.5 px-2 text-right ${val > 0 ? 'text-slate-800 dark:text-slate-100 font-semibold' : 'text-slate-300 dark:text-slate-700'}`}>
-                                {val > 0 ? formatRupiah(val) : '-'}
+                              <td key={idx} title={val > 0 ? formatRupiah(val) : 'Rp 0'} className={`py-2 px-1 text-right ${val > 0 ? 'text-slate-800 dark:text-slate-100 font-bold' : 'text-slate-300 dark:text-slate-700'}`}>
+                                {formatCompactRupiah(val)}
                               </td>
                             ))}
-                            <td className="py-2.5 px-3 text-right font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
-                              {formatRupiah(cat.ytdActual)}
+                            <td className="py-2 px-1.5 text-right font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10" title={formatRupiah(cat.ytdActual)}>
+                              {formatCompactRupiah(cat.ytdActual)}
                             </td>
-                            <td className={`py-2.5 px-3 text-right font-bold ${cat.variance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>
-                              {formatRupiah(cat.variance)}
+                            <td className={`py-2 px-1.5 text-right font-bold ${cat.variance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`} title={formatRupiah(cat.variance)}>
+                              {formatCompactRupiah(cat.variance)}
                             </td>
-                            <td className="py-2.5 px-2 text-center">
-                              <span className={`px-1.5 py-0.5 rounded font-sans text-[10px] font-bold ${
+                            <td className="py-2 px-1 text-center">
+                              <span className={`px-1 py-0.5 rounded font-sans text-[9px] font-bold ${
                                 parseFloat(cat.utilPct) > 100 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' :
                                 parseFloat(cat.utilPct) > 85 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' :
                                 'bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-300'
@@ -934,34 +953,34 @@ export default function ITBudget360() {
                         ))}
                         {/* SUBTOTAL CAPEX ROW */}
                         <tr className="bg-purple-100/60 dark:bg-purple-950/60 font-black text-purple-900 dark:text-purple-100 border-t border-b border-purple-200 dark:border-purple-900">
-                          <td className="py-2.5 px-3.5 font-sans sticky left-0 bg-purple-100/90 dark:bg-purple-950/90 z-10">
+                          <td className="py-2 px-2.5 font-sans sticky left-0 bg-purple-100/90 dark:bg-purple-950/90 z-10">
                             SUBTOTAL CAPEX
                           </td>
-                          <td className="py-2.5 px-3 text-right">{formatRupiah(capexBudgetTotal)}</td>
+                          <td className="py-2 px-1.5 text-right" title={formatRupiah(capexBudgetTotal)}>{formatCompactRupiah(capexBudgetTotal)}</td>
                           {capexMonthsTotal.map((val, idx) => (
-                            <td key={idx} className="py-2.5 px-2 text-right">{val > 0 ? formatRupiah(val) : '-'}</td>
+                            <td key={idx} title={val > 0 ? formatRupiah(val) : 'Rp 0'} className="py-2 px-1 text-right">{formatCompactRupiah(val)}</td>
                           ))}
-                          <td className="py-2.5 px-3 text-right text-emerald-700 dark:text-emerald-300">{formatRupiah(capexYtdTotal)}</td>
-                          <td className="py-2.5 px-3 text-right">{formatRupiah(capexVarianceTotal)}</td>
-                          <td className="py-2.5 px-2 text-center font-sans text-[10px]">
+                          <td className="py-2 px-1.5 text-right text-emerald-700 dark:text-emerald-300" title={formatRupiah(capexYtdTotal)}>{formatCompactRupiah(capexYtdTotal)}</td>
+                          <td className="py-2 px-1.5 text-right" title={formatRupiah(capexVarianceTotal)}>{formatCompactRupiah(capexVarianceTotal)}</td>
+                          <td className="py-2 px-1 text-center font-sans text-[9px]">
                             {capexBudgetTotal > 0 ? ((capexYtdTotal/capexBudgetTotal)*100).toFixed(1) : 0}%
                           </td>
                         </tr>
 
                         {/* GRAND TOTAL ROW */}
-                        <tr className="bg-slate-900 text-white font-black text-xs border-t-2 border-slate-700">
-                          <td className="py-3 px-3.5 font-sans sticky left-0 bg-slate-900 z-10">
+                        <tr className="bg-slate-900 text-white font-black text-[11px] border-t-2 border-slate-700">
+                          <td className="py-2.5 px-2.5 font-sans sticky left-0 bg-slate-900 z-10">
                             GRAND TOTAL BIAYA IT
                           </td>
-                          <td className="py-3 px-3 text-right text-indigo-300">{formatRupiah(grandBudgetTotal)}</td>
+                          <td className="py-2.5 px-1.5 text-right text-indigo-300" title={formatRupiah(grandBudgetTotal)}>{formatCompactRupiah(grandBudgetTotal)}</td>
                           {grandMonthsTotal.map((val, idx) => (
-                            <td key={idx} className="py-3 px-2 text-right text-slate-200">{val > 0 ? formatRupiah(val) : '-'}</td>
+                            <td key={idx} title={val > 0 ? formatRupiah(val) : 'Rp 0'} className="py-2 px-1 text-right text-slate-200">{formatCompactRupiah(val)}</td>
                           ))}
-                          <td className="py-3 px-3 text-right text-emerald-400 bg-slate-800">{formatRupiah(grandYtdTotal)}</td>
-                          <td className={`py-3 px-3 text-right ${grandVarianceTotal < 0 ? 'text-rose-400' : 'text-teal-300'}`}>
-                            {formatRupiah(grandVarianceTotal)}
+                          <td className="py-2.5 px-1.5 text-right text-emerald-400 bg-slate-800" title={formatRupiah(grandYtdTotal)}>{formatCompactRupiah(grandYtdTotal)}</td>
+                          <td className={`py-2.5 px-1.5 text-right ${grandVarianceTotal < 0 ? 'text-rose-400' : 'text-teal-300'}`} title={formatRupiah(grandVarianceTotal)}>
+                            {formatCompactRupiah(grandVarianceTotal)}
                           </td>
-                          <td className="py-3 px-2 text-center font-sans text-[10px] text-emerald-400">
+                          <td className="py-2.5 px-1 text-center font-sans text-[9px] text-emerald-400">
                             {grandUtilPct}%
                           </td>
                         </tr>
