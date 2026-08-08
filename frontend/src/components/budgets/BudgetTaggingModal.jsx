@@ -53,8 +53,11 @@ export default function BudgetTaggingModal({
   };
 
   const fetchSubscriptions = async () => {
+    if (!budget) return;
     try {
-      const res = await fetch(`${apiUrl}/subscriptions`, {
+      const params = new URLSearchParams({ status: 'ACTIVE' });
+      if (budget.companyMasterId) params.append('companyMasterId', budget.companyMasterId);
+      const res = await fetch(`${apiUrl}/subscriptions?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
