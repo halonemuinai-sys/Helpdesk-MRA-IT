@@ -76,23 +76,13 @@ export default function useSubscriptions({ token }) {
       setLoading(true);
       setError(null);
       const reqHeaders = getHeaders();
-      const [compRes, subRes] = await Promise.all([
-        fetch(`${API_URL}/companies/master`, { headers: reqHeaders }),
-        fetch(`${API_URL}/subscriptions`, { headers: reqHeaders })
-      ]);
+      const compRes = await fetch(`${API_URL}/companies/master`, { headers: reqHeaders });
 
       if (!compRes.ok) throw new Error('Gagal memuat data perusahaan.');
-      if (!subRes.ok) throw new Error('Gagal memuat data subskripsi IT.');
 
-      const [compData, subData] = await Promise.all([
-        compRes.json(),
-        subRes.json()
-      ]);
-
+      const compData = await compRes.json();
       setCompanies(compData);
       setFormCompanyId(compData[0]?.id || '');
-      setSubscriptions(subData);
-      setHasProcessed(true);
     } catch (err) {
       setError(err.message);
     } finally {
