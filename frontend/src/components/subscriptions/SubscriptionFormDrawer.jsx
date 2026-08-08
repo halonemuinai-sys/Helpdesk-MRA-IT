@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { CreditCard, Building2, History, AlertTriangle, X, Loader2, CheckCircle2 } from 'lucide-react';
-import { CATEGORIES, BILLING_CYCLES } from './constants';
+import { CATEGORIES, BILLING_CYCLES, MRA_BRANDS } from './constants';
 
 export default function SubscriptionFormDrawer({
   isOpen, onClose,
@@ -75,10 +75,10 @@ export default function SubscriptionFormDrawer({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              {/* Company */}
+              {/* Company (PT Name) */}
               <div className="space-y-1 md:col-span-2">
                 <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                  Anak Perusahaan / Entitas MRA (Pemilik Kontrak) *
+                  Anak Perusahaan / Entitas PT MRA *
                 </label>
                 <div className="relative group">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
@@ -95,21 +95,36 @@ export default function SubscriptionFormDrawer({
                 </div>
               </div>
 
-              {/* Authorized Company / Brand Dropdown */}
+              {/* Brand MRA (Clean Brand Dropdown + Manual Input) */}
               <div className="space-y-1 md:col-span-2">
                 <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                  Brand / Entitas MRA Terotorisasi (Dropdown Pilihan Opsional)
+                  Brand / Merek Business Unit MRA (Bvlgari, Cosmopolitan, Hard Rock FM, dll)
                 </label>
-                <select
-                  value={formAuthorizedCompanyId}
-                  onChange={(e) => setFormAuthorizedCompanyId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
-                >
-                  <option value="">-- Sama Dengan Pemilik Kontrak / Tidak Ada --</option>
-                  {companies.map(comp => (
-                    <option key={comp.id} value={comp.id}>{comp.name}</option>
-                  ))}
-                </select>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select
+                    value={MRA_BRANDS.includes(formBrand) ? formBrand : (formBrand ? 'CUSTOM' : '')}
+                    onChange={(e) => {
+                      if (e.target.value !== 'CUSTOM') {
+                        setFormBrand(e.target.value);
+                      }
+                    }}
+                    className="w-full sm:w-1/2 px-3 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                  >
+                    <option value="">-- Pilih Brand MRA --</option>
+                    {MRA_BRANDS.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                    <option value="CUSTOM">-- Ketik Custom --</option>
+                  </select>
+
+                  <input
+                    type="text"
+                    placeholder="Atau ketik nama brand di sini..."
+                    value={formBrand}
+                    onChange={(e) => setFormBrand(e.target.value)}
+                    className="w-full sm:w-1/2 px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                  />
+                </div>
               </div>
 
               {/* Category */}
@@ -158,19 +173,7 @@ export default function SubscriptionFormDrawer({
                 />
               </div>
 
-              {/* Brand Vendor / Product Brand */}
-              <div className="space-y-1 md:col-span-2">
-                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                  Brand Layanan Vendor / Product Brand (Ketik Manual Opsional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ketik nama brand vendor (Ex: Bvlgari, Cosmopolitan, Google Workspace, Biznet Metronet)"
-                  value={formBrand}
-                  onChange={(e) => setFormBrand(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                />
-              </div>
+
 
               {/* Lokasi / Cabang */}
               <div className="space-y-1 md:col-span-2">
