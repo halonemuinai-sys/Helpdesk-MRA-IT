@@ -1,6 +1,5 @@
 /**
  * Utility functions for IT Cost Overview 12-Month Matrix Calculations
- * Supports Accrual (Prorated 12-Month Amortization) vs Cash Basis (Tagged Transactions)
  */
 
 export const OPEX_ACCOUNT_TYPES = [
@@ -20,8 +19,7 @@ export const buildMonthlyRowForAccountType = (
   isCapexType,
   projectBudgets = [],
   monthlyTrend = [],
-  selectedYear = new Date().getFullYear(),
-  viewMode = 'accrual'
+  selectedYear = new Date().getFullYear()
 ) => {
   const months = Array(12).fill(0);
   const targetYear = parseInt(selectedYear);
@@ -34,8 +32,7 @@ export const buildMonthlyRowForAccountType = (
     if (isMatch) {
       let currentYearExpensesSum = 0;
 
-      // In Cash Mode, check tagged expenses for targetYear
-      if (viewMode === 'cash' && Array.isArray(pb.expenses) && pb.expenses.length > 0) {
+      if (Array.isArray(pb.expenses) && pb.expenses.length > 0) {
         pb.expenses.forEach(exp => {
           const d = new Date(exp.expenseDate);
           if (d.getFullYear() === targetYear) {
@@ -48,27 +45,22 @@ export const buildMonthlyRowForAccountType = (
         });
       }
 
-      // In Accrual Mode (or Cash Mode when untagged), automatically prorate/amortize evenly across 12 months
-      if (viewMode === 'accrual' || currentYearExpensesSum === 0) {
-        const costToAmortize = parseFloat(pb.actualCost) > 0 ? parseFloat(pb.actualCost) : (parseFloat(pb.allocatedBudget) || 0);
-        if (costToAmortize > 0) {
-          const perMonth = costToAmortize / 12;
-          for (let i = 0; i < 12; i++) months[i] += perMonth;
-        }
+      if (currentYearExpensesSum === 0 && pb.actualCost > 0) {
+        const perMonth = (parseFloat(pb.actualCost) || 0) / 12;
+        for (let i = 0; i < 12; i++) months[i] += perMonth;
       }
     }
   });
 
-  // System contract monthlyTrend integration (Rental Assets, Subscriptions, ISP)
+  // Fallback per month to monthlyTrend system contracts if a month is still 0
   months.forEach((v, idx) => {
-    if (monthlyTrend[idx]) {
-      let systemVal = 0;
-      if (accType === 'Rental Expenses') systemVal = monthlyTrend[idx].assetsRental || 0;
-      else if (accType === 'License & Permit') systemVal = monthlyTrend[idx].subscriptions || 0;
-      else if (accType === 'Telecommunication') systemVal = monthlyTrend[idx].isp || 0;
-
-      if (systemVal > 0) {
-        months[idx] = viewMode === 'accrual' ? Math.max(v, systemVal) : (v > 0 ? v : systemVal);
+    if (v === 0 && monthlyTrend[idx]) {
+      if (accType === 'Rental Expenses' && monthlyTrend[idx].assetsRental > 0) {
+        months[idx] = monthlyTrend[idx].assetsRental;
+      } else if (accType === 'License & Permit' && monthlyTrend[idx].subscriptions > 0) {
+        months[idx] = monthlyTrend[idx].subscriptions;
+      } else if (accType === 'Telecommunication' && monthlyTrend[idx].isp > 0) {
+        months[idx] = monthlyTrend[idx].isp;
       }
     }
   });

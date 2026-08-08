@@ -412,32 +412,6 @@ export default function ITBudget360() {
             </select>
           </div>
 
-          {/* Toggle Calculation Mode Switch */}
-          <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center border border-slate-200 dark:border-slate-700 text-xs font-semibold">
-            <button
-              onClick={() => setViewMode('accrual')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                viewMode === 'accrual'
-                  ? 'bg-indigo-600 text-white shadow-sm font-bold'
-                  : 'text-gray-500 hover:text-slate-800 dark:hover:text-white'
-              }`}
-              title="Mode Amortisasi Prorated 12 Bulan (Accrual Basis)"
-            >
-              Accrual (Prorated 12 Bln)
-            </button>
-            <button
-              onClick={() => setViewMode('cash')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                viewMode === 'cash'
-                  ? 'bg-indigo-600 text-white shadow-sm font-bold'
-                  : 'text-gray-500 hover:text-slate-800 dark:hover:text-white'
-              }`}
-              title="Mode Realisasi Kas Keluar (Cash Outflow)"
-            >
-              Cash Basis (Kas Keluar)
-            </button>
-          </div>
-
           {/* Load Button */}
           <button
             onClick={handleLoadData}
@@ -542,7 +516,7 @@ export default function ITBudget360() {
             const monthlyTrend = reportData?.monthlyTrend || [];
 
             const opexCategories = OPEX_ACCOUNT_TYPES.map(acc => {
-              const months = buildMonthlyRowForAccountType(acc.id, false, projectBudgets, monthlyTrend, selectedYear, viewMode);
+              const months = buildMonthlyRowForAccountType(acc.id, false, projectBudgets, monthlyTrend, selectedYear);
               const budget = getPaguForAccountType(acc.id, false, projectBudgets, reportData);
               const ytdActual = months.reduce((a, b) => a + b, 0);
               const variance = budget - ytdActual;
@@ -551,7 +525,7 @@ export default function ITBudget360() {
             });
 
             const capexCategories = CAPEX_ACCOUNT_TYPES.map(acc => {
-              const months = buildMonthlyRowForAccountType(acc.id, true, projectBudgets, monthlyTrend, selectedYear, viewMode);
+              const months = buildMonthlyRowForAccountType(acc.id, true, projectBudgets, monthlyTrend, selectedYear);
               const budget = getPaguForAccountType(acc.id, true, projectBudgets, reportData);
               const ytdActual = months.reduce((a, b) => a + b, 0);
               const variance = budget - ytdActual;
