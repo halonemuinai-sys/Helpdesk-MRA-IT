@@ -78,11 +78,18 @@ export default function SubscriptionTable({
                       </td>
                       <td className="py-4 px-6">
                         <div className="font-bold text-gray-700 dark:text-slate-350">{sub.companyMaster?.name}</div>
-                        {sub.brand && (
-                          <span className="inline-block mt-0.5 px-1.5 py-0.2 text-[9px] font-semibold bg-rose-500/10 text-rose-500 rounded">
-                            Brand: {sub.brand}
-                          </span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                          {sub.brand && (
+                            <span className="inline-block px-1.5 py-0.2 text-[9px] font-semibold bg-rose-500/10 text-rose-500 rounded">
+                              Brand: {sub.brand}
+                            </span>
+                          )}
+                          {sub.location && (
+                            <span className="inline-block px-1.5 py-0.2 text-[9px] font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded">
+                              📍 {sub.location}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-6">
                         <span className="inline-block bg-slate-100 dark:bg-slate-850 px-2 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300">

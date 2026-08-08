@@ -27,7 +27,8 @@ router.get('/', verifyToken, async (req, res, next) => {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { vendor: { contains: search, mode: 'insensitive' } },
-        { brand: { contains: search, mode: 'insensitive' } }
+        { brand: { contains: search, mode: 'insensitive' } },
+        { location: { contains: search, mode: 'insensitive' } }
       ];
     }
 
@@ -73,6 +74,7 @@ router.post('/', verifyToken, async (req, res, next) => {
       vendor, 
       name,
       brand, 
+      location,
       billingCycle, 
       cost, 
       startDate, 
@@ -105,6 +107,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         vendor,
         name,
         brand: brand || null,
+        location: location || null,
         billingCycle,
         cost: parseFloat(cost),
         startDate: new Date(startDate),
@@ -145,6 +148,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       vendor,
       name,
       brand,
+      location,
       billingCycle,
       cost,
       startDate,
@@ -171,6 +175,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (vendor !== undefined) updateData.vendor = vendor;
     if (name !== undefined) updateData.name = name;
     if (brand !== undefined) updateData.brand = brand || null;
+    if (location !== undefined) updateData.location = location || null;
     if (billingCycle !== undefined) updateData.billingCycle = billingCycle;
     if (cost !== undefined) updateData.cost = parseFloat(cost);
     if (startDate !== undefined) updateData.startDate = new Date(startDate);

@@ -13,6 +13,7 @@ export default function SubscriptionFormDrawer({
   formVendor, setFormVendor,
   formName, setFormName,
   formBrand, setFormBrand,
+  formLocation, setFormLocation,
   formBillingCycle, setFormBillingCycle,
   formCost, setFormCost,
   formStartDate, setFormStartDate,
@@ -166,6 +167,20 @@ export default function SubscriptionFormDrawer({
                   <option value="Parentalk" />
                   <option value="MRA Group / HQ" />
                 </datalist>
+              </div>
+
+              {/* Lokasi / Cabang */}
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                  Lokasi Fisik / Cabang / Gedung (Opsional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: HQ Wisma MRA Lt. 6, Butik Plaza Indonesia, Cloud Server"
+                  value={formLocation}
+                  onChange={(e) => setFormLocation(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                />
               </div>
 
               {/* Billing Cycle */}

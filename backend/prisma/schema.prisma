@@ -198,6 +198,9 @@ model ITSubscription {
   // Nama Brand / Merek Dagang yang dipegang anak perusahaan (e.g. "Bvlgari", "Cosmopolitan")
   brand                   String?
 
+  // Lokasi fisik / Cabang / Gedung penempatan (e.g. "Head Office Lt. 6", "Butik Plaza Indonesia", "Bandung Branch")
+  location                String?
+
   // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
   replacedSubscriptionId  String?          @unique
   replacedSubscription    ITSubscription?  @relation("SubscriptionReplacement", fields: [replacedSubscriptionId], references: [id])
