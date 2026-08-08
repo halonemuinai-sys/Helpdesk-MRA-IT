@@ -3,7 +3,7 @@ export const BILLING_CYCLES = ['1 Bulan', '3 Bulan', '6 Bulan', '1 Tahun', '2 Ta
 
 export const MRA_BRANDS = [
   'Bvlgari',
-  'Bang & Olufsen',
+  'Wiggle Wiggle',
   'Cosmopolitan',
   "Harper's Bazaar",
   'Her World',
