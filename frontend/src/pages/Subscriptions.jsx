@@ -99,6 +99,7 @@ export default function Subscriptions({ user, token }) {
         onSubmit={h.handleSubmit}
         formatNumberForInput={h.formatNumberForInput}
         formCompanyId={h.formCompanyId} setFormCompanyId={h.setFormCompanyId}
+        formAuthorizedCompanyId={h.formAuthorizedCompanyId} setFormAuthorizedCompanyId={h.setFormAuthorizedCompanyId}
         formCategory={h.formCategory} setFormCategory={h.setFormCategory}
         formVendor={h.formVendor} setFormVendor={h.setFormVendor}
         formName={h.formName} setFormName={h.setFormName}

@@ -29,7 +29,8 @@ router.get('/', verifyToken, async (req, res, next) => {
         { vendor: { contains: search, mode: 'insensitive' } },
         { brand: { contains: search, mode: 'insensitive' } },
         { location: { contains: search, mode: 'insensitive' } },
-        { contractNumber: { contains: search, mode: 'insensitive' } }
+        { contractNumber: { contains: search, mode: 'insensitive' } },
+        { authorizedCompanyMaster: { name: { contains: search, mode: 'insensitive' } } }
       ];
     }
 
@@ -41,6 +42,9 @@ router.get('/', verifyToken, async (req, res, next) => {
       include: {
         companyMaster: {
           select: { name: true }
+        },
+        authorizedCompanyMaster: {
+          select: { id: true, name: true }
         },
         renewals: {
           orderBy: { renewedAt: 'desc' }
@@ -85,6 +89,7 @@ router.post('/', verifyToken, async (req, res, next) => {
       evidenceLink, 
       notes,
       companyMasterId,
+      authorizedCompanyMasterId,
       companyId,
       replacedSubscriptionId
     } = req.body;
@@ -119,6 +124,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         evidenceLink: evidenceLink || null,
         notes: notes || null,
         companyMasterId: parseInt(targetCompanyMasterId),
+        authorizedCompanyMasterId: authorizedCompanyMasterId ? parseInt(authorizedCompanyMasterId) : null,
         replacedSubscriptionId: replacedSubscriptionId || null
       }
     });
@@ -161,6 +167,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       evidenceLink,
       notes,
       companyMasterId,
+      authorizedCompanyMasterId,
       companyId,
       updateJourney
     } = req.body;
@@ -192,6 +199,9 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     const targetCompanyMasterId = companyMasterId !== undefined ? companyMasterId : companyId;
     if (targetCompanyMasterId !== undefined && targetCompanyMasterId !== null) {
       updateData.companyMasterId = parseInt(targetCompanyMasterId);
+    }
+    if (authorizedCompanyMasterId !== undefined) {
+      updateData.authorizedCompanyMasterId = authorizedCompanyMasterId ? parseInt(authorizedCompanyMasterId) : null;
     }
 
     // If updateJourney text is provided, add it to journey log and insert RenewalHistory

@@ -9,6 +9,7 @@ export default function SubscriptionFormDrawer({
   submitting, formError,
   companies, onSubmit, formatNumberForInput,
   formCompanyId, setFormCompanyId,
+  formAuthorizedCompanyId, setFormAuthorizedCompanyId,
   formCategory, setFormCategory,
   formVendor, setFormVendor,
   formName, setFormName,
@@ -77,7 +78,7 @@ export default function SubscriptionFormDrawer({
               {/* Company */}
               <div className="space-y-1 md:col-span-2">
                 <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                  Anak Perusahaan / Entitas MRA *
+                  Anak Perusahaan / Entitas MRA (Pemilik Kontrak) *
                 </label>
                 <div className="relative group">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-rose-500 transition-colors" />
@@ -92,6 +93,23 @@ export default function SubscriptionFormDrawer({
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Authorized Company / Brand Dropdown */}
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                  Brand / Entitas MRA Terotorisasi (Dropdown Pilihan Opsional)
+                </label>
+                <select
+                  value={formAuthorizedCompanyId}
+                  onChange={(e) => setFormAuthorizedCompanyId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-750 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition cursor-pointer"
+                >
+                  <option value="">-- Sama Dengan Pemilik Kontrak / Tidak Ada --</option>
+                  {companies.map(comp => (
+                    <option key={comp.id} value={comp.id}>{comp.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Category */}
@@ -140,14 +158,14 @@ export default function SubscriptionFormDrawer({
                 />
               </div>
 
-              {/* Brand / Unit Bisnis */}
+              {/* Brand Vendor / Product Brand */}
               <div className="space-y-1 md:col-span-2">
                 <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                  Brand Vendor / Merek Business Unit (Opsional)
+                  Brand Layanan Vendor / Product Brand (Ketik Manual Opsional)
                 </label>
                 <input
                   type="text"
-                  placeholder="Ketik nama brand (Ex: Bvlgari, Cosmopolitan, Hard Rock FM, Biznet Metronet)"
+                  placeholder="Ketik nama brand vendor (Ex: Bvlgari, Cosmopolitan, Google Workspace, Biznet Metronet)"
                   value={formBrand}
                   onChange={(e) => setFormBrand(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"

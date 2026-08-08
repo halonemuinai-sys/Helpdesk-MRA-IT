@@ -82,6 +82,11 @@ export default function SubscriptionTable({
                       <td className="py-4 px-6">
                         <div className="font-bold text-gray-700 dark:text-slate-350">{sub.companyMaster?.name}</div>
                         <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                          {sub.authorizedCompanyMaster?.name && (
+                            <span className="inline-block px-1.5 py-0.2 text-[9px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded">
+                              Otorisasi: {sub.authorizedCompanyMaster.name}
+                            </span>
+                          )}
                           {sub.brand && (
                             <span className="inline-block px-1.5 py-0.2 text-[9px] font-semibold bg-rose-500/10 text-rose-500 rounded">
                               Brand: {sub.brand}

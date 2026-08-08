@@ -37,7 +37,8 @@ model CompanyMaster {
   sharedBudget  Float            @default(0) // Budget for shared/branch devices (monthly)
   createdAt     DateTime         @default(now())
   companies     Company[]        // Branches belonging to this master company
-  subscriptions ITSubscription[] // Subscriptions belonging to this master company
+  subscriptions           ITSubscription[] @relation("SubscriptionOwnerCompany") // Subscriptions belonging to this master company
+  authorizedSubscriptions ITSubscription[] @relation("SubscriptionAuthorizedCompany") // Subscriptions authorized for this entity/brand
   assets        Asset[]          // Assets leased by this master company
   peripheralAssets PeripheralAsset[]
   peripheralInvoices PeripheralInvoice[]
@@ -191,12 +192,16 @@ model ITSubscription {
   journey                 String?          @default("") // Akumulasi log catatan pembaruan teks
   renewals                RenewalHistory[] // Relasi historis perpanjangan
   
-  // Relasi ke Master Company (Company Entity Tagging)
-  companyMasterId         Int?
-  companyMaster           CompanyMaster?   @relation(fields: [companyMasterId], references: [id])
+  // Relasi ke Master Company (Company Entity Tagging - Dropdown)
+  companyMasterId            Int?
+  companyMaster              CompanyMaster?   @relation("SubscriptionOwnerCompany", fields: [companyMasterId], references: [id])
 
-  // Nama Brand / Merek Dagang yang dipegang anak perusahaan (e.g. "Bvlgari", "Cosmopolitan")
-  brand                   String?
+  // Relasi Otorisasi Brand / Entitas MRA Terotorisasi (Dropdown - Opsional)
+  authorizedCompanyMasterId  Int?
+  authorizedCompanyMaster    CompanyMaster?   @relation("SubscriptionAuthorizedCompany", fields: [authorizedCompanyMasterId], references: [id])
+
+  // Nama Brand Layanan / Product Brand Vendor (Teks Ketik Manual - Opsional)
+  brand                      String?
 
   // Lokasi fisik / Cabang / Gedung penempatan (e.g. "Head Office Lt. 6", "Butik Plaza Indonesia", "Bandung Branch")
   location                String?

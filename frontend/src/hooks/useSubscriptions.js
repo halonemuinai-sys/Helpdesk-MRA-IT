@@ -43,6 +43,7 @@ export default function useSubscriptions({ token }) {
   const [formNotes, setFormNotes] = useState('');
   const [formUpdateJourney, setFormUpdateJourney] = useState('');
   const [formCompanyId, setFormCompanyId] = useState('');
+  const [formAuthorizedCompanyId, setFormAuthorizedCompanyId] = useState('');
   const [replacedSubscriptionId, setReplacedSubscriptionId] = useState(null);
 
   const getHeaders = () => ({ 'Authorization': `Bearer ${token}` });
@@ -155,6 +156,7 @@ export default function useSubscriptions({ token }) {
     setFormNotes('');
     setFormUpdateJourney('');
     setFormCompanyId(companies[0]?.id || '');
+    setFormAuthorizedCompanyId('');
     setReplacedSubscriptionId(null);
     setFormError(null);
     setIsModalOpen(true);
@@ -179,6 +181,7 @@ export default function useSubscriptions({ token }) {
     setFormNotes(sub.notes || '');
     setFormUpdateJourney('');
     setFormCompanyId(sub.companyMasterId || '');
+    setFormAuthorizedCompanyId(sub.authorizedCompanyMasterId || '');
     setReplacedSubscriptionId(null);
     setFormError(null);
     setIsModalOpen(true);
@@ -211,6 +214,7 @@ export default function useSubscriptions({ token }) {
     setFormNotes(`Menggantikan kontrak lama: ID ${sub.id.substring(0, 8)}`);
     setFormUpdateJourney(`Kontrak baru dibuat menggantikan ID ${sub.id.substring(0, 8)}`);
     setFormCompanyId(sub.companyMasterId || '');
+    setFormAuthorizedCompanyId(sub.authorizedCompanyMasterId || '');
     setReplacedSubscriptionId(sub.id);
     setFormError(null);
     setIsModalOpen(true);
@@ -250,6 +254,7 @@ export default function useSubscriptions({ token }) {
         evidenceLink: formEvidenceLink || null,
         notes: formNotes || null,
         companyMasterId: parseInt(formCompanyId),
+        authorizedCompanyMasterId: formAuthorizedCompanyId ? parseInt(formAuthorizedCompanyId) : null,
         replacedSubscriptionId,
         updateJourney: formUpdateJourney || null,
       };
@@ -324,6 +329,7 @@ export default function useSubscriptions({ token }) {
       sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sub.vendor.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (sub.brand && sub.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (sub.authorizedCompanyMaster?.name && sub.authorizedCompanyMaster.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (sub.location && sub.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (sub.contractNumber && sub.contractNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (sub.notes && sub.notes.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -367,6 +373,7 @@ export default function useSubscriptions({ token }) {
     formNotes, setFormNotes,
     formUpdateJourney, setFormUpdateJourney,
     formCompanyId, setFormCompanyId,
+    formAuthorizedCompanyId, setFormAuthorizedCompanyId,
     // handlers
     fetchSubscriptions, handleResetFilters, toggleRow,
     handleOpenAddModal, handleOpenEditModal, handleOpenReplacementModal,
