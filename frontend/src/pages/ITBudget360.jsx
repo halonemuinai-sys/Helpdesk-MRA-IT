@@ -107,7 +107,7 @@ export default function ITBudget360() {
   const [formDepartment, setFormDepartment] = useState('Store Operations');
   const [formFiscalYear, setFormFiscalYear] = useState('2026');
   const [formBudgetType, setFormBudgetType] = useState('CAPEX');
-  const [formAccountType, setFormAccountType] = useState('Periferal Hardware');
+  const [formAccountType, setFormAccountType] = useState('Utilities');
   const [formAllocatedBudget, setFormAllocatedBudget] = useState('');
   const [formActualCost, setFormActualCost] = useState('0');
   const [formPriority, setFormPriority] = useState('MEDIUM');
@@ -229,7 +229,7 @@ export default function ITBudget360() {
     setFormDepartment('Store Operations');
     setFormFiscalYear(selectedYear || '2026');
     setFormBudgetType('CAPEX');
-    setFormAccountType('Periferal Hardware');
+    setFormAccountType('Utilities');
     setFormAllocatedBudget('');
     setFormActualCost('0');
     setFormPriority('MEDIUM');
@@ -918,112 +918,54 @@ export default function ITBudget360() {
             </div>
           )}
 
-          {/* TAB 5: 5 PILAR IT — BUDGET VS REALISASI */}
+          {/* TAB 5: BUDGET VS REALISASI — DIKELOMPOKKAN PER ACCOUNT TYPE */}
           {activeTab === 'pillar-recap' && (() => {
-            const CATEGORY_META = {
-              INFRASTRUCTURE: { label: 'Infrastructure & Networking', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' },
-              SOFTWARE_DEVELOPMENT: { label: 'Software Development', color: 'bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300' },
-              CYBERSECURITY: { label: 'Cybersecurity & Audit', color: 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300' },
-              DIGITAL_TRANSFORMATION: { label: 'Digital Transformation', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' },
-              AI_INNOVATION: { label: 'AI & Innovation', color: 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300' },
-              HARDWARE_REFRESH: { label: 'Hardware Refresh', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' },
-              OTHERS: { label: 'Lainnya', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300' },
-            };
+            // Kelompokkan projectBudgets berdasarkan accountType (nilai dari dropdown)
+            // CAPEX tanpa accountType spesifik dikelompokkan ke "CAPEX – Proyek & Inovasi"
+            const CAPEX_KEY = 'CAPEX – Proyek & Inovasi';
 
-            // Pagu DAN realisasi keduanya dari Budget 360 (konsisten dengan bagian bawah)
-            const pillarPagu   = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
-            const pillarActual = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
-
-            const toKey = (pb) => {
-              if (pb.budgetType === 'CAPEX') return 'projects';
-              const t = pb.accountType || '';
-              // Nama baru (5 pilar langsung)
-              if (t === 'Periferal Hardware')        return 'peripherals';
-              if (t === 'Sewa Aset')                 return 'assetsRental';
-              if (t === 'Subscriptions & Lisensi')   return 'subscriptions';
-              if (t === 'Internet & ISP')            return 'isp';
-              if (t === 'Proyek & Inovasi')          return 'projects';
-              // Nama lama (backward compatible)
-              if (t === 'Repair & Maintenance')      return 'peripherals';
-              if (t === 'Rental Expenses')           return 'assetsRental';
-              if (t === 'License & Permit')          return 'subscriptions';
-              if (t === 'Utilities')                 return 'isp';
-              return 'projects';
-            };
-
+            const groups = {};
             projectBudgets.forEach(pb => {
-              const key = toKey(pb);
-              pillarPagu[key]   += pb.allocatedBudget || 0;
-              pillarActual[key] += pb.actualCost || 0;
+              const key = pb.budgetType === 'CAPEX' ? CAPEX_KEY : (pb.accountType || 'Lainnya');
+              if (!groups[key]) groups[key] = { items: [], totalPagu: 0, totalActual: 0 };
+              groups[key].items.push(pb);
+              groups[key].totalPagu  += pb.allocatedBudget || 0;
+              groups[key].totalActual += pb.actualCost || 0;
             });
 
-            const pillars = [
-              { key: 'peripherals',  label: 'Periferal Hardware',       icon: Package,   colorClass: 'text-blue-600 dark:text-blue-400',   bgClass: 'bg-blue-50 dark:bg-blue-950/40',   barClass: 'bg-blue-500',   realisasi: pillarActual.peripherals,  pagu: pillarPagu.peripherals  },
-              { key: 'assetsRental', label: 'Sewa Aset Device',         icon: Laptop,    colorClass: 'text-amber-600 dark:text-amber-400', bgClass: 'bg-amber-50 dark:bg-amber-950/40', barClass: 'bg-amber-500',  realisasi: pillarActual.assetsRental, pagu: pillarPagu.assetsRental },
-              { key: 'subscriptions',label: 'Subscriptions & Lisensi',  icon: CreditCard,colorClass: 'text-violet-600 dark:text-violet-400',bgClass: 'bg-violet-50 dark:bg-violet-950/40',barClass: 'bg-violet-500',realisasi: pillarActual.subscriptions,pagu: pillarPagu.subscriptions},
-              { key: 'isp',          label: 'Internet & Jaringan (ISP)',icon: Wifi,      colorClass: 'text-cyan-600 dark:text-cyan-400',   bgClass: 'bg-cyan-50 dark:bg-cyan-950/40',   barClass: 'bg-cyan-500',   realisasi: pillarActual.isp,          pagu: pillarPagu.isp          },
-              { key: 'projects',     label: 'Proyek & Inovasi IT',      icon: Sparkles,  colorClass: 'text-emerald-600 dark:text-emerald-400',bgClass: 'bg-emerald-50 dark:bg-emerald-950/40',barClass: 'bg-emerald-500',realisasi: pillarActual.projects, pagu: pillarPagu.projects     },
-            ];
-
-            const totalPagu = pillars.reduce((s, p) => s + p.pagu, 0);
-            const totalRealisasi = pillars.reduce((s, p) => s + p.realisasi, 0);
-
-            const catGroups = {};
-            projectBudgets.forEach(pb => {
-              const cat = pb.category || 'OTHERS';
-              if (!catGroups[cat]) catGroups[cat] = { items: [], totalPagu: 0, totalActual: 0 };
-              catGroups[cat].items.push(pb);
-              catGroups[cat].totalPagu += pb.allocatedBudget || 0;
-              catGroups[cat].totalActual += pb.actualCost || 0;
+            // Urutan tampilan: OPEX types dulu, CAPEX terakhir
+            const ORDER = ['Utilities', 'License & Permit', 'Repair & Maintenance', 'Rental Expenses', CAPEX_KEY, 'Lainnya'];
+            const sortedGroups = Object.entries(groups).sort(([a], [b]) => {
+              const ia = ORDER.indexOf(a); const ib = ORDER.indexOf(b);
+              return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
             });
+
+            const GROUP_META = {
+              'Utilities':               { icon: Wifi,      color: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400',     badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',     bar: 'bg-cyan-500'    },
+              'License & Permit':        { icon: CreditCard, color: 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400', badge: 'bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300', bar: 'bg-violet-500'  },
+              'Repair & Maintenance':    { icon: Package,   color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',       badge: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',       bar: 'bg-blue-500'    },
+              'Rental Expenses':         { icon: Laptop,    color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400',   badge: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',   bar: 'bg-amber-500'   },
+              [CAPEX_KEY]:               { icon: Sparkles,  color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300', bar: 'bg-emerald-500' },
+              'Lainnya':                 { icon: Layers,    color: 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400',  badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300',  bar: 'bg-slate-400'   },
+            };
+
+            const grandPagu     = sortedGroups.reduce((s, [, g]) => s + g.totalPagu, 0);
+            const grandActual   = sortedGroups.reduce((s, [, g]) => s + g.totalActual, 0);
 
             return (
-              <div className="space-y-6">
-                {/* Section 1: 5 Pillar Cards */}
-                <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
-                  {pillars.map((p, i) => {
-                    const serapanPct = p.pagu > 0 ? Math.round((p.realisasi / p.pagu) * 100) : null;
-                    const IconComp = p.icon;
-                    return (
-                      <div key={p.key} className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-sm space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className={`w-8 h-8 ${p.bgClass} rounded-xl flex items-center justify-center`}>
-                            <IconComp className={`w-4 h-4 ${p.colorClass}`} />
-                          </div>
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Pilar {i + 1}</span>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-500 mb-0.5">{p.label}</p>
-                          <h4 className={`text-sm font-black ${p.colorClass}`}>{formatRupiah(p.realisasi)}</h4>
-                          {p.pagu > 0
-                            ? <p className="text-[9px] text-gray-400 mt-0.5">Pagu: {formatRupiah(p.pagu)}</p>
-                            : <p className="text-[9px] text-gray-400 mt-0.5">Pagu: Tidak Dianggarkan</p>
-                          }
-                        </div>
-                        {serapanPct !== null && (
-                          <div>
-                            <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                              <div className={`${serapanPct > 100 ? 'bg-rose-500' : p.barClass} h-full rounded-full transition-all`} style={{ width: `${Math.min(serapanPct, 100)}%` }}></div>
-                            </div>
-                            <p className={`text-[9px] font-bold mt-1 ${serapanPct > 100 ? 'text-rose-500' : serapanPct > 90 ? 'text-amber-500' : p.colorClass}`}>{serapanPct}% Terpakai</p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Section 2: Comparison Table */}
+              <div className="space-y-4">
+                {/* Summary table per Account Type */}
                 <div className="glass-panel rounded-3xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60 shadow-sm">
                   <div className="px-5 py-4 border-b border-slate-200/50 dark:border-slate-800/40 flex items-center gap-2">
                     <BarChart2 className="w-4 h-4 text-indigo-500" />
-                    <h3 className="text-sm font-black text-slate-800 dark:text-white">Perbandingan Pagu vs Realisasi per Pilar IT</h3>
+                    <h3 className="text-sm font-black text-slate-800 dark:text-white">Rekapitulasi Budget vs Realisasi per Kategori Akun</h3>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50/80 dark:bg-slate-800/50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                          <th className="py-3 px-4">Pilar IT</th>
+                          <th className="py-3 px-4">Account Type (Kategori Akun)</th>
+                          <th className="py-3 px-4 text-center">Jumlah Item</th>
                           <th className="py-3 px-4 text-right">Pagu Anggaran</th>
                           <th className="py-3 px-4 text-right">Realisasi</th>
                           <th className="py-3 px-4 text-right">Selisih</th>
@@ -1031,40 +973,38 @@ export default function ITBudget360() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/50 text-xs">
-                        {pillars.map((p, i) => {
-                          const selisih = p.pagu - p.realisasi;
-                          const serapanPct = p.pagu > 0 ? Math.round((p.realisasi / p.pagu) * 100) : null;
-                          const IconComp = p.icon;
+                        {sortedGroups.map(([key, group]) => {
+                          const meta = GROUP_META[key] || GROUP_META['Lainnya'];
+                          const IconComp = meta.icon;
+                          const selisih = group.totalPagu - group.totalActual;
+                          const pct = group.totalPagu > 0 ? Math.round((group.totalActual / group.totalPagu) * 100) : null;
                           return (
-                            <tr key={p.key} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
+                            <tr key={key} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
                               <td className="py-3.5 px-4">
                                 <div className="flex items-center gap-2">
-                                  <div className={`w-6 h-6 ${p.bgClass} rounded-lg flex items-center justify-center shrink-0`}>
-                                    <IconComp className={`w-3.5 h-3.5 ${p.colorClass}`} />
+                                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${meta.color}`}>
+                                    <IconComp className="w-3.5 h-3.5" />
                                   </div>
-                                  <span className="font-bold text-slate-800 dark:text-white">{p.label}</span>
-                                  <span className="text-[9px] text-gray-400 font-semibold">#{i + 1}</span>
+                                  <span className="font-bold text-slate-800 dark:text-white">{key}</span>
                                 </div>
                               </td>
-                              <td className="py-3.5 px-4 text-right font-bold text-slate-700 dark:text-slate-200">
-                                {p.pagu > 0 ? formatRupiah(p.pagu) : <span className="text-gray-400">—</span>}
-                              </td>
-                              <td className={`py-3.5 px-4 text-right font-black ${p.colorClass}`}>
-                                {formatRupiah(p.realisasi)}
+                              <td className="py-3.5 px-4 text-center font-bold text-slate-500">{group.items.length}</td>
+                              <td className="py-3.5 px-4 text-right font-bold text-slate-700 dark:text-slate-200">{formatRupiah(group.totalPagu)}</td>
+                              <td className={`py-3.5 px-4 text-right font-black ${group.totalActual > group.totalPagu ? 'text-rose-500' : 'text-emerald-600'}`}>
+                                {formatRupiah(group.totalActual)}
                               </td>
                               <td className="py-3.5 px-4 text-right font-bold">
-                                {p.pagu > 0
-                                  ? <span className={selisih >= 0 ? 'text-emerald-600' : 'text-rose-500'}>{selisih >= 0 ? '+' : ''}{formatRupiah(selisih)}</span>
-                                  : <span className="text-gray-400">—</span>
-                                }
+                                <span className={selisih >= 0 ? 'text-emerald-600' : 'text-rose-500'}>
+                                  {selisih >= 0 ? '+' : ''}{formatRupiah(selisih)}
+                                </span>
                               </td>
                               <td className="py-3.5 px-4">
-                                {serapanPct !== null ? (
+                                {pct !== null ? (
                                   <div className="flex items-center gap-2">
                                     <div className="w-20 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                                      <div className={`${serapanPct > 100 ? 'bg-rose-500' : serapanPct > 90 ? 'bg-amber-500' : p.barClass} h-full rounded-full`} style={{ width: `${Math.min(serapanPct, 100)}%` }}></div>
+                                      <div className={`${pct > 100 ? 'bg-rose-500' : pct > 90 ? 'bg-amber-500' : meta.bar} h-full rounded-full`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
                                     </div>
-                                    <span className={`font-black text-[10px] ${serapanPct > 100 ? 'text-rose-500' : serapanPct > 90 ? 'text-amber-500' : 'text-emerald-600'}`}>{serapanPct}%</span>
+                                    <span className={`font-black text-[10px] ${pct > 100 ? 'text-rose-500' : pct > 90 ? 'text-amber-500' : 'text-emerald-600'}`}>{pct}%</span>
                                   </div>
                                 ) : <span className="text-gray-400 text-[10px]">N/A</span>}
                               </td>
@@ -1072,52 +1012,43 @@ export default function ITBudget360() {
                           );
                         })}
                         <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-t-2 border-slate-300 dark:border-slate-700 text-xs font-black">
-                          <td className="py-3.5 px-4 text-slate-800 dark:text-white">TOTAL 5 PILAR IT</td>
-                          <td className="py-3.5 px-4 text-right text-slate-700 dark:text-slate-200">
-                            {totalPagu > 0 ? formatRupiah(totalPagu) : '—'}
-                          </td>
-                          <td className="py-3.5 px-4 text-right text-indigo-600 dark:text-indigo-400">{formatRupiah(totalRealisasi)}</td>
+                          <td className="py-3.5 px-4 text-slate-800 dark:text-white">TOTAL</td>
+                          <td className="py-3.5 px-4 text-center text-slate-500">{projectBudgets.length}</td>
+                          <td className="py-3.5 px-4 text-right text-slate-700 dark:text-slate-200">{formatRupiah(grandPagu)}</td>
+                          <td className={`py-3.5 px-4 text-right ${grandActual > grandPagu ? 'text-rose-500' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatRupiah(grandActual)}</td>
                           <td className="py-3.5 px-4 text-right">
-                            {totalPagu > 0
-                              ? <span className={totalPagu - totalRealisasi >= 0 ? 'text-emerald-600' : 'text-rose-500'}>{formatRupiah(totalPagu - totalRealisasi)}</span>
-                              : '—'
-                            }
+                            <span className={grandPagu - grandActual >= 0 ? 'text-emerald-600' : 'text-rose-500'}>{formatRupiah(grandPagu - grandActual)}</span>
                           </td>
                           <td className="py-3.5 px-4">
-                            {totalPagu > 0
-                              ? <span className="font-black text-[10px] text-indigo-600 dark:text-indigo-400">{Math.round((totalRealisasi / totalPagu) * 100)}%</span>
-                              : <span className="text-gray-400 text-[10px]">N/A</span>
-                            }
+                            {grandPagu > 0 && <span className="font-black text-[10px] text-indigo-600 dark:text-indigo-400">{Math.round((grandActual / grandPagu) * 100)}%</span>}
                           </td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                  <div className="px-5 py-2.5 border-t border-slate-200/40 dark:border-slate-800/40">
-                    <p className="text-[10px] text-gray-400">
-                      * Pagu dan Realisasi seluruh pilar bersumber dari item anggaran Budget 360. Pilar 1–4 dipetakan dari item OPEX berdasarkan Tipe Akun; Pilar 5 dari semua item CAPEX. Angka ini mencerminkan seberapa besar pagu yang sudah di-entry vs realisasi yang sudah di-tag.
-                    </p>
-                  </div>
                 </div>
 
-                {/* Section 3: Budget Items by Category */}
-                {Object.keys(catGroups).length === 0 ? (
+                {/* Detail per Account Type */}
+                {sortedGroups.length === 0 ? (
                   <div className="text-center py-8 text-gray-400 text-sm font-semibold">Belum ada item anggaran terdaftar.</div>
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 px-1">
                       <Tag className="w-4 h-4 text-indigo-500" />
-                      <h3 className="text-sm font-black text-slate-800 dark:text-white">Rincian per Kategori Proyek IT (Budget vs Realisasi)</h3>
+                      <h3 className="text-sm font-black text-slate-800 dark:text-white">Rincian Item per Kategori Akun</h3>
                     </div>
-                    {Object.entries(catGroups).map(([cat, group]) => {
-                      const catMeta = CATEGORY_META[cat] || CATEGORY_META.OTHERS;
+                    {sortedGroups.map(([key, group]) => {
+                      const meta = GROUP_META[key] || GROUP_META['Lainnya'];
+                      const IconComp = meta.icon;
                       const serapanPct = group.totalPagu > 0 ? Math.round((group.totalActual / group.totalPagu) * 100) : 0;
                       return (
-                        <div key={cat} className="glass-panel rounded-2xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60 shadow-sm">
+                        <div key={key} className="glass-panel rounded-2xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60 shadow-sm">
                           <div className="flex items-center justify-between px-5 py-3 bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-800/40">
                             <div className="flex items-center gap-3">
-                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${catMeta.color}`}>{cat}</span>
-                              <span className="text-xs font-black text-slate-700 dark:text-slate-200">{catMeta.label}</span>
+                              <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${meta.color}`}>
+                                <IconComp className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-xs font-black text-slate-700 dark:text-slate-200">{key}</span>
                               <span className="text-[10px] text-gray-400 font-semibold">{group.items.length} item</span>
                             </div>
                             <div className="flex items-center gap-4 text-xs">
@@ -1138,16 +1069,16 @@ export default function ITBudget360() {
                             {group.items.map(pb => {
                               const pct = pb.allocatedBudget > 0 ? Math.round(((pb.actualCost || 0) / pb.allocatedBudget) * 100) : 0;
                               const statusColor = {
-                                'PROPOSED': 'bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-400',
-                                'APPROVED': 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400',
+                                'PROPOSED':    'bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-400',
+                                'APPROVED':    'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400',
                                 'IN_PROGRESS': 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400',
-                                'COMPLETED': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400',
+                                'COMPLETED':   'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400',
                               }[pb.status] || 'bg-slate-100 text-slate-600';
                               return (
                                 <div key={pb.id} className="px-5 py-3 flex flex-wrap items-center gap-3 text-xs hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition">
                                   <div className="flex-1 min-w-0">
                                     <p className="font-bold text-slate-800 dark:text-white truncate">{pb.projectCode} — {pb.projectName}</p>
-                                    <p className="text-[10px] text-gray-400 mt-0.5">{pb.companyMaster?.name || '—'} · {pb.budgetType} · {pb.accountType || '—'}</p>
+                                    <p className="text-[10px] text-gray-400 mt-0.5">{pb.companyMaster?.name || '—'} · {pb.budgetType}</p>
                                   </div>
                                   <div className="flex items-center gap-4 shrink-0">
                                     <div className="text-right">
@@ -1311,11 +1242,10 @@ export default function ITBudget360() {
                     onChange={(e) => setFormAccountType(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
                   >
-                    <option value="Periferal Hardware">Periferal Hardware</option>
-                    <option value="Sewa Aset">Sewa Aset</option>
-                    <option value="Subscriptions & Lisensi">Subscriptions &amp; Lisensi</option>
-                    <option value="Internet & ISP">Internet &amp; ISP</option>
-                    <option value="Proyek & Inovasi">Proyek &amp; Inovasi</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="License & Permit">License &amp; Permit</option>
+                    <option value="Repair & Maintenance">Repair &amp; Maintenance</option>
+                    <option value="Rental Expenses">Rental Expenses</option>
                   </select>
                 </div>
               </div>
