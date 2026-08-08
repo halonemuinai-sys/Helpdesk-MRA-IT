@@ -282,8 +282,8 @@ export default function BudgetTaggingModal({
             <div className="pt-2">
               <div className="flex justify-between text-[10px] font-extrabold mb-1">
                 <span className="text-slate-400">Status Pemakaian Realisasi:</span>
-                <span className={usagePercentage > 100 ? 'text-rose-400' : usagePercentage === 100 ? 'text-emerald-400' : 'text-blue-400'}>
-                  {usagePercentage === 100 ? 'Terpakai Penuh (100%)' : `${usagePercentage.toFixed(0)}% Terpakai`}
+                <span className={usagePercentage > 100 ? 'text-rose-400' : usagePercentage === 100 ? 'text-emerald-400' : usagePercentage === 0 ? 'text-slate-400' : 'text-blue-400'}>
+                  {usagePercentage === 0 ? 'Belum Dipakai' : usagePercentage === 100 ? 'Terpakai Penuh (100%)' : usagePercentage > 100 ? `Over-Budget (${usagePercentage.toFixed(0)}%)` : `${usagePercentage.toFixed(0)}% Terpakai`}
                 </span>
               </div>
               <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
