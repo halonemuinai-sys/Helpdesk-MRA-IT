@@ -32,7 +32,8 @@ import {
   FileSpreadsheet,
   Save,
   Tag,
-  BarChart2
+  BarChart2,
+  Info
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
 import BudgetTaggingModal from '../components/budgets/BudgetTaggingModal';
@@ -783,9 +784,25 @@ export default function ITBudget360() {
                       </h3>
                       <p className="text-[11px] text-slate-400 mt-0.5">Perincian Pagu Anggaran &amp; Realisasi Biaya Bulanan per Kategori Akun OPEX &amp; CAPEX</p>
                     </div>
-                    <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg font-medium">
-                      💡 Angka disingkat (Jt/M). Hover kursor pada angka untuk detail nominal lengkap.
-                    </span>
+                    
+                    {/* Tooltip Penjelasan Tabel */}
+                    <div className="relative group inline-block">
+                      <span className="text-[10px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 cursor-help hover:bg-slate-200 dark:hover:bg-slate-700 transition border border-slate-200/60 dark:border-slate-700/50">
+                        <Info className="w-3.5 h-3.5 text-indigo-500" />
+                        Penjelasan Tabel Matriks 12 Bulan
+                      </span>
+                      <div className="absolute right-0 top-7 w-72 p-3 bg-slate-900 text-white text-[11px] rounded-2xl shadow-xl border border-slate-700 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-30 space-y-1.5">
+                        <p className="font-bold text-indigo-300 flex items-center gap-1">
+                          <Info className="w-3.5 h-3.5" /> Maksud &amp; Tujuan Tabel Ini:
+                        </p>
+                        <p className="text-slate-300 leading-relaxed text-[10px]">
+                          Tabel ini menyajikan rekapitulasi Pagu Anggaran vs Realisasi pengeluaran bulanan (Januari s/d Desember) untuk seluruh Kategori Akun IT (OPEX &amp; CAPEX) dalam 1 Tahun Fiskal.
+                        </p>
+                        <div className="border-t border-slate-700 pt-1 text-[10px] text-emerald-400 font-mono">
+                          Angka disingkat (Jt = Juta, M = Miliar). Hover kursor pada sel angka untuk melihat nominal Rupiah utuh.
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">
@@ -806,7 +823,7 @@ export default function ITBudget360() {
                         {/* HEADER SECTION 1: OPEX */}
                         <tr className="bg-blue-50/60 dark:bg-blue-950/30 text-blue-800 dark:text-blue-200 font-black text-[10px] uppercase tracking-wider">
                           <td colSpan={17} className="py-2 px-2.5">
-                            📊 Biaya Operasional (OPEX)
+                            Biaya Operasional (OPEX)
                           </td>
                         </tr>
                         {opexCategories.map(cat => (
@@ -858,7 +875,7 @@ export default function ITBudget360() {
                         {/* HEADER SECTION 2: CAPEX */}
                         <tr className="bg-purple-50/60 dark:bg-purple-950/30 text-purple-800 dark:text-purple-200 font-black text-[10px] uppercase tracking-wider">
                           <td colSpan={17} className="py-2 px-2.5">
-                            🚀 Investasi &amp; Belanja Modal (CAPEX)
+                            Investasi &amp; Belanja Modal (CAPEX)
                           </td>
                         </tr>
                         {capexCategories.map(cat => (
