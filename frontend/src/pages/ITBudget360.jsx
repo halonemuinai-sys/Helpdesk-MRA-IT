@@ -25,11 +25,43 @@ import {
   ChevronRight,
   Sparkles,
   Sliders,
-  Check
+  Check,
+  Edit2,
+  Trash2,
+  X,
+  FileSpreadsheet,
+  Save
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const MRA_BRANDS = [
+  'Bvlgari',
+  'Wiggle Wiggle',
+  'Cosmopolitan',
+  "Harper's Bazaar",
+  'Her World',
+  'Hard Rock FM',
+  'Trax FM',
+  'iRadio',
+  'Brava Radio',
+  'Häagen-Dazs',
+  'Hard Rock Cafe',
+  'Parentalk',
+  'MRA Head Office / HQ'
+];
+
+const DEPARTMENTS = [
+  'Sales Advisor / Store Staff',
+  'VIP Sales Bvlgari',
+  'Store Operations',
+  'Finance & Accounting',
+  'General Affairs',
+  'IT Department',
+  'Marketing & CRM',
+  'Executive / Directors'
+];
 
 const formatRupiah = (val) => {
   if (val === undefined || val === null) return 'Rp 0';
@@ -59,7 +91,27 @@ export default function ITBudget360() {
 
   // Search & Filter for Projects Tab
   const [projectSearch, setProjectSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
+  const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('');
+
+  // Modal / Drawer Form State (Input & Edit Budget)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formProjectName, setFormProjectName] = useState('');
+  const [formCategory, setFormCategory] = useState('DIGITAL_TRANSFORMATION');
+  const [formCompanyMasterId, setFormCompanyMasterId] = useState('');
+  const [formBrand, setFormBrand] = useState('Bvlgari');
+  const [formDepartment, setFormDepartment] = useState('Store Operations');
+  const [formFiscalYear, setFormFiscalYear] = useState('2026');
+  const [formBudgetType, setFormBudgetType] = useState('CAPEX');
+  const [formAccountType, setFormAccountType] = useState('Utilities');
+  const [formAllocatedBudget, setFormAllocatedBudget] = useState('');
+  const [formActualCost, setFormActualCost] = useState('0');
+  const [formPriority, setFormPriority] = useState('MEDIUM');
+  const [formStatus, setFormStatus] = useState('PROPOSED');
+  const [formVendor, setFormVendor] = useState('');
+  const [formNotes, setFormNotes] = useState('');
+  const [formSubmitting, setFormSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCompanyMasters();
@@ -137,13 +189,125 @@ export default function ITBudget360() {
     }
   };
 
+  // Open modal for NEW budget item
+  const handleOpenNewModal = () => {
+    setEditingId(null);
+    setFormProjectName('');
+    setFormCategory('DIGITAL_TRANSFORMATION');
+    setFormCompanyMasterId(companies.length > 0 ? companies[0].id : '');
+    setFormBrand('Bvlgari');
+    setFormDepartment('Store Operations');
+    setFormFiscalYear(selectedYear || '2026');
+    setFormBudgetType('CAPEX');
+    setFormAccountType('Utilities');
+    setFormAllocatedBudget('');
+    setFormActualCost('0');
+    setFormPriority('MEDIUM');
+    setFormStatus('PROPOSED');
+    setFormVendor('');
+    setFormNotes('');
+    setIsModalOpen(true);
+  };
+
+  // Open modal for EDITING budget item
+  const handleOpenEditModal = (item) => {
+    setEditingId(item.id);
+    setFormProjectName(item.projectName);
+    setFormCategory(item.category);
+    setFormCompanyMasterId(item.companyMasterId || '');
+    setFormBrand(item.brand || 'Bvlgari');
+    setFormDepartment(item.department || 'Store Operations');
+    setFormFiscalYear(String(item.fiscalYear));
+    setFormBudgetType(item.budgetType || 'CAPEX');
+    setFormAccountType(item.accountType || 'Utilities');
+    setFormAllocatedBudget(String(item.allocatedBudget));
+    setFormActualCost(String(item.actualCost || 0));
+    setFormPriority(item.priority || 'MEDIUM');
+    setFormStatus(item.status || 'PROPOSED');
+    setFormVendor(item.vendor || '');
+    setFormNotes(item.notes || '');
+    setIsModalOpen(true);
+  };
+
+  // Handle Form Submit (CREATE / UPDATE)
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!formProjectName || !formAllocatedBudget) {
+      alert('Nama item proyek dan Pagu Anggaran wajib diisi.');
+      return;
+    }
+
+    try {
+      setFormSubmitting(true);
+      const payload = {
+        projectName: formProjectName,
+        category: formCategory,
+        companyMasterId: formCompanyMasterId ? parseInt(formCompanyMasterId) : null,
+        brand: formBrand,
+        department: formDepartment,
+        fiscalYear: parseInt(formFiscalYear),
+        budgetType: formBudgetType,
+        accountType: formAccountType,
+        allocatedBudget: parseFloat(formAllocatedBudget),
+        actualCost: parseFloat(formActualCost || 0),
+        priority: formPriority,
+        status: formStatus,
+        vendor: formVendor,
+        notes: formNotes
+      };
+
+      const url = editingId ? `${API_URL}/budgets/${editingId}` : `${API_URL}/budgets`;
+      const method = editingId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setIsModalOpen(false);
+        handleLoadData();
+      } else {
+        const errJson = await res.json();
+        throw new Error(errJson.error || 'Gagal menyimpan anggaran.');
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  // Handle Delete Budget Item
+  const handleDeleteBudget = async (id, name) => {
+    if (!window.confirm(`Yakin ingin menghapus item anggaran "${name}"?`)) return;
+    try {
+      const res = await fetch(`${API_URL}/budgets/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        handleLoadData();
+      } else {
+        throw new Error('Gagal menghapus item.');
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const filteredProjects = projectBudgets.filter(p => {
     const matchSearch = !projectSearch || 
       p.projectName.toLowerCase().includes(projectSearch.toLowerCase()) ||
       p.projectCode.toLowerCase().includes(projectSearch.toLowerCase()) ||
       (p.brand && p.brand.toLowerCase().includes(projectSearch.toLowerCase()));
-    const matchCat = !selectedCategory || p.category === selectedCategory;
-    return matchSearch && matchCat;
+    const matchCat = !selectedCategoryFilter || p.category === selectedCategoryFilter;
+    const matchDept = !selectedDepartmentFilter || p.department === selectedDepartmentFilter;
+    return matchSearch && matchCat && matchDept;
   });
 
   return (
@@ -161,7 +325,7 @@ export default function ITBudget360() {
                 IT Budget 360 &amp; Innovation Hub
               </h1>
               <p className="text-xs text-gray-500 font-medium">
-                Pusat Perencanaan Anggaran IT, Proyek Inovasi (CAPEX/OPEX), &amp; Analisis Realisasi 360-Derajat
+                Input Anggaran Proyek, Evaluasi Pagu vs Realisasi, &amp; Analisis Realisasi 360-Derajat
               </p>
             </div>
           </div>
@@ -232,16 +396,14 @@ export default function ITBudget360() {
             {loading ? 'Memuat...' : 'Proses Data'}
           </button>
 
-          {/* Generate Baseline Button */}
-          {selectedYear === '2027' && (
-            <button
-              onClick={handleGenerateBaseline2027}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              Generate Baseline 2027
-            </button>
-          )}
+          {/* New Budget Input Button */}
+          <button
+            onClick={handleOpenNewModal}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition"
+          >
+            <Plus className="w-4 h-4" />
+            + Input Anggaran Proyek
+          </button>
         </div>
       </div>
 
@@ -267,7 +429,7 @@ export default function ITBudget360() {
           }`}
         >
           <Sparkles className="w-4 h-4" />
-          Proyek Inovasi &amp; CAPEX ({projectBudgets.length})
+          Tabel Anggaran &amp; Proyek Inovasi ({projectBudgets.length})
         </button>
         <button
           onClick={() => setActiveTab('departmental')}
@@ -409,65 +571,120 @@ export default function ITBudget360() {
             </div>
           )}
 
-          {/* TAB 2: PROYEK INOVASI & CAPEX */}
+          {/* TAB 2: TABEL ANGGARAN & INSPECTOR */}
           {activeTab === 'projects' && (
             <div className="space-y-4">
+              {/* Table Controls */}
               <div className="flex flex-wrap items-center justify-between gap-3 glass-panel p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40">
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Cari proyek inovasi..."
+                      placeholder="Cari item anggaran / proyek / brand..."
                       value={projectSearch}
                       onChange={(e) => setProjectSearch(e.target.value)}
-                      className="pl-9 pr-4 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                      className="pl-9 pr-4 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white"
                     />
                   </div>
+
+                  <select
+                    value={selectedDepartmentFilter}
+                    onChange={(e) => setSelectedDepartmentFilter(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white"
+                  >
+                    <option value="">Semua Departemen</option>
+                    {DEPARTMENTS.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
                 </div>
+
+                <button
+                  onClick={handleOpenNewModal}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  + Tambah Item Anggaran Baru
+                </button>
               </div>
 
-              {/* Projects Table */}
-              <div className="glass-panel rounded-3xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60">
+              {/* Projects & Budget Items Table */}
+              <div className="glass-panel rounded-3xl border border-slate-200/50 dark:border-slate-800/40 overflow-hidden bg-white/70 dark:bg-slate-900/60 shadow-sm">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                      <th className="py-3.5 px-4">Kode &amp; Proyek</th>
-                      <th className="py-3.5 px-4">Kategori</th>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Kode &amp; Item Anggaran</th>
                       <th className="py-3.5 px-4">Entitas &amp; Brand</th>
-                      <th className="py-3.5 px-4 text-right">Pagu Budget (Rp)</th>
+                      <th className="py-3.5 px-4">Departemen</th>
+                      <th className="py-3.5 px-4">Tipe Biaya</th>
+                      <th className="py-3.5 px-4 text-right">Pagu Budget</th>
+                      <th className="py-3.5 px-4 text-right">Realisasi Riil</th>
                       <th className="py-3.5 px-4 text-center">Status</th>
+                      <th className="py-3.5 px-4 text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/50 text-xs">
                     {filteredProjects.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="py-8 text-center text-gray-400 font-semibold">
-                          Belum ada proyek inovasi terdaftar untuk filter ini.
+                        <td colSpan="8" className="py-12 text-center text-gray-400 font-semibold">
+                          Belum ada item anggaran terdaftar. Klik "+ Tambah Item Anggaran Baru" untuk menginput.
                         </td>
                       </tr>
                     ) : (
                       filteredProjects.map(p => (
                         <tr key={p.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                          <td className="py-3 px-4 font-bold text-slate-800 dark:text-white">
+                          <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-white">
                             <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 font-mono mr-2">
                               {p.projectCode}
                             </span>
                             {p.projectName}
                           </td>
-                          <td className="py-3 px-4 text-gray-500 font-medium">
-                            {p.category}
-                          </td>
-                          <td className="py-3 px-4 font-medium text-slate-700 dark:text-slate-300">
+                          <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">
                             {p.companyMaster?.name || 'Group Wide'} {p.brand ? `(${p.brand})` : ''}
                           </td>
-                          <td className="py-3 px-4 text-right font-black text-emerald-600 dark:text-emerald-450">
+                          <td className="py-3.5 px-4 font-medium text-gray-500">
+                            <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[11px]">
+                              {p.department || 'Store Operations'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-bold">
+                            <span className={`px-2 py-0.5 rounded text-[10px] ${
+                              p.budgetType === 'CAPEX' 
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'
+                            }`}>
+                              {p.budgetType}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-black text-indigo-600 dark:text-indigo-400">
                             {formatRupiah(p.allocatedBudget)}
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="py-3.5 px-4 text-right font-black text-slate-700 dark:text-slate-300">
+                            {formatRupiah(p.actualCost || 0)}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
                             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
                               {p.status}
                             </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenEditModal(p)}
+                                className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition"
+                                title="Edit Anggaran"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBudget(p.id, p.projectName)}
+                                className="p-1.5 rounded-lg text-gray-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
+                                title="Hapus Anggaran"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -544,6 +761,243 @@ export default function ITBudget360() {
             </div>
           )}
         </>
+      )}
+
+      {/* FORM DRAWER / MODAL UNTUK INPUT & EDIT ANGGARAN */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[90vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 rounded-2xl flex items-center justify-center">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 dark:text-white">
+                    {editingId ? 'Edit Item Anggaran Proyek' : 'Input Anggaran Proyek Baru'}
+                  </h3>
+                  <p className="text-xs text-gray-500 font-medium">Form Alokasi Pagu &amp; Perencanaan Anggaran IT</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 rounded-xl text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body Form */}
+            <form onSubmit={handleFormSubmit} className="p-6 overflow-y-auto space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Nama Proyek / Item Anggaran *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Modernisasi POS & Integration System"
+                  value={formProjectName}
+                  onChange={(e) => setFormProjectName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Entitas Induk PT MRA *
+                  </label>
+                  <select
+                    value={formCompanyMasterId}
+                    onChange={(e) => setFormCompanyMasterId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                  >
+                    {companies.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Brand Business Unit MRA
+                  </label>
+                  <select
+                    value={formBrand}
+                    onChange={(e) => setFormBrand(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                  >
+                    {MRA_BRANDS.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Departemen Pengguna *
+                  </label>
+                  <select
+                    value={formDepartment}
+                    onChange={(e) => setFormDepartment(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                  >
+                    {DEPARTMENTS.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Tahun Fiskal *
+                  </label>
+                  <select
+                    value={formFiscalYear}
+                    onChange={(e) => setFormFiscalYear(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                  >
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Tipe Biaya *
+                  </label>
+                  <select
+                    value={formBudgetType}
+                    onChange={(e) => setFormBudgetType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                  >
+                    <option value="CAPEX">CAPEX (Capital Expense / Inovasi &amp; Aset)</option>
+                    <option value="OPEX">OPEX (Operational Expense / Biaya Rutin)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Account Type (Kategori Akun)
+                  </label>
+                  <select
+                    value={formAccountType}
+                    onChange={(e) => setFormAccountType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                  >
+                    <option value="Utilities">Utilities</option>
+                    <option value="License & Permit">License &amp; Permit</option>
+                    <option value="Repair & Maintenance">Repair &amp; Maintenance</option>
+                    <option value="Rental Expenses">Rental Expenses</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Pagu Anggaran (Rp) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="Contoh: 45000000"
+                    value={formAllocatedBudget}
+                    onChange={(e) => setFormAllocatedBudget(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Realisasi Riil (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={formActualCost}
+                    onChange={(e) => setFormActualCost(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Prioritas
+                  </label>
+                  <select
+                    value={formPriority}
+                    onChange={(e) => setFormPriority(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                  >
+                    <option value="CRITICAL">CRITICAL</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Status Approval
+                  </label>
+                  <select
+                    value={formStatus}
+                    onChange={(e) => setFormStatus(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                  >
+                    <option value="PROPOSED">PROPOSED (Usulan)</option>
+                    <option value="APPROVED">APPROVED (Disetujui)</option>
+                    <option value="IN_PROGRESS">IN_PROGRESS (Berjalan)</option>
+                    <option value="COMPLETED">COMPLETED (Selesai)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Catatan Keterangan
+                </label>
+                <textarea
+                  rows="2"
+                  placeholder="Catatan pendukung atau justifikasi anggaran..."
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                ></textarea>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={formSubmitting}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {formSubmitting ? 'Menyimpan...' : 'Simpan Anggaran'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
