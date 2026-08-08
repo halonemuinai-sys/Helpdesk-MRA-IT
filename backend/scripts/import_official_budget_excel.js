@@ -13,17 +13,13 @@ async function importOfficialBudgets() {
     const allCompanyMasters = await prisma.companyMaster.findMany();
     
     const findCompanyId = (nameStr) => {
-      if (!nameStr) return null;
+      if (!nameStr) return 15; // default PLA
       const s = String(nameStr).toLowerCase();
-      const match = allCompanyMasters.find(c => {
-        const cName = c.name.toLowerCase();
-        if (s.includes('mogems') && cName.includes('mogems')) return true;
-        if (s.includes('permata') && cName.includes('permata')) return true;
-        if (s.includes('jemma') && cName.includes('jemma')) return true;
-        if (s.includes('amanda') && cName.includes('amanda')) return true;
-        return false;
-      });
-      return match ? match.id : null;
+      if (s.includes('mogems') || s.includes('mpi')) return 14;
+      if (s.includes('permata') || s.includes('pla')) return 15;
+      if (s.includes('jemma') || s.includes('jpi')) return 13;
+      if (s.includes('amanda') || s.includes('aaa')) return 19;
+      return 15;
     };
 
     const mapDepartment = (costCenter) => {
