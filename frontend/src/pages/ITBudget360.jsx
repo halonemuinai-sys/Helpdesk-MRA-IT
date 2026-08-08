@@ -531,21 +531,22 @@ export default function ITBudget360() {
               </div>
 
               {/* Industry Benchmark Health Indicator */}
-              <div className="glass-panel p-6 rounded-3xl border border-indigo-200/50 dark:border-indigo-900/40 bg-gradient-to-r from-indigo-50/50 via-white to-blue-50/50 dark:from-slate-900/90 dark:to-slate-900/90 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
+              <div className="glass-panel p-6 rounded-3xl border border-indigo-200/50 dark:border-indigo-900/40 bg-gradient-to-r from-indigo-50/50 via-white to-blue-50/50 dark:from-slate-900/90 dark:to-slate-900/90 shadow-sm space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     <h3 className="text-sm font-black text-slate-800 dark:text-white">
                       Evaluasi Kesehatan Alokasi Anggaran vs Benchmark Industri Ritel
                     </h3>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider ${
                     reportData.benchmarks.isHealthy ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-amber-100 text-amber-700'
                   }`}>
                     {reportData.benchmarks.isHealthy ? '✓ PERFORMA ALOKASI SEHAT (ON TRACK)' : '⚠ WARNING OVER-LIMIT'}
                   </span>
                 </div>
 
+                {/* Progress Bars */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
                   <div className="bg-white/70 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-700/40">
                     <div className="flex justify-between font-bold text-gray-600 dark:text-slate-400 mb-1">
@@ -574,6 +575,75 @@ export default function ITBudget360() {
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
                       <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(reportData.benchmarks.securityPct, 100)}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detailed Analysis Breakdown & Action Plans */}
+                <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 space-y-4">
+                  <h4 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                    Analisis Kesehatan &amp; Rekomendasi Khusus Ritel MRA:
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Left Column: Alerts */}
+                    <div className="space-y-3">
+                      {reportData.benchmarks.opexPct > 75 && (
+                        <div className="flex gap-3 p-3.5 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-rose-700 dark:text-rose-300">
+                          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                          <div className="text-[11px]">
+                            <h5 className="font-bold text-xs mb-0.5">Biaya OPEX Rutin Terlalu Tinggi ({reportData.benchmarks.opexPct}%)</h5>
+                            <p className="opacity-90 leading-relaxed">
+                              Pengeluaran didominasi oleh <strong>Sewa Perangkat Laptop Bulanan</strong> dan <strong>Internet ISP Toko</strong>. Disarankan mengevaluasi skema sewa perangkat yang sudah jatuh tempo untuk dikonversi menjadi beli putus (CAPEX) guna mereduksi beban bulanan.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {reportData.benchmarks.capexPct < 15 && (
+                        <div className="flex gap-3 p-3.5 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-amber-700 dark:text-amber-300">
+                          <Zap className="w-5 h-5 shrink-0 mt-0.5" />
+                          <div className="text-[11px]">
+                            <h5 className="font-bold text-xs mb-0.5">Alokasi Inovasi Rendah ({reportData.benchmarks.capexPct}%)</h5>
+                            <p className="opacity-90 leading-relaxed">
+                              Investasi untuk modernisasi sistem penjualan (POS), sistem inventori toko, dan CRM kustom masih sangat minim. Industri ritel modern menyarankan porsi inovasi &gt; 25% agar bisnis tetap kompetitif.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {reportData.benchmarks.securityPct < 5 && (
+                        <div className="flex gap-3 p-3.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-indigo-700 dark:text-indigo-300">
+                          <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
+                          <div className="text-[11px]">
+                            <h5 className="font-bold text-xs mb-0.5">Proteksi Data Perlu Ditingkatkan ({reportData.benchmarks.securityPct}%)</h5>
+                            <p className="opacity-90 leading-relaxed">
+                              Alokasi untuk Cybersecurity dan kepatuhan lisensi audit berada di bawah 5%. Penting untuk menyisihkan anggaran khusus lisensi antivirus endpoint (EDR) dan firewall toko ritel guna melindungi data pelanggan VIP.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column: Strategic Recommendations Checklist */}
+                    <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/40 dark:border-slate-700/30 text-[11px] text-slate-600 dark:text-slate-350 space-y-3">
+                      <h5 className="font-black text-slate-800 dark:text-white uppercase tracking-wider text-[10px]">
+                        Langkah Strategis Efisiensi Anggaran:
+                      </h5>
+                      <ul className="space-y-2.5">
+                        <li className="flex gap-2 items-start">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <span><strong>Konsolidasi ISP Group MRA:</strong> Satukan pengadaan bandwidth toko retail di mal yang sama untuk mendapatkan harga sewa diskon korporasi.</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <span><strong>Reduksi Double Counting Sewa:</strong> Optimalkan eliminasi intercompany atas aset yang disewakan internal (seperti Permata Landmarq ke Mogems).</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <span><strong>Masa Pakai Fleksibel:</strong> Pastikan durasi sewa laptop selaras dengan masa aktif kontrak kerja karyawan guna menghindari sewa menganggur (idle devices).</span>
+                        </li>
+                      </ul>
                     </div>
                   </div>
                 </div>
