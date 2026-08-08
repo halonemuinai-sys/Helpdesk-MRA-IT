@@ -107,7 +107,7 @@ export default function ITBudget360() {
   const [formDepartment, setFormDepartment] = useState('Store Operations');
   const [formFiscalYear, setFormFiscalYear] = useState('2026');
   const [formBudgetType, setFormBudgetType] = useState('CAPEX');
-  const [formAccountType, setFormAccountType] = useState('Utilities');
+  const [formAccountType, setFormAccountType] = useState('Periferal Hardware');
   const [formAllocatedBudget, setFormAllocatedBudget] = useState('');
   const [formActualCost, setFormActualCost] = useState('0');
   const [formPriority, setFormPriority] = useState('MEDIUM');
@@ -229,7 +229,7 @@ export default function ITBudget360() {
     setFormDepartment('Store Operations');
     setFormFiscalYear(selectedYear || '2026');
     setFormBudgetType('CAPEX');
-    setFormAccountType('Utilities');
+    setFormAccountType('Periferal Hardware');
     setFormAllocatedBudget('');
     setFormActualCost('0');
     setFormPriority('MEDIUM');
@@ -931,23 +931,30 @@ export default function ITBudget360() {
             };
 
             // Pagu DAN realisasi keduanya dari Budget 360 (konsisten dengan bagian bawah)
-            const pillarPagu     = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
-            const pillarActual   = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
+            const pillarPagu   = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
+            const pillarActual = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
+
+            const toKey = (pb) => {
+              if (pb.budgetType === 'CAPEX') return 'projects';
+              const t = pb.accountType || '';
+              // Nama baru (5 pilar langsung)
+              if (t === 'Periferal Hardware')        return 'peripherals';
+              if (t === 'Sewa Aset')                 return 'assetsRental';
+              if (t === 'Subscriptions & Lisensi')   return 'subscriptions';
+              if (t === 'Internet & ISP')            return 'isp';
+              if (t === 'Proyek & Inovasi')          return 'projects';
+              // Nama lama (backward compatible)
+              if (t === 'Repair & Maintenance')      return 'peripherals';
+              if (t === 'Rental Expenses')           return 'assetsRental';
+              if (t === 'License & Permit')          return 'subscriptions';
+              if (t === 'Utilities')                 return 'isp';
+              return 'projects';
+            };
+
             projectBudgets.forEach(pb => {
-              const alloc  = pb.allocatedBudget || 0;
-              const actual = pb.actualCost || 0;
-              let key;
-              if (pb.budgetType === 'CAPEX') {
-                key = 'projects';
-              } else {
-                if (pb.accountType === 'Rental Expenses')       key = 'assetsRental';
-                else if (pb.accountType === 'License & Permit') key = 'subscriptions';
-                else if (pb.accountType === 'Utilities')        key = 'isp';
-                else if (pb.accountType === 'Repair & Maintenance') key = 'peripherals';
-                else key = 'projects';
-              }
-              pillarPagu[key]   += alloc;
-              pillarActual[key] += actual;
+              const key = toKey(pb);
+              pillarPagu[key]   += pb.allocatedBudget || 0;
+              pillarActual[key] += pb.actualCost || 0;
             });
 
             const pillars = [
@@ -1304,10 +1311,11 @@ export default function ITBudget360() {
                     onChange={(e) => setFormAccountType(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
                   >
-                    <option value="Utilities">Utilities</option>
-                    <option value="License & Permit">License &amp; Permit</option>
-                    <option value="Repair & Maintenance">Repair &amp; Maintenance</option>
-                    <option value="Rental Expenses">Rental Expenses</option>
+                    <option value="Periferal Hardware">Periferal Hardware</option>
+                    <option value="Sewa Aset">Sewa Aset</option>
+                    <option value="Subscriptions & Lisensi">Subscriptions &amp; Lisensi</option>
+                    <option value="Internet & ISP">Internet &amp; ISP</option>
+                    <option value="Proyek & Inovasi">Proyek &amp; Inovasi</option>
                   </select>
                 </div>
               </div>
