@@ -28,12 +28,17 @@ const WHITE   = [255, 255, 255];
 const LIGHT   = [248, 250, 252]; // slate-50
 const RULE    = [226, 232, 240]; // slate-200
 
-// Category colours (R, G, B)
+// Category stripe colours — hanya untuk aksen visual, bukan teks
 const COL_PERIPHERALS   = [59,  130, 246];  // blue-500
 const COL_SEWA          = [245, 158,  11];  // amber-500
 const COL_SUBSCRIPTION  = [16,  185, 129];  // emerald-500
 const COL_ISP           = [6,   182, 212];  // cyan-500
 const COL_TOTAL         = [220,  38,  38];  // rose-600
+
+// Monochrome text palette
+const TEXT_DARK   = [15,  23,  42];   // slate-900
+const TEXT_MED    = [51,  65,  85];   // slate-700
+const TEXT_TOTAL  = [15,  23,  42];   // slate-900 bold untuk kolom total
 
 // ─── PDF EXPORT ─────────────────────────────────────────────────────────────
 
@@ -125,7 +130,7 @@ export function exportPDF({ overview, periodLabel, selectedYear, selectedCompany
     // Value
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    doc.setTextColor(...kpi.color);
+    doc.setTextColor(...TEXT_DARK);
     doc.text(fmtRupiah(kpi.value), x + 5, curY + 12);
 
     // Period note
@@ -174,16 +179,15 @@ export function exportPDF({ overview, periodLabel, selectedYear, selectedCompany
       fontSize: 7,
     },
     columnStyles: {
-      0: { halign: 'left',  fontStyle: 'bold', cellWidth: 24 },
-      1: { halign: 'right', textColor: COL_PERIPHERALS },
-      2: { halign: 'right', textColor: COL_SEWA },
-      3: { halign: 'right', textColor: COL_SUBSCRIPTION },
-      4: { halign: 'right', textColor: COL_ISP },
-      5: { halign: 'right', fontStyle: 'bold', textColor: COL_TOTAL },
+      0: { halign: 'left',  fontStyle: 'bold', textColor: TEXT_DARK,  cellWidth: 24 },
+      1: { halign: 'right', textColor: TEXT_MED },
+      2: { halign: 'right', textColor: TEXT_MED },
+      3: { halign: 'right', textColor: TEXT_MED },
+      4: { halign: 'right', textColor: TEXT_MED },
+      5: { halign: 'right', fontStyle: 'bold', textColor: TEXT_TOTAL },
     },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     didParseCell(data) {
-      // Bold + colored bg for the TOTAL footer row
       if (data.row.index === trendBody.length - 1 && data.section === 'body') {
         data.cell.styles.fillColor  = [30, 41, 59];
         data.cell.styles.textColor  = [255, 255, 255];
@@ -234,12 +238,12 @@ export function exportPDF({ overview, periodLabel, selectedYear, selectedCompany
       fontSize: 7,
     },
     columnStyles: {
-      0: { halign: 'left',  fontStyle: 'bold', cellWidth: 55 },
-      1: { halign: 'right', textColor: COL_PERIPHERALS },
-      2: { halign: 'right', textColor: COL_SEWA },
-      3: { halign: 'right', textColor: COL_SUBSCRIPTION },
-      4: { halign: 'right', textColor: COL_ISP },
-      5: { halign: 'right', fontStyle: 'bold', textColor: COL_TOTAL },
+      0: { halign: 'left',  fontStyle: 'bold', textColor: TEXT_DARK,  cellWidth: 55 },
+      1: { halign: 'right', textColor: TEXT_MED },
+      2: { halign: 'right', textColor: TEXT_MED },
+      3: { halign: 'right', textColor: TEXT_MED },
+      4: { halign: 'right', textColor: TEXT_MED },
+      5: { halign: 'right', fontStyle: 'bold', textColor: TEXT_TOTAL },
     },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     didParseCell(data) {
