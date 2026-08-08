@@ -930,27 +930,32 @@ export default function ITBudget360() {
               OTHERS: { label: 'Lainnya', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300' },
             };
 
-            // Map OPEX projectBudgets to operational pillars by accountType
-            const pillarPagu = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
+            // Pagu DAN realisasi keduanya dari Budget 360 (konsisten dengan bagian bawah)
+            const pillarPagu     = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
+            const pillarActual   = { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, projects: 0 };
             projectBudgets.forEach(pb => {
-              const alloc = pb.allocatedBudget || 0;
+              const alloc  = pb.allocatedBudget || 0;
+              const actual = pb.actualCost || 0;
+              let key;
               if (pb.budgetType === 'CAPEX') {
-                pillarPagu.projects += alloc;
+                key = 'projects';
               } else {
-                if (pb.accountType === 'Rental Expenses') pillarPagu.assetsRental += alloc;
-                else if (pb.accountType === 'License & Permit') pillarPagu.subscriptions += alloc;
-                else if (pb.accountType === 'Utilities') pillarPagu.isp += alloc;
-                else if (pb.accountType === 'Repair & Maintenance') pillarPagu.peripherals += alloc;
-                else pillarPagu.projects += alloc;
+                if (pb.accountType === 'Rental Expenses')       key = 'assetsRental';
+                else if (pb.accountType === 'License & Permit') key = 'subscriptions';
+                else if (pb.accountType === 'Utilities')        key = 'isp';
+                else if (pb.accountType === 'Repair & Maintenance') key = 'peripherals';
+                else key = 'projects';
               }
+              pillarPagu[key]   += alloc;
+              pillarActual[key] += actual;
             });
 
             const pillars = [
-              { key: 'peripherals', label: 'Periferal Hardware', icon: Package, colorClass: 'text-blue-600 dark:text-blue-400', bgClass: 'bg-blue-50 dark:bg-blue-950/40', barClass: 'bg-blue-500', realisasi: reportData.grandTotal.peripherals, pagu: pillarPagu.peripherals },
-              { key: 'assetsRental', label: 'Sewa Aset Device', icon: Laptop, colorClass: 'text-amber-600 dark:text-amber-400', bgClass: 'bg-amber-50 dark:bg-amber-950/40', barClass: 'bg-amber-500', realisasi: reportData.grandTotal.assetsRental, pagu: pillarPagu.assetsRental },
-              { key: 'subscriptions', label: 'Subscriptions & Lisensi', icon: CreditCard, colorClass: 'text-violet-600 dark:text-violet-400', bgClass: 'bg-violet-50 dark:bg-violet-950/40', barClass: 'bg-violet-500', realisasi: reportData.grandTotal.subscriptions, pagu: pillarPagu.subscriptions },
-              { key: 'isp', label: 'Internet & Jaringan (ISP)', icon: Wifi, colorClass: 'text-cyan-600 dark:text-cyan-400', bgClass: 'bg-cyan-50 dark:bg-cyan-950/40', barClass: 'bg-cyan-500', realisasi: reportData.grandTotal.isp, pagu: pillarPagu.isp },
-              { key: 'projects', label: 'Proyek & Inovasi IT', icon: Sparkles, colorClass: 'text-emerald-600 dark:text-emerald-400', bgClass: 'bg-emerald-50 dark:bg-emerald-950/40', barClass: 'bg-emerald-500', realisasi: reportData.projectBudgetsSummary.totalActual, pagu: reportData.projectBudgetsSummary.totalPlan },
+              { key: 'peripherals',  label: 'Periferal Hardware',       icon: Package,   colorClass: 'text-blue-600 dark:text-blue-400',   bgClass: 'bg-blue-50 dark:bg-blue-950/40',   barClass: 'bg-blue-500',   realisasi: pillarActual.peripherals,  pagu: pillarPagu.peripherals  },
+              { key: 'assetsRental', label: 'Sewa Aset Device',         icon: Laptop,    colorClass: 'text-amber-600 dark:text-amber-400', bgClass: 'bg-amber-50 dark:bg-amber-950/40', barClass: 'bg-amber-500',  realisasi: pillarActual.assetsRental, pagu: pillarPagu.assetsRental },
+              { key: 'subscriptions',label: 'Subscriptions & Lisensi',  icon: CreditCard,colorClass: 'text-violet-600 dark:text-violet-400',bgClass: 'bg-violet-50 dark:bg-violet-950/40',barClass: 'bg-violet-500',realisasi: pillarActual.subscriptions,pagu: pillarPagu.subscriptions},
+              { key: 'isp',          label: 'Internet & Jaringan (ISP)',icon: Wifi,      colorClass: 'text-cyan-600 dark:text-cyan-400',   bgClass: 'bg-cyan-50 dark:bg-cyan-950/40',   barClass: 'bg-cyan-500',   realisasi: pillarActual.isp,          pagu: pillarPagu.isp          },
+              { key: 'projects',     label: 'Proyek & Inovasi IT',      icon: Sparkles,  colorClass: 'text-emerald-600 dark:text-emerald-400',bgClass: 'bg-emerald-50 dark:bg-emerald-950/40',barClass: 'bg-emerald-500',realisasi: pillarActual.projects, pagu: pillarPagu.projects     },
             ];
 
             const totalPagu = pillars.reduce((s, p) => s + p.pagu, 0);
@@ -1083,7 +1088,7 @@ export default function ITBudget360() {
                   </div>
                   <div className="px-5 py-2.5 border-t border-slate-200/40 dark:border-slate-800/40">
                     <p className="text-[10px] text-gray-400">
-                      * Realisasi Pilar 1–4 diambil dari IT Cost Overview (total transaksi aktual). Pilar 5 (Proyek & Inovasi) diambil dari realisasi yang di-tag di Budget 360. Pagu Pilar 1–4 dari item OPEX Budget 360 yang sesuai tipe akun.
+                      * Pagu dan Realisasi seluruh pilar bersumber dari item anggaran Budget 360. Pilar 1–4 dipetakan dari item OPEX berdasarkan Tipe Akun; Pilar 5 dari semua item CAPEX. Angka ini mencerminkan seberapa besar pagu yang sudah di-entry vs realisasi yang sudah di-tag.
                     </p>
                   </div>
                 </div>
