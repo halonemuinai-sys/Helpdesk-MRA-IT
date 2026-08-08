@@ -373,5 +373,44 @@ router.post('/:id/tag-subscription', async (req, res) => {
   }
 });
 
+// 10. POST Tag Aset Sewa ke Budget Item
+router.post('/:id/tag-rental', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { assetId } = req.body;
+
+    const asset = await prisma.asset.findUnique({
+      where: { id: assetId },
+      include: { companyMaster: { select: { name: true } } }
+    });
+    if (!asset) return res.status(404).json({ error: 'Aset tidak ditemukan.' });
+    if (asset.ownershipType !== 'RENTAL') {
+      return res.status(400).json({ error: 'Aset ini bukan tipe sewa (RENTAL).' });
+    }
+
+    // Hitung biaya sewa tahunan dari rentalCost bulanan
+    const annualCost = (asset.rentalCost || 0) * 12;
+    const description = `[Sewa Aset] ${asset.brand} ${asset.model} — ${asset.assetTag}${asset.vendor ? ` (${asset.vendor})` : ''}`;
+
+    await prisma.iTProjectExpense.create({
+      data: {
+        projectId: id,
+        description,
+        amount: annualCost,
+        expenseDate: asset.rentalStart || new Date(),
+        invoiceNumber: asset.vendorRef || asset.assetTag,
+        vendor: asset.vendor || null,
+        status: 'PAID'
+      }
+    });
+
+    const updatedBudget = await recalculateBudgetActualCost(id);
+    res.status(201).json(updatedBudget);
+  } catch (err) {
+    console.error('Error tagging rental asset:', err);
+    res.status(500).json({ error: 'Gagal me-tag aset sewa ke item anggaran.' });
+  }
+});
+
 module.exports = router;
 

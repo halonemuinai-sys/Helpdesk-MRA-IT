@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Tag, Plus, Trash2, ExternalLink, CreditCard, Receipt, AlertCircle, CheckCircle2, DollarSign } from 'lucide-react';
+import { X, Tag, Plus, Trash2, ExternalLink, CreditCard, Receipt, AlertCircle, CheckCircle2, DollarSign, Laptop } from 'lucide-react';
 
 export default function BudgetTaggingModal({
   isOpen,
@@ -27,10 +27,15 @@ export default function BudgetTaggingModal({
   // Selected Subscription Quick Tag
   const [selectedSubId, setSelectedSubId] = useState('');
 
+  // Rental Asset Quick Tag
+  const [rentalAssets, setRentalAssets] = useState([]);
+  const [selectedAssetId, setSelectedAssetId] = useState('');
+
   useEffect(() => {
     if (isOpen && budget) {
       fetchExpenses();
       fetchSubscriptions();
+      fetchRentalAssets();
     }
   }, [isOpen, budget]);
 
@@ -130,6 +135,49 @@ export default function BudgetTaggingModal({
       }
     } catch (err) {
       console.error('Error deleting expense:', err);
+    }
+  };
+
+  const fetchRentalAssets = async () => {
+    if (!budget) return;
+    try {
+      const params = new URLSearchParams({ ownershipType: 'RENTAL' });
+      if (budget.companyMasterId) params.append('companyMasterId', budget.companyMasterId);
+      const res = await fetch(`${apiUrl}/assets?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.assets || []);
+        setRentalAssets(list.filter(a => a.ownershipType === 'RENTAL' && a.rentalStatus !== 'EXPIRED'));
+      }
+    } catch (err) {
+      console.error('Error fetching rental assets for tagging:', err);
+    }
+  };
+
+  const handleQuickTagRental = async () => {
+    if (!selectedAssetId) return;
+    try {
+      setSubmitting(true);
+      const res = await fetch(`${apiUrl}/budgets/${budget.id}/tag-rental`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ assetId: selectedAssetId })
+      });
+      if (res.ok) {
+        const updatedBudget = await res.json();
+        onUpdateBudget(updatedBudget);
+        setExpenses(updatedBudget.expenses || []);
+        setSelectedAssetId('');
+      } else {
+        const errData = await res.json();
+        setError(errData.error || 'Gagal me-tag aset sewa.');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -275,6 +323,40 @@ export default function BudgetTaggingModal({
               >
                 <Tag className="w-3.5 h-3.5" />
                 Tag Subskripsi
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Tag Aset Sewa Aktif */}
+          <div className="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 space-y-3">
+            <h3 className="text-xs font-black text-amber-700 dark:text-amber-400 flex items-center gap-2">
+              <Laptop className="w-4 h-4 text-amber-500" />
+              Quick Tag dari Aset Sewa IT MRA
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Pilih aset sewa aktif untuk ditambatkan sebagai realisasi sewa tahunan pada item anggaran ini.
+            </p>
+            <div className="flex gap-2">
+              <select
+                value={selectedAssetId}
+                onChange={(e) => setSelectedAssetId(e.target.value)}
+                className="flex-1 px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500"
+              >
+                <option value="">-- Pilih Aset Sewa --</option>
+                {rentalAssets.map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.brand} {asset.model} — {asset.assetTag}{asset.vendor ? ` (${asset.vendor})` : ''} · {formatRupiah((asset.rentalCost || 0) * 12)}/thn
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleQuickTagRental}
+                disabled={!selectedAssetId || submitting}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-amber-500/10 flex items-center gap-1.5 shrink-0"
+              >
+                <Tag className="w-3.5 h-3.5" />
+                Tag Sewa
               </button>
             </div>
           </div>

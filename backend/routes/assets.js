@@ -81,11 +81,14 @@ router.get('/', verifyToken, async (req, res, next) => {
     if (req.user.role === 'USER') {
       return res.status(403).json({ error: 'Access denied.' });
     }
-    const { category, status, search, companyMasterId, limit, skip } = req.query;
+    const { category, status, search, companyMasterId, ownershipType, limit, skip } = req.query;
 
     const where = {};
     if (status) {
       where.status = status;
+    }
+    if (ownershipType) {
+      where.ownershipType = ownershipType;
     }
     if (companyMasterId) {
       where.companyMasterId = parseInt(companyMasterId);
