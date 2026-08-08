@@ -102,7 +102,7 @@ export default function Subscriptions({ user, token }) {
         formCategory={h.formCategory} setFormCategory={h.setFormCategory}
         formVendor={h.formVendor} setFormVendor={h.setFormVendor}
         formName={h.formName} setFormName={h.setFormName}
-        formBrand={h.formBrand} setFormBrand={h.setFormBrand}
+        formBrandId={h.formBrandId} setFormBrandId={h.setFormBrandId}
         formBillingCycle={h.formBillingCycle} setFormBillingCycle={h.setFormBillingCycle}
         formCost={h.formCost} setFormCost={h.setFormCost}
         formStartDate={h.formStartDate} setFormStartDate={h.setFormStartDate}

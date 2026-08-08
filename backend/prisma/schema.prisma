@@ -37,7 +37,8 @@ model CompanyMaster {
   sharedBudget  Float            @default(0) // Budget for shared/branch devices (monthly)
   createdAt     DateTime         @default(now())
   companies     Company[]        // Branches belonging to this master company
-  subscriptions ITSubscription[] // Subscriptions belonging to this master company
+  subscriptions ITSubscription[] @relation("SubscriptionOwner") // Subscriptions belonging to this master company
+  brandedSubscriptions ITSubscription[] @relation("SubscriptionBrand") // Subscriptions where this entity is the authorized brand
   assets        Asset[]          // Assets leased by this master company
   peripheralAssets PeripheralAsset[]
   peripheralInvoices PeripheralInvoice[]
@@ -181,7 +182,6 @@ model ITSubscription {
   category                String           // e.g. "Hosting", "Domain", "VPN", "ISP", "Subscription", "Others"
   vendor                  String           // Penyedia jasa (e.g. Google, Niagahoster)
   name                    String           // Nama layanan / Domain (e.g. "Google Workspace", "mra.co.id")
-  brand                   String?          // Nama brand/merek produk (e.g. "Google Workspace", "Adobe Creative Cloud")
   billingCycle            String           // Siklus penagihan: "1 Bulan", "3 Bulan", "6 Bulan", "1 Tahun", "2 Tahun", "3 Tahun"
   cost                    Float            // Biaya layanan dalam Rupiah (e.g. 150000)
   startDate               DateTime         // Tanggal mulai aktif kontrak
@@ -194,7 +194,11 @@ model ITSubscription {
   
   // Relasi ke Master Company (Company Entity Tagging)
   companyMasterId         Int?
-  companyMaster           CompanyMaster?   @relation(fields: [companyMasterId], references: [id])
+  companyMaster           CompanyMaster?   @relation("SubscriptionOwner", fields: [companyMasterId], references: [id])
+
+  // Relasi Otorisasi Brand / Anak Perusahaan yang diotorisasi
+  brandId                 Int?
+  brand                   CompanyMaster?   @relation("SubscriptionBrand", fields: [brandId], references: [id])
 
   // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
   replacedSubscriptionId  String?          @unique

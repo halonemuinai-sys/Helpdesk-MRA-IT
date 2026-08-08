@@ -72,7 +72,7 @@ export default function SubscriptionTable({
                           </div>
                           <div className="overflow-hidden">
                             <h4 className="font-bold text-gray-800 dark:text-slate-100 text-xs truncate max-w-[200px]">{sub.name}</h4>
-                            <p className="text-[10px] text-gray-400 font-medium truncate max-w-[180px]">Provider: {sub.vendor}{sub.brand ? ` · ${sub.brand}` : ''}</p>
+                            <p className="text-[10px] text-gray-400 font-medium truncate max-w-[180px]">Provider: {sub.vendor}{sub.brand?.name ? ` · ${sub.brand.name}` : ''}</p>
                           </div>
                         </div>
                       </td>

@@ -27,7 +27,7 @@ router.get('/', verifyToken, async (req, res, next) => {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { vendor: { contains: search, mode: 'insensitive' } },
-        { brand: { contains: search, mode: 'insensitive' } }
+        { brand: { name: { contains: search, mode: 'insensitive' } } }
       ];
     }
 
@@ -39,6 +39,9 @@ router.get('/', verifyToken, async (req, res, next) => {
       include: {
         companyMaster: {
           select: { name: true }
+        },
+        brand: {
+          select: { id: true, name: true }
         },
         renewals: {
           orderBy: { renewedAt: 'desc' }
@@ -72,7 +75,7 @@ router.post('/', verifyToken, async (req, res, next) => {
       category, 
       vendor, 
       name,
-      brand, 
+      brandId, 
       billingCycle, 
       cost, 
       startDate, 
@@ -104,7 +107,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         category,
         vendor,
         name,
-        brand: brand || null,
+        brandId: brandId ? parseInt(brandId) : null,
         billingCycle,
         cost: parseFloat(cost),
         startDate: new Date(startDate),
@@ -144,7 +147,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       category,
       vendor,
       name,
-      brand,
+      brandId,
       billingCycle,
       cost,
       startDate,
@@ -170,7 +173,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (category !== undefined) updateData.category = category;
     if (vendor !== undefined) updateData.vendor = vendor;
     if (name !== undefined) updateData.name = name;
-    if (brand !== undefined) updateData.brand = brand;
+    if (brandId !== undefined) updateData.brandId = brandId ? parseInt(brandId) : null;
     if (billingCycle !== undefined) updateData.billingCycle = billingCycle;
     if (cost !== undefined) updateData.cost = parseFloat(cost);
     if (startDate !== undefined) updateData.startDate = new Date(startDate);
