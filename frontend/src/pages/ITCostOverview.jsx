@@ -99,7 +99,7 @@ export default function ITCostOverview({ user, token, darkMode }) {
     if (!overview) return;
     setExporting('excel');
     try {
-      exportExcel({ overview, periodLabel, selectedYear, selectedCompanyMasterName });
+      await exportExcel({ overview, periodLabel, selectedYear, selectedCompanyMasterName });
     } finally {
       setExporting(null);
     }

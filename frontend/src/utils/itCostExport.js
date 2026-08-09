@@ -1,6 +1,5 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -276,90 +275,265 @@ export function exportPDF({ overview, periodLabel, selectedYear, selectedCompany
   doc.save(`IT_Cost_Overview_${safePeriod}.pdf`);
 }
 
-// ─── EXCEL EXPORT ────────────────────────────────────────────────────────────
+// ─── EXCEL EXPORT (ExcelJS — professional styling) ───────────────────────────
 
-export function exportExcel({ overview, periodLabel, selectedYear, selectedCompanyMasterName }) {
+export async function exportExcel({ overview, periodLabel, selectedYear, selectedCompanyMasterName }) {
+  const ExcelJS = (await import('exceljs')).default;
+
   const monthlyTrend = overview.monthlyTrend || [];
   const byEntity     = overview.byEntity     || [];
   const gt           = overview.grandTotal   || {};
   const cms          = overview.currentMonthSummary || {};
 
-  const wb = XLSX.utils.book_new();
+  // ── Palette ──────────────────────────────────────────────────────────────
+  const C = {
+    navy:    '1E3A5F',  // header bg
+    rose:    'BE123C',  // accent / total stripe
+    altRow:  'F8FAFC',  // zebra
+    totalBg: '1E293B',  // grand total row bg
+    border:  'CBD5E1',
+    gray:    '64748B',
+    white:   'FFFFFF',
+    blue:    '1D4ED8',  // peripherals
+    amber:   'B45309',  // sewa
+    green:   '065F46',  // subscription
+    cyan:    '0E7490',  // ISP
+  };
 
-  // ── Helper: append rows with gap ─────────────────────────────────────────
-  function makeAoA(rows) { return rows; }
+  const numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
 
-  // ── Sheet 1: Ringkasan KPI ───────────────────────────────────────────────
-  const kpiRows = makeAoA([
-    ['IT COST OVERVIEW — RINGKASAN PENGELUARAN'],
-    [`Periode: ${periodLabel}`, '', `Entitas: ${selectedCompanyMasterName || 'Semua'}`],
-    [`Dibuat: ${nowLabel()}`],
-    [],
-    ['Kategori', 'Nilai (Rp)', 'Keterangan'],
-    ['Total Keseluruhan',  gt.total || 0,         selectedYear ? `Akumulasi ${selectedYear}` : periodLabel],
-    ['Peripherals',        gt.peripherals || 0,   selectedYear ? `Total Periferal ${selectedYear}` : ''],
-    ['Sewa Aset',          gt.assetsRental || 0,  selectedYear ? `Total Sewa ${selectedYear}` : ''],
-    ['Subscription',       gt.subscriptions || 0, selectedYear ? `Total Subskripsi ${selectedYear}` : ''],
-    ['Internet (ISP)',     gt.isp || 0,            selectedYear ? `Total ISP ${selectedYear}` : ''],
-    [],
-    ['Bulan Terakhir', cms.yearMonth ? fmtMonthLabel(cms.yearMonth) : '-'],
-    ['Total Bulan Ini',    cms.total || 0],
-    ['Peripherals (Bln)', cms.peripherals || 0],
-    ['Sewa Aset (Bln)',   cms.assetsRental || 0],
-    ['Subscription (Bln)',cms.subscriptions || 0],
-    ['ISP (Bln)',         cms.isp || 0],
-  ]);
-  const wsKPI = XLSX.utils.aoa_to_sheet(kpiRows);
-  wsKPI['!cols'] = [{ wch: 28 }, { wch: 22 }, { wch: 30 }];
-  XLSX.utils.book_append_sheet(wb, wsKPI, 'Ringkasan KPI');
+  const thin = (hex) => ({ style: 'thin', color: { argb: 'FF' + hex } });
+  const borders = (hex = C.border) => ({ top: thin(hex), bottom: thin(hex), left: thin(hex), right: thin(hex) });
 
-  // ── Sheet 2: Tren Bulanan ────────────────────────────────────────────────
-  const trendHeader = ['Bulan', 'Peripherals (Rp)', 'Sewa Aset (Rp)', 'Subscription (Rp)', 'Internet ISP (Rp)', 'Total (Rp)'];
-  const trendRows = monthlyTrend.map(m => [
-    fmtMonthLabel(m.yearMonth),
-    m.peripherals   || 0,
-    m.assetsRental  || 0,
-    m.subscriptions || 0,
-    m.isp           || 0,
-    m.total         || 0,
-  ]);
-  trendRows.push([
-    'TOTAL',
-    gt.peripherals   || 0,
-    gt.assetsRental  || 0,
-    gt.subscriptions || 0,
-    gt.isp           || 0,
-    gt.total         || 0,
-  ]);
+  const wb = new ExcelJS.Workbook();
+  wb.creator  = 'Helpdesk MRA — IT Cost Overview';
+  wb.created  = new Date();
 
-  const wsTrend = XLSX.utils.aoa_to_sheet([trendHeader, ...trendRows]);
-  wsTrend['!cols'] = [{ wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
-  XLSX.utils.book_append_sheet(wb, wsTrend, 'Tren Bulanan');
+  const entityLabel = selectedCompanyMasterName || 'Semua Entitas MRA';
 
-  // ── Sheet 3: Per Entitas ─────────────────────────────────────────────────
-  const entityHeader = ['Entitas', 'Peripherals (Rp)', 'Sewa Aset (Rp)', 'Subscription (Rp)', 'Internet ISP (Rp)', 'Total (Rp)'];
-  const entityRows = byEntity.map(e => [
-    e.name,
-    e.peripherals   || 0,
-    e.assetsRental  || 0,
-    e.subscriptions || 0,
-    e.isp           || 0,
-    e.total         || 0,
-  ]);
-  entityRows.push([
-    'TOTAL KESELURUHAN',
-    gt.peripherals   || 0,
-    gt.assetsRental  || 0,
-    gt.subscriptions || 0,
-    gt.isp           || 0,
-    gt.total         || 0,
-  ]);
+  // ── Shared helpers ────────────────────────────────────────────────────────
+  const styleHeader = (row, bgHex = C.navy) => {
+    row.height = 26;
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + bgHex } };
+      cell.font   = { name: 'Arial', bold: true, size: 9.5, color: { argb: 'FF' + C.white } };
+      cell.border = borders(bgHex);
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    });
+  };
 
-  const wsEntity = XLSX.utils.aoa_to_sheet([entityHeader, ...entityRows]);
-  wsEntity['!cols'] = [{ wch: 40 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
-  XLSX.utils.book_append_sheet(wb, wsEntity, 'Per Entitas');
+  const styleTotalRow = (row) => {
+    row.height = 22;
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.totalBg } };
+      cell.font   = { name: 'Arial', bold: true, size: 9.5, color: { argb: 'FF' + C.white } };
+      cell.border = borders(C.totalBg);
+    });
+  };
 
-  // ── Save ─────────────────────────────────────────────────────────────────
-  const safePeriod = periodLabel.replace(/\s/g, '_');
-  XLSX.writeFile(wb, `IT_Cost_Overview_${safePeriod}.xlsx`);
+  const styleDataRow = (row, isAlt, numCols, firstNumCol = 2) => {
+    row.height = 20;
+    row.eachCell({ includeEmpty: true }, (cell, col) => {
+      cell.border = borders();
+      cell.font   = { name: 'Arial', size: 9.5 };
+      if (isAlt) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.altRow } };
+      if (col === 1) {
+        cell.font      = { name: 'Arial', bold: true, size: 9.5 };
+        cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+      } else if (col >= firstNumCol && col <= numCols) {
+        cell.numFmt    = numFmt;
+        cell.alignment = { vertical: 'middle', horizontal: 'right' };
+      }
+    });
+  };
+
+  const addTitle = (ws, lastCol, title, subtitle) => {
+    ws.mergeCells(`A1:${lastCol}1`);
+    const t = ws.getCell('A1');
+    t.value     = title;
+    t.font      = { name: 'Georgia', bold: true, size: 14, color: { argb: 'FF' + C.navy } };
+    t.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(1).height = 36;
+
+    ws.mergeCells(`A2:${lastCol}2`);
+    const s = ws.getCell('A2');
+    s.value     = subtitle;
+    s.font      = { name: 'Arial', italic: true, size: 9, color: { argb: 'FF' + C.gray } };
+    s.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(2).height = 18;
+
+    ws.mergeCells(`A3:${lastCol}3`);
+    ws.getRow(3).height = 6;
+  };
+
+  const saveBlob = async () => {
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `IT_Cost_Overview_${periodLabel.replace(/\s/g, '_')}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SHEET 1 — Ringkasan KPI
+  // ════════════════════════════════════════════════════════════════════════════
+  const ws1 = wb.addWorksheet('Ringkasan KPI', { views: [{ showGridLines: false }] });
+  ws1.columns = [{ width: 32 }, { width: 28 }, { width: 32 }];
+
+  addTitle(ws1, 'C',
+    'IT COST OVERVIEW — RINGKASAN PENGELUARAN',
+    `Periode: ${periodLabel}  |  Entitas: ${entityLabel}  |  Dibuat: ${nowLabel()}`
+  );
+
+  // Section A: Grand Total
+  const hdr1a = ws1.addRow(['Kategori Pengeluaran', 'Total Akumulasi (Rp)', 'Keterangan']);
+  styleHeader(hdr1a);
+  hdr1a.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+
+  const kpiData = [
+    { label: 'TOTAL KESELURUHAN', val: gt.total || 0,         note: `Akumulasi ${selectedYear || periodLabel}`, accent: C.rose  },
+    { label: 'Peripherals',       val: gt.peripherals || 0,   note: 'Pembelian Hardware & Periferal',           accent: C.blue  },
+    { label: 'Sewa Aset Device',  val: gt.assetsRental || 0,  note: 'Biaya Rental Laptop & Perangkat',         accent: C.amber },
+    { label: 'Subscription',      val: gt.subscriptions || 0, note: 'Lisensi, Cloud & Software',               accent: C.green },
+    { label: 'Internet & ISP',    val: gt.isp || 0,           note: 'Jaringan Internet Toko & HO',             accent: C.cyan  },
+  ];
+
+  kpiData.forEach((k, i) => {
+    const r = ws1.addRow([k.label, k.val, k.note]);
+    r.height = 22;
+    const isTotal = i === 0;
+    r.eachCell({ includeEmpty: true }, (cell, col) => {
+      cell.border = borders();
+      if (isTotal) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.totalBg } };
+        cell.font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FF' + C.white } };
+      } else {
+        if (i % 2 === 0) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.altRow } };
+        cell.font = { name: 'Arial', size: 9.5 };
+      }
+      if (col === 1) {
+        cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+        if (!isTotal) {
+          // Accent left border per category
+          cell.border = { ...borders(), left: { style: 'medium', color: { argb: 'FF' + k.accent } } };
+        }
+      }
+      if (col === 2) { cell.numFmt = numFmt; cell.alignment = { horizontal: 'right', vertical: 'middle' }; }
+      if (col === 3) { cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }; cell.font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF' + C.gray } }; }
+    });
+  });
+
+  // Gap + Section B: Bulan Terakhir
+  ws1.addRow([]);
+  const hdr1b = ws1.addRow(['Bulan Berjalan', cms.yearMonth ? fmtMonthLabel(cms.yearMonth) : '—', '']);
+  ws1.mergeCells(`B${ws1.rowCount}:C${ws1.rowCount}`);
+  styleHeader(hdr1b, C.rose);
+  hdr1b.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+
+  const cmsData = [
+    ['Total Bulan Ini',    cms.total || 0,         ''],
+    ['Peripherals',        cms.peripherals || 0,   ''],
+    ['Sewa Aset Device',   cms.assetsRental || 0,  ''],
+    ['Subscription',       cms.subscriptions || 0, ''],
+    ['Internet & ISP',     cms.isp || 0,           ''],
+  ];
+  cmsData.forEach((row, i) => {
+    const r = ws1.addRow(row);
+    styleDataRow(r, i % 2 === 0, 2);
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SHEET 2 — Tren Bulanan
+  // ════════════════════════════════════════════════════════════════════════════
+  const ws2 = wb.addWorksheet('Tren Bulanan', {
+    views: [{ state: 'frozen', ySplit: 4, showGridLines: false }]
+  });
+  ws2.columns = [
+    { width: 14 },  // Bulan
+    { width: 22 },  // Peripherals
+    { width: 22 },  // Sewa Aset
+    { width: 22 },  // Subscription
+    { width: 22 },  // ISP
+    { width: 22 },  // Total
+  ];
+
+  addTitle(ws2, 'F',
+    'IT COST OVERVIEW — TREN BIAYA BULANAN',
+    `Periode: ${periodLabel}  |  Entitas: ${entityLabel}`
+  );
+
+  const hdr2 = ws2.addRow(['Bulan', 'Peripherals', 'Sewa Aset Device', 'Subscription & Lisensi', 'Internet & ISP', 'TOTAL']);
+  styleHeader(hdr2);
+  hdr2.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+
+  monthlyTrend.forEach((m, i) => {
+    const r = ws2.addRow([
+      fmtMonthLabel(m.yearMonth),
+      m.peripherals   || 0,
+      m.assetsRental  || 0,
+      m.subscriptions || 0,
+      m.isp           || 0,
+      m.total         || 0,
+    ]);
+    styleDataRow(r, i % 2 === 1, 6);
+    // Bold total column
+    r.getCell(6).font = { name: 'Arial', bold: true, size: 9.5 };
+  });
+
+  // Grand total row
+  const tot2 = ws2.addRow(['TOTAL TAHUNAN', gt.peripherals || 0, gt.assetsRental || 0, gt.subscriptions || 0, gt.isp || 0, gt.total || 0]);
+  styleTotalRow(tot2);
+  tot2.eachCell({ includeEmpty: true }, (cell, col) => {
+    if (col === 1) cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    else { cell.numFmt = numFmt; cell.alignment = { vertical: 'middle', horizontal: 'right' }; }
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SHEET 3 — Per Entitas
+  // ════════════════════════════════════════════════════════════════════════════
+  const ws3 = wb.addWorksheet('Per Entitas', {
+    views: [{ state: 'frozen', ySplit: 4, showGridLines: false }]
+  });
+  ws3.columns = [
+    { width: 40 },  // Entitas
+    { width: 22 },  // Peripherals
+    { width: 22 },  // Sewa Aset
+    { width: 22 },  // Subscription
+    { width: 22 },  // ISP
+    { width: 22 },  // Total
+  ];
+
+  addTitle(ws3, 'F',
+    'IT COST OVERVIEW — PENGELUARAN PER ENTITAS',
+    `Periode: ${periodLabel}  |  Entitas: ${entityLabel}`
+  );
+
+  const hdr3 = ws3.addRow(['Entitas / Perusahaan', 'Peripherals', 'Sewa Aset Device', 'Subscription & Lisensi', 'Internet & ISP', 'TOTAL']);
+  styleHeader(hdr3);
+  hdr3.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+
+  byEntity.forEach((e, i) => {
+    const r = ws3.addRow([
+      e.name,
+      e.peripherals   || 0,
+      e.assetsRental  || 0,
+      e.subscriptions || 0,
+      e.isp           || 0,
+      e.total         || 0,
+    ]);
+    styleDataRow(r, i % 2 === 1, 6);
+    r.getCell(6).font = { name: 'Arial', bold: true, size: 9.5 };
+  });
+
+  const tot3 = ws3.addRow(['TOTAL KESELURUHAN', gt.peripherals || 0, gt.assetsRental || 0, gt.subscriptions || 0, gt.isp || 0, gt.total || 0]);
+  styleTotalRow(tot3);
+  tot3.eachCell({ includeEmpty: true }, (cell, col) => {
+    if (col === 1) cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    else { cell.numFmt = numFmt; cell.alignment = { vertical: 'middle', horizontal: 'right' }; }
+  });
+
+  await saveBlob();
 }
