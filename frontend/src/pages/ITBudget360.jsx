@@ -38,6 +38,7 @@ import {
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
 import BudgetTaggingModal from '../components/budgets/BudgetTaggingModal';
 import BudgetFormModal from '../components/budgets/BudgetFormModal';
+import { exportITBudget360ToExcel } from '../utils/excelExportITBudget360';
 import {
   OPEX_ACCOUNT_TYPES,
   CAPEX_ACCOUNT_TYPES,
@@ -559,35 +560,32 @@ export default function ITBudget360() {
 
             const maxMonthlyVal = Math.max(...grandMonthsTotal, 1);
 
-            const handleExportCSV = () => {
-              const headers = ['Account Type (Kategori Akun)', 'Klasifikasi', 'Pagu Anggaran', ...monthNames, 'Total YTD', 'Selisih', '% Serapan'];
-              const rows = [];
-
-              const addRow = (name, type, budget, months, ytd, varVal, pct) => {
-                rows.push([
-                  `"${name}"`, type, budget, ...months, ytd, varVal, `"${pct}%"`
-                ].join(','));
-              };
-
-              rows.push('--- OPEX ---');
-              opexCategories.forEach(c => addRow(c.name, c.type, c.budget, c.months, c.ytdActual, c.variance, c.utilPct));
-              addRow('SUBTOTAL OPEX', 'OPEX', opexBudgetTotal, opexMonthsTotal, opexYtdTotal, opexVarianceTotal, opexBudgetTotal > 0 ? ((opexYtdTotal/opexBudgetTotal)*100).toFixed(0) : '0');
-
-              rows.push('--- CAPEX ---');
-              capexCategories.forEach(c => addRow(c.name, c.type, c.budget, c.months, c.ytdActual, c.variance, c.utilPct));
-              addRow('SUBTOTAL CAPEX', 'CAPEX', capexBudgetTotal, capexMonthsTotal, capexYtdTotal, capexVarianceTotal, capexBudgetTotal > 0 ? ((capexYtdTotal/capexBudgetTotal)*100).toFixed(0) : '0');
-
-              rows.push('--- GRAND TOTAL ---');
-              addRow('TOTAL', 'TOTAL', grandBudgetTotal, grandMonthsTotal, grandYtdTotal, grandVarianceTotal, grandUtilPct);
-
-              const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-              const encodedUri = encodeURI(csvContent);
-              const link = document.createElement('a');
-              link.setAttribute('href', encodedUri);
-              link.setAttribute('download', `IT_Cost_Overview_Matrix_${selectedYear}.csv`);
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
+            const handleExportExcel = async () => {
+              try {
+                await exportITBudget360ToExcel({
+                  selectedYear,
+                  companyName: reportData?.companyMaster?.name || 'MRA Group (Konsolidasi)',
+                  reportData,
+                  opexCategories,
+                  capexCategories,
+                  opexBudgetTotal,
+                  opexMonthsTotal,
+                  opexYtdTotal,
+                  opexVarianceTotal,
+                  capexBudgetTotal,
+                  capexMonthsTotal,
+                  capexYtdTotal,
+                  capexVarianceTotal,
+                  grandBudgetTotal,
+                  grandMonthsTotal,
+                  grandYtdTotal,
+                  grandVarianceTotal,
+                  grandUtilPct
+                });
+              } catch (err) {
+                console.error('Failed to export Excel:', err);
+                alert('Gagal mengekspor file Excel: ' + err.message);
+              }
             };
 
             return (
@@ -603,11 +601,11 @@ export default function ITBudget360() {
                   </div>
 
                   <button
-                    onClick={handleExportCSV}
+                    onClick={handleExportExcel}
                     className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-md shadow-emerald-600/20 shrink-0"
                   >
                     <FileSpreadsheet className="w-4 h-4" />
-                    Export Matriks 12 Bulan (CSV)
+                    Export Excel Profesional (.xlsx)
                   </button>
                 </div>
 
