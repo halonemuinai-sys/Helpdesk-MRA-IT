@@ -59,7 +59,7 @@ export async function exportITBudget360ToExcel({
   });
 
   const numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
-  const pctFmt = '0.0"%"';
+  const pctFmt = '0.0%';
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
 
@@ -176,13 +176,13 @@ export async function exportITBudget360ToExcel({
         cell.alignment = { vertical: 'middle', horizontal: 'left' };
       } else if (colIdx === 2) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      } else if (colIdx >= 3 && colIdx <= 16) {
+      } else if (colIdx >= 3 && colIdx <= 17) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' };
         cell.numFmt = numFmt;
-      } else if (colIdx === 17) {
+      } else if (colIdx === 18) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' };
         cell.numFmt = pctFmt;
-      } else if (colIdx === 18) {
+      } else if (colIdx === 19) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         cell.font = { name: 'Arial', bold: true, size: 9.5, color: { argb: 'FF' + (cat.variance < 0 ? C.redText : C.greenText) } };
       }
@@ -202,9 +202,9 @@ export async function exportITBudget360ToExcel({
     cell.border = allBorders(C.slateBg);
     if (colIdx === 1) cell.alignment = { vertical: 'middle', horizontal: 'left' };
     else if (colIdx === 2) cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    else if (colIdx >= 3 && colIdx <= 16) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = numFmt; }
-    else if (colIdx === 17) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = pctFmt; }
-    else if (colIdx === 18) {
+    else if (colIdx >= 3 && colIdx <= 17) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = numFmt; }
+    else if (colIdx === 18) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = pctFmt; }
+    else if (colIdx === 19) {
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
       cell.font = { name: 'Arial', bold: true, size: 9.5, color: { argb: 'FF' + (opexVarianceTotal < 0 ? C.redText : C.greenText) } };
     }
@@ -242,13 +242,13 @@ export async function exportITBudget360ToExcel({
         cell.alignment = { vertical: 'middle', horizontal: 'left' };
       } else if (colIdx === 2) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      } else if (colIdx >= 3 && colIdx <= 16) {
+      } else if (colIdx >= 3 && colIdx <= 17) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' };
         cell.numFmt = numFmt;
-      } else if (colIdx === 17) {
+      } else if (colIdx === 18) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' };
         cell.numFmt = pctFmt;
-      } else if (colIdx === 18) {
+      } else if (colIdx === 19) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         cell.font = { name: 'Arial', bold: true, size: 9.5, color: { argb: 'FF' + (cat.variance < 0 ? C.redText : C.greenText) } };
       }
@@ -268,9 +268,9 @@ export async function exportITBudget360ToExcel({
     cell.border = allBorders(C.slateBg);
     if (colIdx === 1) cell.alignment = { vertical: 'middle', horizontal: 'left' };
     else if (colIdx === 2) cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    else if (colIdx >= 3 && colIdx <= 16) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = numFmt; }
-    else if (colIdx === 17) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = pctFmt; }
-    else if (colIdx === 18) {
+    else if (colIdx >= 3 && colIdx <= 17) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = numFmt; }
+    else if (colIdx === 18) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = pctFmt; }
+    else if (colIdx === 19) {
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
       cell.font = { name: 'Arial', bold: true, size: 9.5, color: { argb: 'FF' + (capexVarianceTotal < 0 ? C.redText : C.greenText) } };
     }
@@ -296,9 +296,9 @@ export async function exportITBudget360ToExcel({
     };
     if (colIdx === 1) cell.alignment = { vertical: 'middle', horizontal: 'left' };
     else if (colIdx === 2) cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    else if (colIdx >= 3 && colIdx <= 16) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = numFmt; }
-    else if (colIdx === 17) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = pctFmt; }
-    else if (colIdx === 18) {
+    else if (colIdx >= 3 && colIdx <= 17) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = numFmt; }
+    else if (colIdx === 18) { cell.alignment = { vertical: 'middle', horizontal: 'right' }; cell.numFmt = pctFmt; }
+    else if (colIdx === 19) {
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
       cell.font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FF' + (grandVarianceTotal < 0 ? C.redText : C.greenText) } };
     }
