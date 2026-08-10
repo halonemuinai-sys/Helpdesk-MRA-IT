@@ -121,6 +121,7 @@ export default function ITBudget360() {
   const [projectSearch, setProjectSearch] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('');
+  const [selectedRealizationFilter, setSelectedRealizationFilter] = useState('');
 
   // Modal / Drawer Form State (Input & Edit Budget)
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -361,7 +362,23 @@ export default function ITBudget360() {
       (p.brand && p.brand.toLowerCase().includes(projectSearch.toLowerCase()));
     const matchCat = !selectedCategoryFilter || p.category === selectedCategoryFilter;
     const matchDept = !selectedDepartmentFilter || p.department === selectedDepartmentFilter;
-    return matchSearch && matchCat && matchDept;
+
+    const actual = p.actualCost || 0;
+    const budget = p.allocatedBudget || 0;
+    let matchRealization = true;
+    if (selectedRealizationFilter === 'HAS_REALIZATION') {
+      matchRealization = actual > 0;
+    } else if (selectedRealizationFilter === 'ZERO') {
+      matchRealization = actual === 0;
+    } else if (selectedRealizationFilter === 'PARTIAL') {
+      matchRealization = actual > 0 && actual < budget;
+    } else if (selectedRealizationFilter === 'FULL') {
+      matchRealization = actual === budget && budget > 0;
+    } else if (selectedRealizationFilter === 'OVER') {
+      matchRealization = actual > budget;
+    }
+
+    return matchSearch && matchCat && matchDept && matchRealization;
   });
 
   return (
@@ -1067,6 +1084,19 @@ export default function ITBudget360() {
                     {DEPARTMENTS.map(d => (
                       <option key={d} value={d}>{d}</option>
                     ))}
+                  </select>
+
+                  <select
+                    value={selectedRealizationFilter}
+                    onChange={(e) => setSelectedRealizationFilter(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 shadow-xs cursor-pointer"
+                  >
+                    <option value="">Semua Realisasi Riil</option>
+                    <option value="HAS_REALIZATION">Ada Realisasi (&gt; 0%)</option>
+                    <option value="ZERO">Belum Terpakai (0%)</option>
+                    <option value="PARTIAL">Sebagian Terpakai (&lt; 100%)</option>
+                    <option value="FULL">Terpakai Penuh (100%)</option>
+                    <option value="OVER">Over-Budget (&gt; 100%)</option>
                   </select>
                 </div>
 
