@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreditCard, Loader2, Search, History, RefreshCw, Edit2, Trash2, Link as LinkIcon } from 'lucide-react';
-import { calculateAnnualCost } from './constants';
+import { calculateMonthlyCost } from './constants';
 
 export default function SubscriptionTable({
   filteredSubs, expandedRows, toggleRow, now,
@@ -50,7 +50,7 @@ export default function SubscriptionTable({
                 <th className="py-4 px-6">Kategori</th>
                 <th className="py-4 px-6">Siklus</th>
                 <th className="py-4 px-6">Biaya Kontrak</th>
-                <th className="py-4 px-6">Total Biaya (1 Thn)</th>
+                <th className="py-4 px-6">Biaya Bulanan (Prorate)</th>
                 <th className="py-4 px-6">Tanggal Kedaluwarsa</th>
                 <th className="py-4 px-6 text-center">Status</th>
                 <th className="py-4 px-6 text-right sticky right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10 border-b border-gray-200 dark:border-slate-800">Aksi</th>
@@ -60,7 +60,7 @@ export default function SubscriptionTable({
               {filteredSubs.map((sub) => {
                 const isExpired = new Date(sub.expiryDate) < now && sub.status === 'ACTIVE';
                 const isExpanded = !!expandedRows[sub.id];
-                const annualCost = calculateAnnualCost(sub.cost, sub.billingCycle);
+                const monthlyCost = calculateMonthlyCost(sub.cost, sub.billingCycle);
 
                 return (
                   <React.Fragment key={sub.id}>
@@ -129,8 +129,8 @@ export default function SubscriptionTable({
                         )}
                       </td>
                       <td className="py-4 px-6 font-mono font-extrabold">
-                        <div className="text-rose-600 dark:text-rose-400">{formatRupiah(annualCost)}</div>
-                        <div className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">Est. 1 Tahun</div>
+                        <div className="text-emerald-600 dark:text-emerald-400">{formatRupiah(monthlyCost)}</div>
+                        <div className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">/ Bulan</div>
                       </td>
                       <td className="py-4 px-6 font-mono">
                         <div>{new Date(sub.expiryDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}</div>

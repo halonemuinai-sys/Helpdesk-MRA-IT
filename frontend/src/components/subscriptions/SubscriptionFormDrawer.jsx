@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { CreditCard, Building2, History, AlertTriangle, X, Loader2, CheckCircle2 } from 'lucide-react';
-import { CATEGORIES, BILLING_CYCLES, MRA_BRANDS, calculateAnnualCost } from './constants';
+import { CATEGORIES, BILLING_CYCLES, MRA_BRANDS, calculateMonthlyCost } from './constants';
 
 export default function SubscriptionFormDrawer({
   isOpen, onClose,
@@ -323,12 +323,12 @@ export default function SubscriptionFormDrawer({
                   </div>
                 )}
 
-                {/* Total Biaya Tahunan (Live Preview) */}
+                {/* Biaya Bulanan Prorate (Live Preview) */}
                 {formCost && (
                   <div className="mt-2 bg-emerald-50 dark:bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 text-[11px] text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
-                    <span className="font-bold">Estimasi Total Biaya (1 Tahun):</span>
+                    <span className="font-bold">Beban Biaya Bulanan (Prorate):</span>
                     <span className="font-extrabold font-mono text-xs text-emerald-600 dark:text-emerald-400">
-                      Rp {calculateAnnualCost(formCost, formBillingCycle).toLocaleString('id-ID')}
+                      Rp {calculateMonthlyCost(formCost, formBillingCycle).toLocaleString('id-ID')} / bln
                       <span className="text-[9px] font-normal text-emerald-500 ml-1">({formBillingCycle})</span>
                     </span>
                   </div>

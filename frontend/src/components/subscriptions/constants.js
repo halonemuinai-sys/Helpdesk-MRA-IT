@@ -32,3 +32,10 @@ export const calculateAnnualCost = (cost, billingCycle) => {
   const divisor = BILLING_DIVISORS[cycle] || 12;
   return Math.round((numericCost / divisor) * 12);
 };
+
+export const calculateMonthlyCost = (cost, billingCycle) => {
+  const numericCost = typeof cost === 'number' ? cost : parseFloat((cost || 0).toString().replace(/\./g, '')) || 0;
+  const cycle = billingCycle || '1 Tahun';
+  const divisor = BILLING_DIVISORS[cycle] || 12;
+  return Math.round(numericCost / divisor);
+};
