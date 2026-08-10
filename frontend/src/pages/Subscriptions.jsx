@@ -110,6 +110,9 @@ export default function Subscriptions({ user, token }) {
         formIsBudgeted={h.formIsBudgeted} setFormIsBudgeted={h.setFormIsBudgeted}
         formBillingCycle={h.formBillingCycle} setFormBillingCycle={h.setFormBillingCycle}
         formCost={h.formCost} setFormCost={h.setFormCost}
+        formCurrency={h.formCurrency} setFormCurrency={h.setFormCurrency}
+        formCostUSD={h.formCostUSD} setFormCostUSD={h.setFormCostUSD}
+        formExchangeRate={h.formExchangeRate} setFormExchangeRate={h.setFormExchangeRate}
         formStartDate={h.formStartDate} setFormStartDate={h.setFormStartDate}
         formExpiryDate={h.formExpiryDate} setFormExpiryDate={h.setFormExpiryDate}
         formStatus={h.formStatus} setFormStatus={h.setFormStatus}

@@ -48,6 +48,11 @@ export default function useSubscriptions({ token }) {
   const [formAuthorizedCompanyId, setFormAuthorizedCompanyId] = useState('');
   const [replacedSubscriptionId, setReplacedSubscriptionId] = useState(null);
 
+  // Multi-currency form state
+  const [formCurrency, setFormCurrency] = useState('IDR');
+  const [formCostUSD, setFormCostUSD] = useState('');
+  const [formExchangeRate, setFormExchangeRate] = useState('16200');
+
   const getHeaders = () => ({ 'Authorization': `Bearer ${token}` });
 
   useEffect(() => {
@@ -140,6 +145,9 @@ export default function useSubscriptions({ token }) {
     setFormIsBudgeted(true);
     setFormBillingCycle('1 Tahun');
     setFormCost('');
+    setFormCurrency('IDR');
+    setFormCostUSD('');
+    setFormExchangeRate('16200');
     const today = new Date().toISOString().split('T')[0];
     setFormStartDate(today);
     const oneYearLater = new Date();
@@ -170,6 +178,9 @@ export default function useSubscriptions({ token }) {
     setFormIsBudgeted(sub.isBudgeted !== undefined ? sub.isBudgeted : true);
     setFormBillingCycle(sub.billingCycle);
     setFormCost(formatNumberForInput(sub.cost));
+    setFormCurrency(sub.currency || 'IDR');
+    setFormCostUSD(sub.costUSD ? sub.costUSD.toString() : '');
+    setFormExchangeRate(sub.exchangeRate ? sub.exchangeRate.toString() : '16200');
     setFormStartDate(sub.startDate.split('T')[0]);
     setFormExpiryDate(sub.expiryDate.split('T')[0]);
     setFormStatus(sub.status);
@@ -189,28 +200,26 @@ export default function useSubscriptions({ token }) {
     setFormId('');
     setFormCategory(sub.category);
     setFormVendor(sub.vendor);
-    setFormName(sub.name + ' (Baru)');
+    setFormName(`${sub.name} (Kontrak Baru)`);
     setFormBrand(sub.brand || '');
     setFormLocation(sub.location || '');
-    setFormContractNumber(sub.contractNumber || '');
+    setFormContractNumber('');
     setFormBandwidth(sub.bandwidth || '');
     setFormIsBudgeted(sub.isBudgeted !== undefined ? sub.isBudgeted : true);
     setFormBillingCycle(sub.billingCycle);
     setFormCost(formatNumberForInput(sub.cost));
-    const oldExpiry = new Date(sub.expiryDate);
-    const newStart = new Date(oldExpiry.getTime() + 24 * 60 * 60 * 1000);
-    setFormStartDate(newStart.toISOString().split('T')[0]);
-    const newExpiry = new Date(newStart);
-    if (sub.billingCycle.includes('Tahun')) {
-      newExpiry.setFullYear(newExpiry.getFullYear() + parseInt(sub.billingCycle));
-    } else {
-      newExpiry.setMonth(newExpiry.getMonth() + parseInt(sub.billingCycle));
-    }
-    setFormExpiryDate(newExpiry.toISOString().split('T')[0]);
+    setFormCurrency(sub.currency || 'IDR');
+    setFormCostUSD(sub.costUSD ? sub.costUSD.toString() : '');
+    setFormExchangeRate(sub.exchangeRate ? sub.exchangeRate.toString() : '16200');
+    const today = new Date().toISOString().split('T')[0];
+    setFormStartDate(today);
+    const oneYearLater = new Date();
+    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+    setFormExpiryDate(oneYearLater.toISOString().split('T')[0]);
     setFormStatus('ACTIVE');
     setFormEvidenceLink('');
-    setFormNotes(`Menggantikan kontrak lama: ID ${sub.id.substring(0, 8)}`);
-    setFormUpdateJourney(`Kontrak baru dibuat menggantikan ID ${sub.id.substring(0, 8)}`);
+    setFormNotes(`Menggantikan kontrak lama (ID: ${sub.id})`);
+    setFormUpdateJourney(`Kontrak baru menggantikan kontrak ID ${sub.id}`);
     setFormCompanyId(sub.companyMasterId || '');
     setFormAuthorizedCompanyId(sub.authorizedCompanyMasterId || '');
     setReplacedSubscriptionId(sub.id);
@@ -248,6 +257,9 @@ export default function useSubscriptions({ token }) {
         isBudgeted: formIsBudgeted,
         billingCycle: formBillingCycle,
         cost: parseFloat(formCost.toString().replace(/\./g, '')) || 0,
+        currency: formCurrency,
+        costUSD: formCurrency === 'USD' ? (parseFloat(formCostUSD) || null) : null,
+        exchangeRate: formCurrency === 'USD' ? (parseFloat(formExchangeRate) || null) : null,
         startDate: new Date(formStartDate).toISOString(),
         expiryDate: new Date(formExpiryDate).toISOString(),
         status: formStatus,
@@ -369,6 +381,9 @@ export default function useSubscriptions({ token }) {
     formIsBudgeted, setFormIsBudgeted,
     formBillingCycle, setFormBillingCycle,
     formCost, setFormCost,
+    formCurrency, setFormCurrency,
+    formCostUSD, setFormCostUSD,
+    formExchangeRate, setFormExchangeRate,
     formStartDate, setFormStartDate,
     formExpiryDate, setFormExpiryDate,
     formStatus, setFormStatus,

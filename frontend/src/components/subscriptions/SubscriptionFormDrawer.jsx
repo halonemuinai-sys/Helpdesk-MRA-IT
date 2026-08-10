@@ -20,6 +20,9 @@ export default function SubscriptionFormDrawer({
   formIsBudgeted, setFormIsBudgeted,
   formBillingCycle, setFormBillingCycle,
   formCost, setFormCost,
+  formCurrency, setFormCurrency,
+  formCostUSD, setFormCostUSD,
+  formExchangeRate, setFormExchangeRate,
   formStartDate, setFormStartDate,
   formExpiryDate, setFormExpiryDate,
   formStatus, setFormStatus,
@@ -241,19 +244,84 @@ export default function SubscriptionFormDrawer({
                 </select>
               </div>
 
-              {/* Cost */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                  Biaya (Rp) *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: 150.000"
-                  value={formCost}
-                  onChange={(e) => setFormCost(formatNumberForInput(e.target.value))}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-250 dark:border-slate-800/80 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                  required
-                />
+              {/* Currency & Cost Section */}
+              <div className="space-y-3 md:col-span-2 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-250 dark:border-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-extrabold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                    Mata Uang & Biaya Tagihan *
+                  </label>
+                  <div className="flex items-center gap-1 bg-gray-200 dark:bg-slate-800 p-0.5 rounded-lg text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setFormCurrency('IDR')}
+                      className={`px-2.5 py-1 rounded-md transition ${formCurrency === 'IDR' ? 'bg-white dark:bg-slate-900 text-rose-600 shadow-xs font-extrabold' : 'text-gray-500'}`}
+                    >
+                      IDR (Rp)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormCurrency('USD')}
+                      className={`px-2.5 py-1 rounded-md transition ${formCurrency === 'USD' ? 'bg-rose-500 text-white shadow-xs font-extrabold' : 'text-gray-500'}`}
+                    >
+                      USD ($)
+                    </button>
+                  </div>
+                </div>
+
+                {formCurrency === 'USD' ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Biaya Nominal ($ USD) *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 500.00"
+                        value={formCostUSD}
+                        onChange={(e) => {
+                          const usdVal = e.target.value;
+                          setFormCostUSD(usdVal);
+                          const rate = parseFloat(formExchangeRate) || 16200;
+                          const calcIdr = (parseFloat(usdVal) || 0) * rate;
+                          setFormCost(formatNumberForInput(Math.round(calcIdr)));
+                        }}
+                        className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-slate-800 dark:text-slate-100"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Kurs Run Rate (Rp / USD) *</label>
+                      <input
+                        type="number"
+                        placeholder="Ex: 16200"
+                        value={formExchangeRate}
+                        onChange={(e) => {
+                          const rateVal = e.target.value;
+                          setFormExchangeRate(rateVal);
+                          const usdVal = parseFloat(formCostUSD) || 0;
+                          const calcIdr = usdVal * (parseFloat(rateVal) || 0);
+                          setFormCost(formatNumberForInput(Math.round(calcIdr)));
+                        }}
+                        className="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-800 dark:text-slate-100"
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2 bg-rose-50 dark:bg-rose-950/30 p-2.5 rounded-xl border border-rose-200/60 dark:border-rose-900/40 text-[11px] text-rose-700 dark:text-rose-300 flex items-center justify-between">
+                      <span>Kalkulasi Ekuivalen Rupiah:</span>
+                      <span className="font-extrabold font-mono text-xs text-rose-600 dark:text-rose-400">Rp {formCost || '0'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      placeholder="Ex: 150.000"
+                      value={formCost}
+                      onChange={(e) => setFormCost(formatNumberForInput(e.target.value))}
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-800 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Start Date */}

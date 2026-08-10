@@ -114,8 +114,16 @@ export default function SubscriptionTable({
                           )}
                         </div>
                       </td>
-                      <td className="py-4 px-6 text-slate-500 dark:text-slate-400">{sub.billingCycle}</td>
-                      <td className="py-4 px-6 font-mono text-gray-850 dark:text-slate-100 font-bold">{formatRupiah(sub.cost)}</td>
+                      <td className="py-4 px-6 font-mono font-bold">
+                        <div className="text-gray-850 dark:text-slate-100">{formatRupiah(sub.cost)}</div>
+                        {sub.currency === 'USD' && sub.costUSD && (
+                          <div className="text-[9px] font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
+                            <span className="inline-block bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.2 rounded border border-blue-200 dark:border-blue-800/80">
+                              ${sub.costUSD} (@ Rp {sub.exchangeRate ? sub.exchangeRate.toLocaleString('id-ID') : '-'})
+                            </span>
+                          </div>
+                        )}
+                      </td>
                       <td className="py-4 px-6 font-mono">
                         <div>{new Date(sub.expiryDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
                         {sub.status === 'ACTIVE' && (

@@ -86,6 +86,9 @@ router.post('/', verifyToken, async (req, res, next) => {
       isBudgeted,
       billingCycle, 
       cost, 
+      currency,
+      costUSD,
+      exchangeRate,
       startDate, 
       expiryDate, 
       status, 
@@ -123,6 +126,9 @@ router.post('/', verifyToken, async (req, res, next) => {
         isBudgeted: isBudgeted !== undefined ? Boolean(isBudgeted) : true,
         billingCycle,
         cost: parseFloat(cost),
+        currency: currency || 'IDR',
+        costUSD: costUSD ? parseFloat(costUSD) : null,
+        exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
         startDate: new Date(startDate),
         expiryDate: new Date(expiryDate),
         status: status || 'ACTIVE',
@@ -168,6 +174,9 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       isBudgeted,
       billingCycle,
       cost,
+      currency,
+      costUSD,
+      exchangeRate,
       startDate,
       expiryDate,
       status,
@@ -199,6 +208,9 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (isBudgeted !== undefined) updateData.isBudgeted = Boolean(isBudgeted);
     if (billingCycle !== undefined) updateData.billingCycle = billingCycle;
     if (cost !== undefined) updateData.cost = parseFloat(cost);
+    if (currency !== undefined) updateData.currency = currency || 'IDR';
+    if (costUSD !== undefined) updateData.costUSD = costUSD ? parseFloat(costUSD) : null;
+    if (exchangeRate !== undefined) updateData.exchangeRate = exchangeRate ? parseFloat(exchangeRate) : null;
     if (startDate !== undefined) updateData.startDate = new Date(startDate);
     if (expiryDate !== undefined) updateData.expiryDate = new Date(expiryDate);
     if (status !== undefined) updateData.status = status;
@@ -227,6 +239,9 @@ router.put('/:id', verifyToken, async (req, res, next) => {
         data: {
           subscriptionId: id,
           cost: parseFloat(cost !== undefined ? cost : current.cost),
+          currency: currency !== undefined ? currency : (current.currency || 'IDR'),
+          costUSD: costUSD !== undefined ? (costUSD ? parseFloat(costUSD) : null) : current.costUSD,
+          exchangeRate: exchangeRate !== undefined ? (exchangeRate ? parseFloat(exchangeRate) : null) : current.exchangeRate,
           period: billingCycle || current.billingCycle,
           notes: cleanJourney
         }

@@ -216,6 +216,11 @@ model ITSubscription {
   // Status Anggaran Tahunan (Budgeted vs Unbudgeted / Non-Budget)
   isBudgeted              Boolean          @default(true)
 
+  // Dukungan Multi-Currency (USD vs IDR)
+  currency                String           @default("IDR") // "IDR" atau "USD"
+  costUSD                 Float?           // Biaya asli dalam nominal Dollar ($) jika currency == "USD"
+  exchangeRate            Float?           // Nilai tukar Kurs Rupiah per 1 USD saat transaksi
+
   // Chaining/Silsilah Kontrak untuk Kasus Kontrak Baru (Replacement)
   replacedSubscriptionId  String?          @unique
   replacedSubscription    ITSubscription?  @relation("SubscriptionReplacement", fields: [replacedSubscriptionId], references: [id])
@@ -235,7 +240,10 @@ model RenewalHistory {
   subscriptionId String
   subscription   ITSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   renewedAt      DateTime       @default(now())
-  cost           Float          // Biaya perpanjangan saat tindakan dilakukan
+  cost           Float          // Biaya perpanjangan saat tindakan dilakukan (IDR)
+  currency       String         @default("IDR") // "IDR" atau "USD"
+  costUSD        Float?         // Biaya asli perpanjangan dalam USD
+  exchangeRate   Float?         // Kurs perpanjangan Rupiah per 1 USD
   period         String         // Durasi perpanjangan (e.g., "1 Tahun")
   notes          String?        // Catatan perpanjangan (e.g., "Diperpanjang 2 tahun per 6 bulan (Rp 300rb)")
 }
