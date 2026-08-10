@@ -39,3 +39,25 @@ export const calculateMonthlyCost = (cost, billingCycle) => {
   const divisor = BILLING_DIVISORS[cycle] || 12;
   return Math.round(numericCost / divisor);
 };
+
+export const calculateContractMonths = (startDate, expiryDate) => {
+  if (!startDate || !expiryDate) return 12;
+  const start = new Date(startDate);
+  const end = new Date(expiryDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 12;
+
+  const yearsDiff = end.getFullYear() - start.getFullYear();
+  const monthsDiff = end.getMonth() - start.getMonth();
+  const daysDiff = end.getDate() - start.getDate();
+
+  let totalMonths = (yearsDiff * 12) + monthsDiff;
+  if (daysDiff > 15) totalMonths += 1;
+
+  return totalMonths > 0 ? totalMonths : 1;
+};
+
+export const calculateLifetimeContractCost = (cost, billingCycle, startDate, expiryDate) => {
+  const monthlyCost = calculateMonthlyCost(cost, billingCycle);
+  const months = calculateContractMonths(startDate, expiryDate);
+  return Math.round(monthlyCost * months);
+};

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreditCard, Loader2, Search, History, RefreshCw, Edit2, Trash2, Link as LinkIcon } from 'lucide-react';
-import { calculateMonthlyCost } from './constants';
+import { calculateMonthlyCost, calculateContractMonths, calculateLifetimeContractCost } from './constants';
 
 export default function SubscriptionTable({
   filteredSubs, expandedRows, toggleRow, now,
@@ -50,7 +50,7 @@ export default function SubscriptionTable({
                 <th className="py-4 px-6">Kategori</th>
                 <th className="py-4 px-6">Siklus</th>
                 <th className="py-4 px-6">Biaya Kontrak</th>
-                <th className="py-4 px-6">Biaya Bulanan (Prorate)</th>
+                <th className="py-4 px-6">Biaya Bulanan &amp; Total Kontrak</th>
                 <th className="py-4 px-6">Tanggal Kedaluwarsa</th>
                 <th className="py-4 px-6 text-center">Status</th>
                 <th className="py-4 px-6 text-right sticky right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10 border-b border-gray-200 dark:border-slate-800">Aksi</th>
@@ -61,6 +61,8 @@ export default function SubscriptionTable({
                 const isExpired = new Date(sub.expiryDate) < now && sub.status === 'ACTIVE';
                 const isExpanded = !!expandedRows[sub.id];
                 const monthlyCost = calculateMonthlyCost(sub.cost, sub.billingCycle);
+                const contractMonths = calculateContractMonths(sub.startDate, sub.expiryDate);
+                const lifetimeCost = calculateLifetimeContractCost(sub.cost, sub.billingCycle, sub.startDate, sub.expiryDate);
 
                 return (
                   <React.Fragment key={sub.id}>
@@ -128,9 +130,11 @@ export default function SubscriptionTable({
                           </div>
                         )}
                       </td>
-                      <td className="py-4 px-6 font-mono font-extrabold">
-                        <div className="text-emerald-600 dark:text-emerald-400">{formatRupiah(monthlyCost)}</div>
-                        <div className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">/ Bulan</div>
+                      <td className="py-4 px-6 font-mono">
+                        <div className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatRupiah(monthlyCost)} <span className="text-[9px] font-semibold text-gray-400 uppercase">/ bln</span></div>
+                        <div className="text-[9px] font-bold text-slate-600 dark:text-slate-300 mt-1 bg-slate-100 dark:bg-slate-850 px-1.5 py-0.5 rounded inline-block border border-slate-200/60 dark:border-slate-800">
+                          Total ({contractMonths} Bln): <span className="text-indigo-600 dark:text-indigo-400 font-extrabold">{formatRupiah(lifetimeCost)}</span>
+                        </div>
                       </td>
                       <td className="py-4 px-6 font-mono">
                         <div>{new Date(sub.expiryDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}</div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { CreditCard, Building2, History, AlertTriangle, X, Loader2, CheckCircle2 } from 'lucide-react';
-import { CATEGORIES, BILLING_CYCLES, MRA_BRANDS, calculateMonthlyCost } from './constants';
+import { CATEGORIES, BILLING_CYCLES, MRA_BRANDS, calculateMonthlyCost, calculateContractMonths, calculateLifetimeContractCost } from './constants';
 
 export default function SubscriptionFormDrawer({
   isOpen, onClose,
@@ -323,14 +323,23 @@ export default function SubscriptionFormDrawer({
                   </div>
                 )}
 
-                {/* Biaya Bulanan Prorate (Live Preview) */}
-                {formCost && (
-                  <div className="mt-2 bg-emerald-50 dark:bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 text-[11px] text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
-                    <span className="font-bold">Beban Biaya Bulanan (Prorate):</span>
-                    <span className="font-extrabold font-mono text-xs text-emerald-600 dark:text-emerald-400">
-                      Rp {calculateMonthlyCost(formCost, formBillingCycle).toLocaleString('id-ID')} / bln
-                      <span className="text-[9px] font-normal text-emerald-500 ml-1">({formBillingCycle})</span>
-                    </span>
+                {/* Biaya Bulanan Prorate & Estimasi Total Masa Kontrak (Live Preview) */}
+                {formCost && formStartDate && formExpiryDate && (
+                  <div className="mt-2 bg-indigo-50/70 dark:bg-indigo-950/30 p-3 rounded-xl border border-indigo-200/60 dark:border-indigo-900/40 text-[11px] space-y-1.5">
+                    <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                      <span className="font-semibold">Beban Biaya Bulanan (Prorate):</span>
+                      <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+                        Rp {calculateMonthlyCost(formCost, formBillingCycle).toLocaleString('id-ID')} / bln
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 pt-1.5 border-t border-indigo-200/50 dark:border-indigo-900/30">
+                      <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                        Total Nilai Kontrak ({calculateContractMonths(formStartDate, formExpiryDate)} Bulan):
+                      </span>
+                      <span className="font-black font-mono text-xs text-indigo-600 dark:text-indigo-400">
+                        Rp {calculateLifetimeContractCost(formCost, formBillingCycle, formStartDate, formExpiryDate).toLocaleString('id-ID')}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
