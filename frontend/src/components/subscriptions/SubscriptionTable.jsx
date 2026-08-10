@@ -114,6 +114,7 @@ export default function SubscriptionTable({
                           )}
                         </div>
                       </td>
+                      <td className="py-4 px-6 text-slate-500 dark:text-slate-400">{sub.billingCycle}</td>
                       <td className="py-4 px-6 font-mono font-bold">
                         <div className="text-gray-850 dark:text-slate-100">{formatRupiah(sub.cost)}</div>
                         {sub.currency === 'USD' && sub.costUSD && (
