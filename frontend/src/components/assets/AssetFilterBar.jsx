@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Laptop, Building2, Clock, Loader2, ChevronDown, Check } from 'lucide-react';
-import { STATUS_OPTIONS } from './constants';
+import { Search, Laptop, Building2, Clock, Loader2, ChevronDown, Check, Tag } from 'lucide-react';
+import { STATUS_OPTIONS, OWNERSHIP_OPTIONS } from './constants';
 
 const DROP_ANIM = `
   @keyframes dropIn { from { opacity:0; transform:translateY(-6px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
@@ -167,12 +167,13 @@ export default function AssetFilterBar({
   selectedCategory, setSelectedCategory,
   selectedCompanyMasterId, setSelectedCompanyMasterId,
   selectedStatus, setSelectedStatus,
+  selectedOwnershipType, setSelectedOwnershipType,
   companyMasters,
   loading,
   handleResetFilters,
   handleRefreshData,
 }) {
-  const hasActiveFilter = searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory;
+  const hasActiveFilter = searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory || selectedOwnershipType;
   const companyOptions = companyMasters.map(m => ({ value: String(m.id), label: m.name }));
 
   return (
@@ -192,14 +193,17 @@ export default function AssetFilterBar({
         </div>
 
         {/* Dropdowns */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:flex gap-3 w-full md:w-auto">
-          <div className="md:w-40">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:flex gap-3 w-full md:w-auto">
+          <div className="md:w-36">
             <CustomSelect icon={Laptop} placeholder="Semua Kategori" value={selectedCategory} onChange={setSelectedCategory} options={CATEGORY_OPTIONS} />
           </div>
-          <div className="md:w-64">
+          <div className="md:w-44">
+            <CustomSelect icon={Tag} placeholder="Kepemilikan" value={selectedOwnershipType} onChange={setSelectedOwnershipType} options={OWNERSHIP_OPTIONS} />
+          </div>
+          <div className="md:w-56">
             <CustomSelect icon={Building2} placeholder="Semua Perusahaan" value={selectedCompanyMasterId} onChange={setSelectedCompanyMasterId} options={companyOptions} searchable />
           </div>
-          <div className="md:w-48">
+          <div className="md:w-44">
             <CustomSelect icon={Clock} placeholder="Semua Status" value={selectedStatus} onChange={setSelectedStatus} options={STATUS_OPTIONS} />
           </div>
         </div>

@@ -6,3 +6,8 @@ export const STATUS_OPTIONS = [
   { value: 'MAINTENANCE', label: 'Dalam Servis', color: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400', dot: 'bg-amber-500' },
   { value: 'DISPOSED', label: 'Pensiun / Sewa Selesai', color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700', dot: 'bg-slate-500' }
 ];
+
+export const OWNERSHIP_OPTIONS = [
+  { value: 'RENTAL', label: 'Perangkat Sewa' },
+  { value: 'OWNED', label: 'Milik Sendiri' }
+];

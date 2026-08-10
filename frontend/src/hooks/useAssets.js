@@ -52,6 +52,7 @@ export default function useAssets({ token, user }) {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedOwnershipType, setSelectedOwnershipType] = useState('');
 
   // Manual-load flag
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -182,6 +183,7 @@ export default function useAssets({ token, user }) {
       if (selectedCompanyMasterId) params.append('companyMasterId', selectedCompanyMasterId);
       if (currentSearch) params.append('search', currentSearch);
       if (selectedCategory) params.append('category', selectedCategory);
+      if (selectedOwnershipType) params.append('ownershipType', selectedOwnershipType);
       const qs = params.toString() ? `?${params.toString()}` : '';
       const res = await fetch(`${API_URL}/assets${qs}`, { headers });
       if (!res.ok) throw new Error('Gagal memuat data inventaris aset.');
@@ -205,6 +207,7 @@ export default function useAssets({ token, user }) {
     setSelectedStatus('');
     setSelectedCompanyMasterId('');
     setSelectedCategory('');
+    setSelectedOwnershipType('');
   };
 
   const handleOpenAddModal = () => {
@@ -581,6 +584,7 @@ export default function useAssets({ token, user }) {
     selectedStatus, setSelectedStatus,
     selectedCompanyMasterId, setSelectedCompanyMasterId,
     selectedCategory, setSelectedCategory,
+    selectedOwnershipType, setSelectedOwnershipType,
     assetsLoaded,
     // sort
     sortConfig, handleSort,

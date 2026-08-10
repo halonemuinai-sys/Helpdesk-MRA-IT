@@ -22,6 +22,7 @@ export default function Assets({ user, token }) {
     selectedStatus, setSelectedStatus,
     selectedCompanyMasterId, setSelectedCompanyMasterId,
     selectedCategory, setSelectedCategory,
+    selectedOwnershipType, setSelectedOwnershipType,
     assetsLoaded,
     // sort
     sortConfig, handleSort,
@@ -155,6 +156,7 @@ export default function Assets({ user, token }) {
           <AssetFilterBar
             searchQuery={searchQuery} setSearchQuery={setSearchQuery}
             selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
+            selectedOwnershipType={selectedOwnershipType} setSelectedOwnershipType={setSelectedOwnershipType}
             selectedCompanyMasterId={selectedCompanyMasterId} setSelectedCompanyMasterId={setSelectedCompanyMasterId}
             selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus}
             companyMasters={companyMasters}
