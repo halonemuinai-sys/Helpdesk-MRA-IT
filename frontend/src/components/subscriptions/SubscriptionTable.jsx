@@ -50,7 +50,8 @@ export default function SubscriptionTable({
                 <th className="py-4 px-6">Kategori</th>
                 <th className="py-4 px-6">Siklus</th>
                 <th className="py-4 px-6">Biaya Kontrak</th>
-                <th className="py-4 px-6">Biaya Bulanan &amp; Total Kontrak</th>
+                <th className="py-4 px-6">Biaya Bulanan (Prorate)</th>
+                <th className="py-4 px-6">Total Masa Kontrak</th>
                 <th className="py-4 px-6">Tanggal Kedaluwarsa</th>
                 <th className="py-4 px-6 text-center">Status</th>
                 <th className="py-4 px-6 text-right sticky right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10 border-b border-gray-200 dark:border-slate-800">Aksi</th>
@@ -130,11 +131,13 @@ export default function SubscriptionTable({
                           </div>
                         )}
                       </td>
-                      <td className="py-4 px-6 font-mono">
-                        <div className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatRupiah(monthlyCost)} <span className="text-[9px] font-semibold text-gray-400 uppercase">/ bln</span></div>
-                        <div className="text-[9px] font-bold text-slate-600 dark:text-slate-300 mt-1 bg-slate-100 dark:bg-slate-850 px-1.5 py-0.5 rounded inline-block border border-slate-200/60 dark:border-slate-800">
-                          Total ({contractMonths} Bln): <span className="text-indigo-600 dark:text-indigo-400 font-extrabold">{formatRupiah(lifetimeCost)}</span>
-                        </div>
+                      <td className="py-4 px-6 font-mono font-extrabold">
+                        <div className="text-emerald-600 dark:text-emerald-400">{formatRupiah(monthlyCost)}</div>
+                        <div className="text-[9px] text-gray-400 font-medium">/ Bulan</div>
+                      </td>
+                      <td className="py-4 px-6 font-mono font-black">
+                        <div className="text-indigo-600 dark:text-indigo-400">{formatRupiah(lifetimeCost)}</div>
+                        <div className="text-[9px] font-bold text-slate-500 dark:text-slate-400">{contractMonths} Bulan Masa Kontrak</div>
                       </td>
                       <td className="py-4 px-6 font-mono">
                         <div>{new Date(sub.expiryDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
@@ -193,7 +196,7 @@ export default function SubscriptionTable({
 
                     {isExpanded && (
                       <tr className="bg-slate-50/30 dark:bg-slate-900/15">
-                        <td colSpan="9" className="p-5 border-t border-gray-100 dark:border-slate-850">
+                        <td colSpan="10" className="p-5 border-t border-gray-100 dark:border-slate-850">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
 
                             <div className="space-y-3.5">
