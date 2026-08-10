@@ -51,7 +51,7 @@ export default function SubscriptionTable({
                 <th className="py-4 px-6">Biaya Kontrak</th>
                 <th className="py-4 px-6">Tanggal Kedaluwarsa</th>
                 <th className="py-4 px-6 text-center">Status</th>
-                <th className="py-4 px-6 text-right">Aksi</th>
+                <th className="py-4 px-6 text-right sticky right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10 border-b border-gray-200 dark:border-slate-800">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800/40 text-gray-700 dark:text-slate-300">
@@ -62,7 +62,7 @@ export default function SubscriptionTable({
                 return (
                   <React.Fragment key={sub.id}>
                     <tr
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer"
+                      className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer"
                       onClick={() => toggleRow(sub.id)}
                     >
                       <td className="py-4 px-6">
@@ -147,7 +147,7 @@ export default function SubscriptionTable({
                           {sub.status === 'ACTIVE' && isExpired ? 'EXPIRED' : sub.status}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-4 px-4 text-right sticky right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10 border-b border-gray-150/40 dark:border-slate-850/30 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.1)] transition-colors duration-150" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
                           {sub.replacedSubscriptionId && (
                             <div className="p-1 text-cyan-500" title="Menggantikan kontrak lama">
