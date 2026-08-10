@@ -129,7 +129,7 @@ router.get('/', async (req, res) => {
         const rStart = new Date(ast.rentalStart);
         const rEnd = new Date(ast.rentalEnd);
 
-        if (rStart <= monthEnd && rEnd >= monthStart) {
+        if (ast.status !== 'DISPOSED' && rStart <= monthEnd && rEnd >= monthStart) {
           if (monthMap[m.yearMonth]) {
             monthMap[m.yearMonth].assetsRental += (ast.rentalCost || 0);
           }

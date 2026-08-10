@@ -36,25 +36,27 @@ router.get('/stats', verifyToken, async (req, res, next) => {
       prisma.asset.count({ where: { status: 'AVAILABLE' } }),
       prisma.asset.count({ where: { status: 'MAINTENANCE' } }),
       prisma.asset.aggregate({
-        where: { ownershipType: 'RENTAL' },
+        where: { ownershipType: 'RENTAL', status: { not: 'DISPOSED' } },
         _sum: { rentalCost: true }
       }),
       prisma.asset.count({
         where: {
           ownershipType: 'RENTAL',
+          status: { not: 'DISPOSED' },
           rentalEnd: { lt: now }
         }
       }),
       prisma.asset.count({
         where: {
           ownershipType: 'RENTAL',
+          status: { not: 'DISPOSED' },
           rentalEnd: {
             gte: now,
             lte: thirtyDaysLater
           }
         }
       }),
-      prisma.asset.count({ where: { ownershipType: 'RENTAL' } }),
+      prisma.asset.count({ where: { ownershipType: 'RENTAL', status: { not: 'DISPOSED' } } }),
       prisma.asset.count({ where: { ownershipType: 'OWNED' } })
     ]);
 

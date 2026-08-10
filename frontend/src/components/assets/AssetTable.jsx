@@ -1,12 +1,12 @@
 import React from 'react';
-import { Laptop, Smartphone, Trash2, Edit2, Loader2, AlertTriangle, CheckCircle2, Clock, FileText, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Laptop, Smartphone, Trash2, Edit2, Loader2, AlertTriangle, CheckCircle2, Clock, FileText, Eye, ArrowUp, ArrowDown, ArrowUpDown, PowerOff } from 'lucide-react';
 import PendingProcessPlaceholder from '../PendingProcessPlaceholder';
 import { STATUS_OPTIONS } from './constants';
 
 export default function AssetTable({
   sortedAssets, filteredAssets, assets, loading, assetsLoaded,
   handleSort, sortConfig,
-  handleOpenViewDrawer, handleOpenBastModal, handleOpenEditModal, handleDelete,
+  handleOpenViewDrawer, handleOpenBastModal, handleOpenEditModal, handleDelete, handleEndLease,
   formatRupiah, formatDateYYMMDD, isSmartphone,
   user,
 }) {
@@ -138,6 +138,13 @@ export default function AssetTable({
                     <td className="py-4 px-6 font-mono">
                       {asset.ownershipType === 'OWNED' ? (
                         <span className="text-gray-400 font-semibold italic text-[10px]">N/A (Milik)</span>
+                      ) : asset.status === 'DISPOSED' ? (
+                        <div>
+                          <div className="text-slate-400 line-through text-[10px]">{formatDateYYMMDD(asset.rentalEnd)}</div>
+                          <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 inline-block bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 mt-0.5">
+                            ✓ Sewa Selesai (Pensiun)
+                          </span>
+                        </div>
                       ) : (
                         <>
                           <div>{formatDateYYMMDD(asset.rentalEnd)}</div>
@@ -195,6 +202,15 @@ export default function AssetTable({
                             className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 transition-all"
                           >
                             <FileText className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {asset.ownershipType === 'RENTAL' && asset.status !== 'DISPOSED' && (
+                          <button
+                            onClick={() => handleEndLease(asset)}
+                            title="Akhiri Masa Sewa / Pensiunkan Aset"
+                            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/60 transition-all"
+                          >
+                            <PowerOff className="w-3.5 h-3.5" />
                           </button>
                         )}
                         <button

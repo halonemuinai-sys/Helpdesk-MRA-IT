@@ -69,7 +69,7 @@ export default function Assets({ user, token }) {
     handleRefreshData, handleResetFilters,
     handleOpenAddModal, handleOpenEditModal, handleOpenViewDrawer,
     handleOpenBastModal, handlePrintBast,
-    handleSubmit, handleDelete,
+    handleSubmit, handleDelete, handleEndLease,
     // formatters
     formatRupiah, formatDateYYMMDD, formatIndonesianDate, formatNumberForInput,
   } = useAssets({ token, user });
@@ -175,6 +175,7 @@ export default function Assets({ user, token }) {
             handleOpenBastModal={handleOpenBastModal}
             handleOpenEditModal={handleOpenEditModal}
             handleDelete={handleDelete}
+            handleEndLease={handleEndLease}
             formatRupiah={formatRupiah}
             formatDateYYMMDD={formatDateYYMMDD}
             isSmartphone={isSmartphone}
@@ -189,6 +190,7 @@ export default function Assets({ user, token }) {
           formatRupiah={formatRupiah}
           onEditAsset={handleOpenEditModal}
           onOpenBast={handleOpenBastModal}
+          onEndLease={handleEndLease}
         />
       )}
 
@@ -264,6 +266,7 @@ export default function Assets({ user, token }) {
         onClose={() => { setIsViewDrawerOpen(false); setViewingAsset(null); }}
         handleOpenBastModal={handleOpenBastModal}
         handleOpenEditModal={handleOpenEditModal}
+        handleEndLease={handleEndLease}
         formatRupiah={formatRupiah}
         formatDateYYMMDD={formatDateYYMMDD}
         isSmartphone={isSmartphone}

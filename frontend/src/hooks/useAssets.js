@@ -435,6 +435,71 @@ export default function useAssets({ token, user }) {
     });
   };
 
+  const handleEndLease = (asset) => {
+    Swal.fire({
+      title: 'Akhiri Masa Sewa / Pensiunkan Aset?',
+      html: `Aset <b>${asset.brand} ${asset.model}</b> (${asset.assetTag}) akan ditandai <b>Pensiun / Sewa Selesai (DISPOSED)</b>.<br/><br/>
+             <div class="text-left text-xs bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 space-y-1">
+               <p>• Status pengguna akan dilepas (User Unassigned).</p>
+               <p>• Hitungan hari 'Sewa Habis' akan dihentikan & ditandai Sewa Selesai.</p>
+               <p>• Alokasi sewa bulanan tidak lagi dihitung berlanjut.</p>
+             </div>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#475569',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Akhiri Sewa / Pensiunkan',
+      cancelButtonText: 'Batal'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+          const payload = {
+            assetTag: asset.assetTag,
+            deviceRef: asset.deviceRef,
+            vendorRef: asset.vendorRef,
+            brand: asset.brand,
+            model: asset.model,
+            processor: asset.processor,
+            ram: asset.ram,
+            storage: asset.storage,
+            os: asset.os,
+            office: asset.office,
+            ownershipType: asset.ownershipType,
+            status: 'DISPOSED',
+            rentalCost: asset.rentalCost || 0,
+            rentalStart: asset.rentalStart,
+            rentalEnd: asset.rentalEnd,
+            notes: asset.notes || null,
+            userId: null,
+            companyId: asset.companyId || null,
+            companyMasterId: asset.companyMasterId || null,
+            vendor: asset.vendor || null,
+            updateJourney: `Masa sewa diakhiri / Pensiunkan aset per ${new Date().toLocaleDateString('id-ID')}`
+          };
+          const res = await fetch(`${API_URL}/assets/${asset.id}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(payload)
+          });
+          const resData = await res.json();
+          if (!res.ok) throw new Error(resData.error || 'Gagal memperbarui status aset.');
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Sewa Diakhiri / Pensiun!',
+            text: `Aset ${asset.brand} ${asset.model} telah ditandai Sewa Selesai.`,
+            confirmButtonColor: '#475569',
+            timer: 2000
+          });
+          handleRefreshData({ silent: true });
+        } catch (err) {
+          Swal.fire({ icon: 'error', title: 'Gagal!', text: err.message, confirmButtonColor: '#f43f5e' });
+        }
+      }
+    });
+  };
+
   // ── Formatters ─────────────────────────────────────────────────────────────
 
   const formatRupiah = (value) => {
@@ -564,7 +629,7 @@ export default function useAssets({ token, user }) {
     handleRefreshData, handleResetFilters,
     handleOpenAddModal, handleOpenEditModal, handleOpenViewDrawer,
     handleOpenBastModal, handlePrintBast,
-    handleSubmit, handleDelete,
+    handleSubmit, handleDelete, handleEndLease,
     // formatters
     formatRupiah, formatDateYYMMDD, formatIndonesianDate, formatNumberForInput,
   };

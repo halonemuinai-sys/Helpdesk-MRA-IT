@@ -19,8 +19,8 @@ export default function RentalMonitoringWidget({ assets, formatRupiah, onEditAss
 
   const now = new Date();
 
-  // 1. Filter semua aset bertipe RENTAL
-  const rentalAssets = assets.filter(a => a.ownershipType === 'RENTAL');
+  // 1. Filter semua aset bertipe RENTAL yang belum pensiun/diakhiri
+  const rentalAssets = assets.filter(a => a.ownershipType === 'RENTAL' && a.status !== 'DISPOSED');
 
   // 2 & 3. Gunakan rentalStatus dari backend — tidak hitung ulang di frontend
   const activeRentals  = rentalAssets.filter(a => a.rentalStatus !== 'EXPIRED');

@@ -1,11 +1,11 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Laptop, Smartphone, X, Cpu, DollarSign, History, FileText, Edit2 } from 'lucide-react';
+import { Laptop, Smartphone, X, Cpu, DollarSign, History, FileText, Edit2, PowerOff } from 'lucide-react';
 import { STATUS_OPTIONS } from './constants';
 
 export default function AssetDetailDrawer({
   isViewDrawerOpen, viewingAsset, onClose,
-  handleOpenBastModal, handleOpenEditModal,
+  handleOpenBastModal, handleOpenEditModal, handleEndLease,
   formatRupiah, formatDateYYMMDD,
   isSmartphone,
 }) {
@@ -196,6 +196,15 @@ export default function AssetDetailDrawer({
             >
               <FileText className="w-3.5 h-3.5" />
               Cetak BAST
+            </button>
+          )}
+          {viewingAsset.ownershipType === 'RENTAL' && viewingAsset.status !== 'DISPOSED' && handleEndLease && (
+            <button
+              onClick={() => { handleEndLease(viewingAsset); onClose(); }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition"
+            >
+              <PowerOff className="w-3.5 h-3.5" />
+              Akhiri Sewa / Pensiunkan
             </button>
           )}
           <button
