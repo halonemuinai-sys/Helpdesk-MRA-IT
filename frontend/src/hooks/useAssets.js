@@ -390,6 +390,7 @@ export default function useAssets({ token, user }) {
         storage: formDeviceCategory === 'PRINTER' ? 'None' : (formStorage || null),
         os: formDeviceCategory === 'PRINTER' ? 'Printer OS' : (formOs || null),
         office: formDeviceCategory === 'LAPTOP' ? (formOffice || null) : 'None',
+        deviceCategory: formDeviceCategory,
         ownershipType: formOwnershipType, status: formStatus,
         rentalCost: parseFloat(formRentalCost.toString().replace(/\./g, '')) || 0,
         rentalStart: new Date(finalRentalStart).toISOString(),

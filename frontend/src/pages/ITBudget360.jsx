@@ -109,7 +109,7 @@ export default function ITBudget360() {
   const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [viewMode, setViewMode] = useState('accrual'); // 'accrual' (Prorated) vs 'cash' (Cash Outflow)
-  const [activeTab, setActiveTab] = useState('cost-overview'); // 'cost-overview' | 'summary' | 'projects' | 'departmental' | 'consolidation' | 'pillar-recap'
+  const [activeTab, setActiveTab] = useState('cost-overview'); // 'cost-overview' | 'summary' | 'projects' | 'departmental' | 'consolidation' | 'pillar-recap' | 'realisasi-entitas'
 
   // Data State
   const [companies, setCompanies] = useState([]);
@@ -147,6 +147,11 @@ export default function ITBudget360() {
   // Rollover Modal State
   const [isRolloverModalOpen, setIsRolloverModalOpen] = useState(false);
 
+  // Realisasi per Entitas State
+  const [realisasiData, setRealisasiData] = useState(null);
+  const [realisasiLoading, setRealisasiLoading] = useState(false);
+  const [realisasiExpandedId, setRealisasiExpandedId] = useState(null);
+
   // Expense & Tagging Modal State
   const [isTaggingModalOpen, setIsTaggingModalOpen] = useState(false);
   const [taggingBudget, setTaggingBudget] = useState(null);
@@ -167,6 +172,29 @@ export default function ITBudget360() {
   useEffect(() => {
     fetchCompanyMasters();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'realisasi-entitas') {
+      fetchRealisasiPerEntitas();
+    }
+  }, [activeTab, selectedYear, selectedCompanyMasterId]);
+
+  const fetchRealisasiPerEntitas = async () => {
+    setRealisasiLoading(true);
+    try {
+      const params = new URLSearchParams({ fiscalYear: selectedYear });
+      if (selectedCompanyMasterId) params.set('companyMasterId', selectedCompanyMasterId);
+      const res = await fetch(`${API_URL}/reports/it-budget-360/realisasi-per-entitas?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setRealisasiData(data);
+    } catch (e) {
+      console.error('Gagal memuat realisasi per entitas:', e);
+    } finally {
+      setRealisasiLoading(false);
+    }
+  };
 
   const fetchCompanyMasters = async () => {
     try {
@@ -533,6 +561,17 @@ export default function ITBudget360() {
         >
           <BarChart2 className="w-4 h-4" />
           Budget vs Realisasi
+        </button>
+        <button
+          onClick={() => setActiveTab('realisasi-entitas')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+            activeTab === 'realisasi-entitas'
+              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
+              : 'bg-white/60 dark:bg-slate-900/60 text-gray-500 hover:text-slate-800 dark:hover:text-white border border-slate-200/50 dark:border-slate-800/40'
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          Realisasi per Entitas
         </button>
       </div>
 
@@ -1523,6 +1562,174 @@ export default function ITBudget360() {
           })()}
         </>
       )}
+
+      {/* TAB 6: REALISASI PER ENTITAS */}
+      {activeTab === 'realisasi-entitas' && (() => {
+        const SOURCE_LABELS = {
+          SUBSCRIPTION: { label: 'Subscription', color: 'bg-blue-500', light: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+          ASSET_LAPTOP: { label: 'Rental Laptop', color: 'bg-violet-500', light: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300' },
+          ASSET_SMARTPHONE: { label: 'Rental Smartphone', color: 'bg-rose-500', light: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
+          ASSET_PRINTER: { label: 'Rental Printer', color: 'bg-amber-500', light: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+          ASSET_OTHER: { label: 'Rental Lainnya', color: 'bg-slate-400', light: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+          PERIPHERAL: { label: 'Peripheral', color: 'bg-emerald-500', light: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+          MANUAL: { label: 'Manual', color: 'bg-orange-400', light: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
+        };
+        const SOURCE_ORDER = ['SUBSCRIPTION', 'ASSET_LAPTOP', 'ASSET_SMARTPHONE', 'ASSET_PRINTER', 'ASSET_OTHER', 'PERIPHERAL', 'MANUAL'];
+
+        if (realisasiLoading) return (
+          <div className="flex items-center justify-center h-48 gap-2 text-indigo-500">
+            <RefreshCw className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Memuat data realisasi...</span>
+          </div>
+        );
+
+        if (!realisasiData || !realisasiData.companies) return (
+          <div className="flex flex-col items-center justify-center h-40 text-slate-400">
+            <p className="text-sm">Tidak ada data. Pilih tahun dan klik tab ini kembali.</p>
+          </div>
+        );
+
+        const { companies } = realisasiData;
+
+        return (
+          <div className="space-y-4 mt-4">
+            {/* Header summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Total Entitas', value: companies.length, suffix: 'PT' },
+                { label: 'Total Pagu', value: formatRupiah(companies.reduce((s, c) => s + c.totalAllocated, 0)), suffix: '' },
+                { label: 'Total Realisasi', value: formatRupiah(companies.reduce((s, c) => s + c.totalActual, 0)), suffix: '' },
+                { label: 'Rata-rata Serapan', value: `${(companies.reduce((s, c) => s + c.utilizationPct, 0) / Math.max(companies.length, 1)).toFixed(1)}%`, suffix: '' },
+              ].map((kpi, i) => (
+                <div key={i} className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800/60 px-4 py-3">
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{kpi.label}</p>
+                  <p className="text-lg font-bold text-slate-800 dark:text-white mt-0.5">{kpi.value} <span className="text-sm font-normal text-slate-400">{kpi.suffix}</span></p>
+                </div>
+              ))}
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap items-center gap-3 px-1">
+              {SOURCE_ORDER.map(k => (
+                <div key={k} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                  <span className={`inline-block w-2.5 h-2.5 rounded-sm ${SOURCE_LABELS[k].color}`}></span>
+                  {SOURCE_LABELS[k].label}
+                </div>
+              ))}
+            </div>
+
+            {/* Per-company cards */}
+            {companies.map(company => {
+              const isExpanded = realisasiExpandedId === company.companyMasterId;
+              const totalSrc = SOURCE_ORDER.reduce((s, k) => s + (company.sourceBreakdown[k] || 0), 0);
+
+              return (
+                <div key={company.companyMasterId} className="bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800/60 overflow-hidden">
+                  {/* Company header row */}
+                  <div
+                    className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+                    onClick={() => setRealisasiExpandedId(isExpanded ? null : company.companyMasterId)}
+                  >
+                    <Building2 className="w-5 h-5 text-rose-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{company.companyName}</p>
+                      <p className="text-[10px] text-slate-500">{company.budgetCount} item · {company.ongoingCount} on-going</p>
+                    </div>
+
+                    {/* Stacked bar */}
+                    <div className="flex-1 max-w-[220px]">
+                      <div className="flex rounded-full overflow-hidden h-3 bg-slate-100 dark:bg-slate-800">
+                        {SOURCE_ORDER.map(k => {
+                          const amt = company.sourceBreakdown[k] || 0;
+                          const pct = totalSrc > 0 ? (amt / totalSrc) * 100 : 0;
+                          return pct > 0 ? (
+                            <div key={k} className={`${SOURCE_LABELS[k].color} h-full`} style={{ width: `${pct}%` }} title={`${SOURCE_LABELS[k].label}: ${formatRupiah(amt)}`} />
+                          ) : null;
+                        })}
+                      </div>
+                      <p className="text-[9px] text-slate-400 mt-0.5 text-right">{company.utilizationPct}% terserap</p>
+                    </div>
+
+                    {/* Numbers */}
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-white tabular-nums">{formatRupiah(company.totalActual)}</p>
+                      <p className="text-[10px] text-slate-400 tabular-nums">dari {formatRupiah(company.totalAllocated)}</p>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 text-slate-400 transition ${isExpanded ? 'rotate-90' : ''}`} />
+                  </div>
+
+                  {/* Source breakdown chips */}
+                  <div className="px-5 pb-3 flex flex-wrap gap-2">
+                    {SOURCE_ORDER.map(k => {
+                      const amt = company.sourceBreakdown[k] || 0;
+                      if (amt === 0) return null;
+                      return (
+                        <span key={k} className={`px-2.5 py-1 rounded-full text-[10px] font-semibold ${SOURCE_LABELS[k].light}`}>
+                          {SOURCE_LABELS[k].label}: {formatRupiah(amt)}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  {/* Expanded: budget detail table */}
+                  {isExpanded && (
+                    <div className="border-t border-slate-100 dark:border-slate-800 overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400">
+                            <th className="px-4 py-2.5 text-left font-semibold">Proyek / Item</th>
+                            <th className="px-3 py-2.5 text-center font-semibold">Tipe</th>
+                            <th className="px-3 py-2.5 text-center font-semibold">Status</th>
+                            <th className="px-3 py-2.5 text-right font-semibold">Pagu</th>
+                            <th className="px-3 py-2.5 text-right font-semibold">Realisasi</th>
+                            <th className="px-3 py-2.5 text-right font-semibold">Sisa</th>
+                            <th className="px-3 py-2.5 text-right font-semibold">%</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {company.budgets.map((b, idx) => (
+                            <tr key={b.id} className={`border-t border-slate-100 dark:border-slate-800 ${idx % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/30' : ''}`}>
+                              <td className="px-4 py-2.5">
+                                <p className="font-medium text-slate-800 dark:text-slate-200">{b.projectName}</p>
+                                <p className="text-slate-400">{b.projectCode} · {b.accountType || '-'}</p>
+                              </td>
+                              <td className="px-3 py-2.5 text-center">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${b.budgetType === 'OPEX' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'}`}>
+                                  {b.budgetType}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2.5 text-center">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  b.status === 'IN_PROGRESS' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+                                  b.status === 'APPROVED' ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' :
+                                  b.status === 'COMPLETED' ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300' :
+                                  'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                                }`}>
+                                  {b.status}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2.5 text-right tabular-nums text-slate-600 dark:text-slate-400">{formatRupiah(b.allocatedBudget)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums font-medium text-slate-800 dark:text-slate-200">{formatRupiah(b.actualCost)}</td>
+                              <td className={`px-3 py-2.5 text-right tabular-nums font-medium ${b.remainingBudget < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                                {formatRupiah(b.remainingBudget)}
+                              </td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">
+                                <span className={`font-bold ${b.utilizationPct > 100 ? 'text-red-600' : b.utilizationPct > 80 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                  {b.utilizationPct}%
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* FORM DRAWER / MODAL UNTUK INPUT & EDIT ANGGARAN */}
       <BudgetFormModal

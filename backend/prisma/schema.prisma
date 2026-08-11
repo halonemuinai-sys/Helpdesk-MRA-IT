@@ -275,6 +275,9 @@ model Asset {
   rentalStart     DateTime      // Lease start date
   rentalEnd       DateTime      // Lease end date
   
+  // Device category for rental tracking and cost breakdown
+  deviceCategory  String        @default("LAPTOP") // LAPTOP, SMARTPHONE, PRINTER, OTHERS
+
   // Status Anggaran Tahunan (Budgeted vs Unbudgeted / Non-Budget)
   isBudgeted      Boolean       @default(true)
   
@@ -497,7 +500,12 @@ model ITProjectExpense {
   vendor                  String?
   receiptLink             String?
   status                  String           @default("PAID") // PAID, PENDING, REJECTED
-  
+
+  // Source tracking — where did this expense come from?
+  sourceType              String?          // SUBSCRIPTION, ASSET, PERIPHERAL, MANUAL
+  sourceCategory          String?          // ASSET: Laptop/Smartphone/Printer; SUBSCRIPTION: ISP/License/etc.
+  sourceRefId             String?          // ID of the original source record
+
   createdAt               DateTime         @default(now())
 
   @@index([projectId])

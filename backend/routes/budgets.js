@@ -431,7 +431,9 @@ router.post('/:id/expenses', async (req, res) => {
         invoiceNumber,
         vendor,
         receiptLink,
-        status: 'PAID'
+        status: 'PAID',
+        sourceType: 'MANUAL',
+        sourceCategory: 'Manual'
       }
     });
 
@@ -510,7 +512,10 @@ router.post('/:id/tag-subscription', async (req, res) => {
         invoiceNumber: sub.contractNumber || `SUB-${sub.id.substring(0, 6)}`,
         vendor: sub.providerName || sub.brand,
         receiptLink: sub.evidenceLink,
-        status: 'PAID'
+        status: 'PAID',
+        sourceType: 'SUBSCRIPTION',
+        sourceCategory: sub.category || 'License',
+        sourceRefId: sub.id
       }
     });
 
@@ -575,7 +580,10 @@ router.post('/:id/tag-rental', async (req, res) => {
         expenseDate: asset.rentalStart || new Date(),
         invoiceNumber: asset.vendorRef || asset.assetTag,
         vendor: asset.vendor || null,
-        status: 'PAID'
+        status: 'PAID',
+        sourceType: 'ASSET',
+        sourceCategory: asset.deviceCategory || 'Laptop',
+        sourceRefId: asset.id
       }
     });
 
@@ -610,7 +618,10 @@ router.post('/:id/tag-peripheral', async (req, res) => {
         invoiceNumber: invoice.invoiceRef,
         vendor: invoice.supplier,
         receiptLink: invoice.fileLink,
-        status: 'PAID'
+        status: 'PAID',
+        sourceType: 'PERIPHERAL',
+        sourceCategory: 'Peripheral',
+        sourceRefId: invoice.id
       }
     });
 

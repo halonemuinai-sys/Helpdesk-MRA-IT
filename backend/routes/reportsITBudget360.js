@@ -257,4 +257,108 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/reports/it-budget-360/realisasi-per-entitas
+// Returns per-company breakdown of ongoing budgets with expense source breakdown
+router.get('/realisasi-per-entitas', async (req, res) => {
+  try {
+    const { fiscalYear, companyMasterId } = req.query;
+    const year = parseInt(fiscalYear) || new Date().getFullYear();
+
+    const budgets = await prisma.iTProjectBudget.findMany({
+      where: {
+        fiscalYear: year,
+        status: { notIn: ['CANCELLED', 'DRAFT'] },
+        ...(companyMasterId ? { companyMasterId: parseInt(companyMasterId) } : {})
+      },
+      include: {
+        companyMaster: { select: { id: true, name: true } },
+        expenses: {
+          select: { amount: true, sourceType: true, sourceCategory: true, expenseDate: true }
+        }
+      },
+      orderBy: { companyMasterId: 'asc' }
+    });
+
+    // Group by company
+    const companyMap = {};
+
+    for (const budget of budgets) {
+      const companyId = budget.companyMasterId || 0;
+      const companyName = budget.companyMaster?.name || 'Tanpa Entitas';
+
+      if (!companyMap[companyId]) {
+        companyMap[companyId] = {
+          companyMasterId: companyId,
+          companyName,
+          totalAllocated: 0,
+          totalActual: 0,
+          budgetCount: 0,
+          ongoingCount: 0,
+          sourceBreakdown: {
+            SUBSCRIPTION: 0,
+            ASSET_LAPTOP: 0,
+            ASSET_SMARTPHONE: 0,
+            ASSET_PRINTER: 0,
+            ASSET_OTHER: 0,
+            PERIPHERAL: 0,
+            MANUAL: 0
+          },
+          budgets: []
+        };
+      }
+
+      const entry = companyMap[companyId];
+      entry.totalAllocated += budget.allocatedBudget || 0;
+      entry.totalActual += budget.actualCost || 0;
+      entry.budgetCount++;
+      if (['APPROVED', 'IN_PROGRESS', 'PROPOSED'].includes(budget.status)) entry.ongoingCount++;
+
+      // Aggregate expenses by sourceType + sourceCategory
+      for (const exp of budget.expenses) {
+        const amt = exp.amount || 0;
+        if (exp.sourceType === 'SUBSCRIPTION') {
+          entry.sourceBreakdown.SUBSCRIPTION += amt;
+        } else if (exp.sourceType === 'ASSET') {
+          const cat = (exp.sourceCategory || '').toUpperCase();
+          if (cat === 'LAPTOP') entry.sourceBreakdown.ASSET_LAPTOP += amt;
+          else if (cat === 'SMARTPHONE') entry.sourceBreakdown.ASSET_SMARTPHONE += amt;
+          else if (cat === 'PRINTER') entry.sourceBreakdown.ASSET_PRINTER += amt;
+          else entry.sourceBreakdown.ASSET_OTHER += amt;
+        } else if (exp.sourceType === 'PERIPHERAL') {
+          entry.sourceBreakdown.PERIPHERAL += amt;
+        } else {
+          entry.sourceBreakdown.MANUAL += amt;
+        }
+      }
+
+      entry.budgets.push({
+        id: budget.id,
+        projectCode: budget.projectCode,
+        projectName: budget.projectName,
+        budgetType: budget.budgetType,
+        accountType: budget.accountType,
+        status: budget.status,
+        allocatedBudget: budget.allocatedBudget,
+        actualCost: budget.actualCost,
+        remainingBudget: budget.remainingBudget,
+        utilizationPct: budget.allocatedBudget > 0
+          ? parseFloat(((budget.actualCost / budget.allocatedBudget) * 100).toFixed(1))
+          : 0
+      });
+    }
+
+    const result = Object.values(companyMap).map(c => ({
+      ...c,
+      utilizationPct: c.totalAllocated > 0
+        ? parseFloat(((c.totalActual / c.totalAllocated) * 100).toFixed(1))
+        : 0
+    }));
+
+    res.json({ year, companies: result });
+  } catch (err) {
+    console.error('Error generating realisasi per entitas:', err);
+    res.status(500).json({ error: 'Gagal memuat laporan realisasi per entitas.' });
+  }
+});
+
 module.exports = router;
