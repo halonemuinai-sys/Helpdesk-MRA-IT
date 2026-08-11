@@ -33,11 +33,13 @@ import {
   Save,
   Tag,
   BarChart2,
-  Info
+  Info,
+  Copy
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
 import BudgetTaggingModal from '../components/budgets/BudgetTaggingModal';
 import BudgetFormModal from '../components/budgets/BudgetFormModal';
+import BudgetRolloverModal from '../components/budgets/BudgetRolloverModal';
 import { exportITBudget360ToExcel } from '../utils/excelExportITBudget360';
 import {
   OPEX_ACCOUNT_TYPES,
@@ -141,6 +143,9 @@ export default function ITBudget360() {
   const [formVendor, setFormVendor] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // Rollover Modal State
+  const [isRolloverModalOpen, setIsRolloverModalOpen] = useState(false);
 
   // Expense & Tagging Modal State
   const [isTaggingModalOpen, setIsTaggingModalOpen] = useState(false);
@@ -439,6 +444,15 @@ export default function ITBudget360() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             {loading ? 'Memuat...' : 'Proses Data'}
+          </button>
+
+          {/* Rollover Estimasi Button */}
+          <button
+            onClick={() => setIsRolloverModalOpen(true)}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-violet-600/20 transition"
+          >
+            <Copy className="w-4 h-4" />
+            Rollover Estimasi
           </button>
 
           {/* New Budget Input Button */}
@@ -1556,6 +1570,18 @@ export default function ITBudget360() {
         apiUrl={API_URL}
         onUpdateBudget={handleUpdateBudgetFromTagging}
         formatRupiah={formatRupiah}
+      />
+
+      {/* Rollover Estimasi Modal */}
+      <BudgetRolloverModal
+        isOpen={isRolloverModalOpen}
+        onClose={() => setIsRolloverModalOpen(false)}
+        companies={companies}
+        token={token}
+        onSuccess={() => {
+          setIsRolloverModalOpen(false);
+          handleLoadData();
+        }}
       />
     </div>
   );

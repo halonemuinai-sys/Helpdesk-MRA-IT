@@ -185,7 +185,135 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// 5. POST Auto-Generate Baseline 2027 from Active Subscriptions, ISP, and Rentals
+// 5a. GET Rollover Preview — show source year items with proposed target year budget
+router.get('/rollover-preview', async (req, res) => {
+  try {
+    const { fromYear, toYear, companyMasterId } = req.query;
+    const fy = parseInt(fromYear) || 2026;
+    const ty = parseInt(toYear) || 2027;
+
+    const sourceItems = await prisma.iTProjectBudget.findMany({
+      where: {
+        fiscalYear: fy,
+        ...(companyMasterId ? { companyMasterId: parseInt(companyMasterId) } : {})
+      },
+      include: { companyMaster: { select: { id: true, name: true } } },
+      orderBy: [{ budgetType: 'asc' }, { accountType: 'asc' }]
+    });
+
+    const existingInTarget = await prisma.iTProjectBudget.findMany({
+      where: {
+        fiscalYear: ty,
+        ...(companyMasterId ? { companyMasterId: parseInt(companyMasterId) } : {})
+      },
+      select: { projectName: true, companyMasterId: true }
+    });
+    const existingKeys = new Set(
+      existingInTarget.map(e => `${e.projectName}__${e.companyMasterId}`)
+    );
+
+    const preview = sourceItems.map(item => ({
+      sourceId: item.id,
+      projectCode: item.projectCode,
+      projectName: item.projectName,
+      company: item.companyMaster?.name || '-',
+      companyMasterId: item.companyMasterId,
+      brand: item.brand,
+      department: item.department,
+      category: item.category,
+      budgetType: item.budgetType,
+      accountType: item.accountType || '-',
+      priority: item.priority,
+      fromYearAllocated: item.allocatedBudget,
+      fromYearActual: item.actualCost,
+      // Proposed base: actual if realized, otherwise allocated
+      proposedBase: item.actualCost > 0 ? item.actualCost : item.allocatedBudget,
+      isDuplicate: existingKeys.has(`${item.projectName}__${item.companyMasterId}`)
+    }));
+
+    res.json({ preview, fromYear: fy, toYear: ty });
+  } catch (err) {
+    console.error('Error fetching rollover preview:', err);
+    res.status(500).json({ error: 'Gagal mengambil preview rollover.' });
+  }
+});
+
+// 5b. POST Rollover — bulk-create target year budget items from source year history
+router.post('/rollover', async (req, res) => {
+  try {
+    const { toYear, adjustmentFactor = 1, items } = req.body;
+    const ty = parseInt(toYear);
+
+    if (!ty || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'toYear dan items diperlukan.' });
+    }
+
+    const selectedItems = items.filter(i => i.include);
+    if (selectedItems.length === 0) {
+      return res.status(400).json({ error: 'Tidak ada item yang dipilih.' });
+    }
+
+    const sourceIds = selectedItems.map(i => i.sourceId);
+    const sourceBudgets = await prisma.iTProjectBudget.findMany({
+      where: { id: { in: sourceIds } }
+    });
+
+    let countCreated = 0;
+    let countSkipped = 0;
+
+    for (const sel of selectedItems) {
+      const src = sourceBudgets.find(b => b.id === sel.sourceId);
+      if (!src) continue;
+
+      const existing = await prisma.iTProjectBudget.findFirst({
+        where: { fiscalYear: ty, projectName: src.projectName, companyMasterId: src.companyMasterId }
+      });
+      if (existing) { countSkipped++; continue; }
+
+      const base = src.actualCost > 0 ? src.actualCost : src.allocatedBudget;
+      const allocatedBudget = sel.customBudget != null && sel.customBudget !== ''
+        ? parseFloat(sel.customBudget)
+        : Math.round(base * parseFloat(adjustmentFactor));
+
+      const existingCount = await prisma.iTProjectBudget.count({ where: { fiscalYear: ty } });
+      const projectCode = `PRJ-${ty}-${String(existingCount + 1).padStart(3, '0')}`;
+
+      await prisma.iTProjectBudget.create({
+        data: {
+          projectCode,
+          projectName: src.projectName,
+          category: src.category,
+          description: `Rollover dari ${src.projectCode} — realisasi ${ty - 1}: ${src.actualCost > 0 ? src.actualCost.toFixed(0) : 'N/A'}`,
+          companyMasterId: src.companyMasterId,
+          brand: src.brand,
+          department: src.department,
+          fiscalYear: ty,
+          allocatedBudget,
+          actualCost: 0,
+          remainingBudget: allocatedBudget,
+          budgetType: src.budgetType,
+          accountType: src.accountType,
+          priority: src.priority,
+          status: 'PROPOSED',
+          vendor: src.vendor,
+          notes: `Estimasi rollover dari ${src.projectCode} (${ty - 1} → ${ty})`
+        }
+      });
+      countCreated++;
+    }
+
+    res.json({
+      message: `Berhasil membuat ${countCreated} item estimasi anggaran ${ty}.${countSkipped > 0 ? ` ${countSkipped} item dilewati karena sudah ada.` : ''}`,
+      countCreated,
+      countSkipped
+    });
+  } catch (err) {
+    console.error('Error rolling over budgets:', err);
+    res.status(500).json({ error: 'Gagal membuat rollover anggaran.' });
+  }
+});
+
+// 5c. POST Auto-Generate Baseline 2027 from Active Subscriptions, ISP, and Rentals
 router.post('/generate-baseline-2027', async (req, res) => {
   try {
     const year = 2027;
