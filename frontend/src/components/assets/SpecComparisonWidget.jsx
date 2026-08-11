@@ -322,7 +322,7 @@ export default function SpecComparisonWidget({
       }
       return true;
     });
-  }, [hardwareAssets, selectedCompanyMasterId, selectedOwnershipType, selectedCategory, ramFilter, osFilter, searchQuery]);
+  }, [hardwareAssets, selectedCompanyMasterIds, selectedOwnershipType, selectedCategory, ramFilter, osFilter, searchQuery]);
 
   // Toggle Asset Checkbox
   const toggleSelectAsset = (id) => {
