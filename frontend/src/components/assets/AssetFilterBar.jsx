@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Laptop, Building2, Clock, Loader2, ChevronDown, Check, Tag } from 'lucide-react';
+import { Search, Laptop, Building2, Clock, Loader2, ChevronDown, Check, Tag, CheckSquare, Square } from 'lucide-react';
 import { STATUS_OPTIONS, OWNERSHIP_OPTIONS } from './constants';
 
 const DROP_ANIM = `
@@ -8,7 +8,7 @@ const DROP_ANIM = `
   .asset-drop-anim { animation: dropIn 0.15s cubic-bezier(0.16,1,0.3,1); }
 `;
 
-function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searchable = false }) {
+function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searchable = false, isMulti = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -16,13 +16,17 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
   const searchRef = useRef(null);
   const dropRef = useRef(null);
 
+  const selectedValues = isMulti
+    ? (Array.isArray(value) ? value.map(String) : value ? [String(value)] : [])
+    : [];
+
   const reposition = () => {
     if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
     setPos({
       top: r.bottom + window.scrollY + 6,
       left: r.left + window.scrollX,
-      width: Math.max(r.width, searchable ? 300 : 220),
+      width: Math.max(r.width, searchable ? 320 : 220),
     });
   };
 
@@ -54,16 +58,64 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const selected = options.find(o => String(o.value) === String(value));
   const filtered = searchable && query
     ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
     : options;
 
-  const labelNode = selected
-    ? selected.dot
-      ? <span className="flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${selected.dot}`} />{selected.label}</span>
-      : selected.label
-    : null;
+  let labelNode = null;
+  if (isMulti) {
+    if (selectedValues.length === 0) {
+      labelNode = null;
+    } else if (selectedValues.length === 1) {
+      const match = options.find(o => String(o.value) === String(selectedValues[0]));
+      labelNode = match ? match.label : placeholder;
+    } else {
+      labelNode = (
+        <span className="flex items-center gap-1.5 font-extrabold text-rose-600 dark:text-rose-400">
+          <span>{selectedValues.length} Perusahaan Dipilih</span>
+        </span>
+      );
+    }
+  } else {
+    const selected = options.find(o => String(o.value) === String(value));
+    labelNode = selected
+      ? selected.dot
+        ? <span className="flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${selected.dot}`} />{selected.label}</span>
+        : selected.label
+      : null;
+  }
+
+  const handleToggleOption = (optVal) => {
+    if (!isMulti) {
+      onChange(String(optVal));
+      setOpen(false);
+      return;
+    }
+
+    const valStr = String(optVal);
+    let updated = [];
+    if (selectedValues.includes(valStr)) {
+      updated = selectedValues.filter(v => v !== valStr);
+    } else {
+      updated = [...selectedValues, valStr];
+    }
+    onChange(updated);
+  };
+
+  const handleSelectAllOrClear = () => {
+    if (isMulti) {
+      if (selectedValues.length === options.length) {
+        onChange([]);
+      } else {
+        onChange(options.map(o => String(o.value)));
+      }
+    } else {
+      onChange('');
+      setOpen(false);
+    }
+  };
+
+  const hasSelectedAny = isMulti ? selectedValues.length > 0 : Boolean(value);
 
   return (
     <>
@@ -75,13 +127,18 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
         className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-xl border text-left transition-all duration-150 group
           ${open
             ? 'bg-white dark:bg-slate-900 border-rose-400 dark:border-rose-500/60 shadow-sm shadow-rose-100 dark:shadow-rose-900/20'
-            : 'bg-gray-50/70 dark:bg-slate-950/30 border-gray-200 dark:border-slate-800/60 hover:border-rose-300 dark:hover:border-rose-500/40'
+            : 'bg-gray-50/70 dark:bg-slate-955/30 border-gray-200 dark:border-slate-800/60 hover:border-rose-300 dark:hover:border-rose-500/40'
           }`}
       >
-        <Icon className={`w-4 h-4 shrink-0 transition-colors ${open ? 'text-rose-500' : 'text-gray-400 group-hover:text-rose-400'}`} />
-        <span className={`flex-1 text-xs font-semibold truncate transition-colors ${value ? 'text-gray-800 dark:text-slate-100' : 'text-gray-400 dark:text-slate-500'}`}>
+        <Icon className={`w-4 h-4 shrink-0 transition-colors ${open || hasSelectedAny ? 'text-rose-500' : 'text-gray-400 group-hover:text-rose-400'}`} />
+        <span className={`flex-1 text-xs font-semibold truncate transition-colors ${hasSelectedAny ? 'text-gray-800 dark:text-slate-100' : 'text-gray-400 dark:text-slate-500'}`}>
           {labelNode ?? placeholder}
         </span>
+        {isMulti && selectedValues.length > 1 && (
+          <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-black text-[9px]">
+            {selectedValues.length}
+          </span>
+        )}
         <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-all duration-200 ${open ? 'rotate-180 text-rose-500' : 'text-gray-400'}`} />
       </button>
 
@@ -111,15 +168,24 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
             <button
               type="button"
               onMouseDown={e => e.preventDefault()}
-              onClick={() => { onChange(''); setOpen(false); }}
-              className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-left transition-colors ${
-                !value
-                  ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400'
+              onClick={handleSelectAllOrClear}
+              className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-left transition-colors border-b border-gray-100 dark:border-slate-800/50 ${
+                !hasSelectedAny
+                  ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-bold'
                   : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800/60'
               }`}
             >
-              <span>{placeholder}</span>
-              {!value && <Check className="w-3.5 h-3.5 shrink-0" />}
+              <span className="flex items-center gap-2">
+                {isMulti && (
+                  selectedValues.length === options.length ? (
+                    <CheckSquare className="w-4 h-4 text-rose-500" />
+                  ) : (
+                    <Square className="w-4 h-4 text-gray-300 dark:text-slate-700" />
+                  )
+                )}
+                <span>Semua Perusahaan</span>
+              </span>
+              {!hasSelectedAny && <Check className="w-3.5 h-3.5 shrink-0" />}
             </button>
 
             {filtered.length === 0 && (
@@ -127,28 +193,54 @@ function CustomSelect({ icon: Icon, placeholder, value, onChange, options, searc
             )}
 
             {filtered.map(opt => {
-              const isSelected = String(value) === String(opt.value);
+              const optValStr = String(opt.value);
+              const isSelected = isMulti
+                ? selectedValues.includes(optValStr)
+                : String(value) === optValStr;
+
               return (
                 <button
                   key={opt.value}
                   type="button"
                   onMouseDown={e => e.preventDefault()}
-                  onClick={() => { onChange(String(opt.value)); setOpen(false); }}
+                  onClick={() => handleToggleOption(opt.value)}
                   className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-left transition-colors ${
                     isSelected
-                      ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400'
+                      ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-bold'
                       : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60'
                   }`}
                 >
-                  <span className="flex items-center gap-2 min-w-0">
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    {isMulti && (
+                      isSelected ? (
+                        <CheckSquare className="w-4 h-4 text-rose-500 shrink-0" />
+                      ) : (
+                        <Square className="w-4 h-4 text-gray-300 dark:text-slate-700 shrink-0" />
+                      )
+                    )}
                     {opt.dot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${opt.dot}`} />}
                     <span className="truncate">{opt.label}</span>
                   </span>
-                  {isSelected && <Check className="w-3.5 h-3.5 shrink-0 ml-2" />}
+                  {!isMulti && isSelected && <Check className="w-3.5 h-3.5 shrink-0 ml-2" />}
                 </button>
               );
             })}
           </div>
+
+          {isMulti && (
+            <div className="p-2 border-t border-gray-100 dark:border-slate-800/70 bg-gray-50/80 dark:bg-slate-955/80 flex items-center justify-between">
+              <span className="text-[11px] font-bold text-gray-500 dark:text-slate-400 pl-2">
+                {selectedValues.length} perusahaan dipilih
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[11px] rounded-lg shadow transition"
+              >
+                Selesai
+              </button>
+            </div>
+          )}
         </div>,
         document.body
       )}
@@ -166,6 +258,7 @@ export default function AssetFilterBar({
   searchQuery, setSearchQuery,
   selectedCategory, setSelectedCategory,
   selectedCompanyMasterId, setSelectedCompanyMasterId,
+  selectedCompanyMasterIds, setSelectedCompanyMasterIds,
   selectedStatus, setSelectedStatus,
   selectedOwnershipType, setSelectedOwnershipType,
   companyMasters,
@@ -173,8 +266,20 @@ export default function AssetFilterBar({
   handleResetFilters,
   handleRefreshData,
 }) {
-  const hasActiveFilter = searchQuery || selectedStatus || selectedCompanyMasterId || selectedCategory || selectedOwnershipType;
+  const currentCompanyVal = selectedCompanyMasterIds && selectedCompanyMasterIds.length > 0
+    ? selectedCompanyMasterIds
+    : selectedCompanyMasterId;
+
+  const hasActiveFilter = searchQuery || selectedStatus || (selectedCompanyMasterIds && selectedCompanyMasterIds.length > 0) || selectedCompanyMasterId || selectedCategory || selectedOwnershipType;
   const companyOptions = companyMasters.map(m => ({ value: String(m.id), label: m.name }));
+
+  const handleCompanyChange = (val) => {
+    if (setSelectedCompanyMasterIds) {
+      setSelectedCompanyMasterIds(Array.isArray(val) ? val : val ? [String(val)] : []);
+    } else {
+      setSelectedCompanyMasterId(val);
+    }
+  };
 
   return (
     <div className="glass-panel p-5 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-gray-250/60 dark:border-slate-800/60 space-y-4">
@@ -201,7 +306,7 @@ export default function AssetFilterBar({
             <CustomSelect icon={Tag} placeholder="Kepemilikan" value={selectedOwnershipType} onChange={setSelectedOwnershipType} options={OWNERSHIP_OPTIONS} />
           </div>
           <div className="md:w-56">
-            <CustomSelect icon={Building2} placeholder="Semua Perusahaan" value={selectedCompanyMasterId} onChange={setSelectedCompanyMasterId} options={companyOptions} searchable />
+            <CustomSelect icon={Building2} placeholder="Semua Perusahaan" value={currentCompanyVal} onChange={handleCompanyChange} options={companyOptions} searchable isMulti />
           </div>
           <div className="md:w-44">
             <CustomSelect icon={Clock} placeholder="Semua Status" value={selectedStatus} onChange={setSelectedStatus} options={STATUS_OPTIONS} />

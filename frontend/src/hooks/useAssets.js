@@ -50,7 +50,21 @@ export default function useAssets({ token, user }) {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-  const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
+  const [selectedCompanyMasterIds, setSelectedCompanyMasterIds] = useState([]);
+  const [selectedCompanyMasterId, setSelectedCompanyMasterIdState] = useState('');
+
+  const setSelectedCompanyMasterId = (val) => {
+    if (Array.isArray(val)) {
+      setSelectedCompanyMasterIds(val);
+      setSelectedCompanyMasterIdState(val.length === 1 ? val[0] : '');
+    } else if (val) {
+      setSelectedCompanyMasterIds([String(val)]);
+      setSelectedCompanyMasterIdState(String(val));
+    } else {
+      setSelectedCompanyMasterIds([]);
+      setSelectedCompanyMasterIdState('');
+    }
+  };
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedOwnershipType, setSelectedOwnershipType] = useState('');
 
@@ -206,6 +220,7 @@ export default function useAssets({ token, user }) {
     setSearchQuery('');
     setSelectedStatus('');
     setSelectedCompanyMasterId('');
+    setSelectedCompanyMasterIds([]);
     setSelectedCategory('');
     setSelectedOwnershipType('');
   };
@@ -541,7 +556,7 @@ export default function useAssets({ token, user }) {
       (asset.user && asset.user.name.toLowerCase().includes(q)) ||
       (asset.notes && asset.notes.toLowerCase().includes(q));
     const matchesStatus = selectedStatus === '' || asset.status === selectedStatus;
-    const matchesMaster = selectedCompanyMasterId === '' || asset.companyMasterId === parseInt(selectedCompanyMasterId);
+    const matchesMaster = selectedCompanyMasterIds.length === 0 || selectedCompanyMasterIds.includes(String(asset.companyMasterId));
     const matchesCategory = selectedCategory === '' || 
       (selectedCategory === 'SMARTPHONE' && isSmartphone(asset)) ||
       (selectedCategory === 'PRINTER' && isPrinter(asset)) ||
@@ -583,6 +598,7 @@ export default function useAssets({ token, user }) {
     searchQuery, setSearchQuery,
     selectedStatus, setSelectedStatus,
     selectedCompanyMasterId, setSelectedCompanyMasterId,
+    selectedCompanyMasterIds, setSelectedCompanyMasterIds,
     selectedCategory, setSelectedCategory,
     selectedOwnershipType, setSelectedOwnershipType,
     assetsLoaded,
