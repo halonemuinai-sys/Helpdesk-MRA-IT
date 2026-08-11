@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Cpu,
   HardDrive,
@@ -15,9 +16,202 @@ import {
   AlertCircle,
   FileSpreadsheet,
   Zap,
-  Tag
+  Tag,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { exportAssetSpecComparisonExcel } from '../../utils/assetSpecExport';
+
+function CustomCompanyMultiSelect({ options, selectedValues, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const btnRef = useRef(null);
+  const searchRef = useRef(null);
+  const dropRef = useRef(null);
+
+  const reposition = () => {
+    if (!btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    setPos({
+      top: r.bottom + window.scrollY + 6,
+      left: r.left + window.scrollX,
+      width: Math.max(r.width, 320),
+    });
+  };
+
+  const toggleOpen = () => {
+    if (!open) reposition();
+    setOpen(o => !o);
+  };
+
+  useEffect(() => {
+    if (!open) { setQuery(''); return; }
+    setTimeout(() => searchRef.current?.focus(), 60);
+    const onScroll = () => reposition();
+    const onResize = () => reposition();
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (btnRef.current?.contains(e.target) || dropRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const filtered = query
+    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  const handleToggleOption = (optVal) => {
+    const valStr = String(optVal);
+    let updated = [];
+    if (selectedValues.includes(valStr)) {
+      updated = selectedValues.filter(v => v !== valStr);
+    } else {
+      updated = [...selectedValues, valStr];
+    }
+    onChange(updated);
+  };
+
+  const handleSelectAllOrClear = () => {
+    if (selectedValues.length === options.length) {
+      onChange([]);
+    } else {
+      onChange(options.map(o => String(o.value)));
+    }
+  };
+
+  const hasSelectedAny = selectedValues.length > 0;
+  let labelNode = null;
+  if (selectedValues.length === 0) {
+    labelNode = 'Semua Perusahaan Induk';
+  } else if (selectedValues.length === 1) {
+    const match = options.find(o => String(o.value) === String(selectedValues[0]));
+    labelNode = match ? match.label : 'Semua Perusahaan Induk';
+  } else {
+    labelNode = (
+      <span className="font-extrabold text-rose-600 dark:text-rose-400">
+        {selectedValues.length} Perusahaan Dipilih
+      </span>
+    );
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={toggleOpen}
+        className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-xl border text-left transition-all group shrink-0 ${
+          open
+            ? 'bg-white dark:bg-slate-900 border-rose-400 dark:border-rose-500/60 shadow-sm'
+            : 'bg-slate-50/70 dark:bg-slate-955/30 border-slate-200 dark:border-slate-850/50 hover:border-rose-300'
+        }`}
+      >
+        <Building2 className={`w-3.5 h-3.5 shrink-0 ${hasSelectedAny ? 'text-rose-500' : 'text-slate-400'}`} />
+        <span className={`truncate max-w-[170px] ${hasSelectedAny ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-300'}`}>
+          {labelNode}
+        </span>
+        {selectedValues.length > 1 && (
+          <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-black text-[9px]">
+            {selectedValues.length}
+          </span>
+        )}
+        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${open ? 'rotate-180 text-rose-500' : 'text-slate-400'}`} />
+      </button>
+
+      {open && createPortal(
+        <div
+          ref={dropRef}
+          style={{ position: 'absolute', top: pos.top, left: pos.left, width: pos.width, zIndex: 9999 }}
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-xs font-semibold"
+        >
+          <div className="p-2 pb-1.5 border-b border-slate-100 dark:border-slate-800">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Cari perusahaan..."
+                className="w-full pl-7 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-rose-500 text-slate-800 dark:text-slate-200"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-60 overflow-y-auto">
+            <button
+              type="button"
+              onMouseDown={e => e.preventDefault()}
+              onClick={handleSelectAllOrClear}
+              className="w-full flex items-center justify-between px-4 py-2 text-left border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+            >
+              <span className="flex items-center gap-2">
+                {selectedValues.length === options.length ? (
+                  <CheckSquare className="w-4 h-4 text-rose-500" />
+                ) : (
+                  <Square className="w-4 h-4 text-slate-300 dark:text-slate-700" />
+                )}
+                <span>Semua Perusahaan Induk</span>
+              </span>
+            </button>
+
+            {filtered.map(opt => {
+              const optValStr = String(opt.value);
+              const isSelected = selectedValues.includes(optValStr);
+
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => handleToggleOption(opt.value)}
+                  className={`w-full flex items-center justify-between px-4 py-2 text-left transition ${
+                    isSelected ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-bold' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    {isSelected ? (
+                      <CheckSquare className="w-4 h-4 text-rose-500 shrink-0" />
+                    ) : (
+                      <Square className="w-4 h-4 text-slate-300 dark:text-slate-700 shrink-0" />
+                    )}
+                    <span className="truncate">{opt.label}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-955/80 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 pl-2">
+              {selectedValues.length} perusahaan dipilih
+            </span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[11px] rounded-lg shadow transition"
+            >
+              Selesai
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
 export default function SpecComparisonWidget({
   assets = [],
@@ -27,7 +221,7 @@ export default function SpecComparisonWidget({
   onOpenBast
 }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
+  const [selectedCompanyMasterIds, setSelectedCompanyMasterIds] = useState([]);
   const [selectedOwnershipType, setSelectedOwnershipType] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [ramFilter, setRamFilter] = useState(''); // '', '8', '16', '32'
@@ -92,7 +286,7 @@ export default function SpecComparisonWidget({
   const filteredAssets = useMemo(() => {
     return hardwareAssets.filter(a => {
       // Company master
-      if (selectedCompanyMasterId && a.companyMasterId !== parseInt(selectedCompanyMasterId, 10)) {
+      if (selectedCompanyMasterIds.length > 0 && !selectedCompanyMasterIds.includes(String(a.companyMasterId))) {
         return false;
       }
       // Ownership
@@ -255,17 +449,12 @@ export default function SpecComparisonWidget({
           {/* Select Filters */}
           <div className="flex flex-wrap items-center gap-2">
             
-            {/* Entity */}
-            <select
-              value={selectedCompanyMasterId}
-              onChange={(e) => setSelectedCompanyMasterId(e.target.value)}
-              className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50/70 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-850/50 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 cursor-pointer"
-            >
-              <option value="">Semua Perusahaan Induk</option>
-              {companyMasters.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
+            {/* Entity Multi-Select */}
+            <CustomCompanyMultiSelect
+              options={companyMasters.map(m => ({ value: String(m.id), label: m.name }))}
+              selectedValues={selectedCompanyMasterIds}
+              onChange={setSelectedCompanyMasterIds}
+            />
 
             {/* Ownership */}
             <select
