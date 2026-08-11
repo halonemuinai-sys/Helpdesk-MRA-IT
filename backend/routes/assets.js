@@ -5,6 +5,16 @@ const prisma = require('../api/db');
 const { verifyToken } = require('../api/authMiddleware');
 const { syncAssetToGA, deleteAssetFromGA } = require('../api/gaSync');
 
+const normalizeProcessor = (proc) => {
+  if (!proc) return null;
+  const p = String(proc).trim();
+  if (/^intel\s+i3$/i.test(p)) return 'Intel Core i3';
+  if (/^intel\s+i5$/i.test(p)) return 'Intel Core i5';
+  if (/^intel\s+i7$/i.test(p)) return 'Intel Core i7';
+  if (/^intel\s+i9$/i.test(p)) return 'Intel Core i9';
+  return p;
+};
+
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -422,7 +432,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         vendorRef: vendorRef || null,
         brand,
         model,
-        processor: processor || null,
+        processor: normalizeProcessor(processor),
         ram: ram || null,
         storage: storage || null,
         os: os || null,
@@ -525,7 +535,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (vendorRef !== undefined) updateData.vendorRef = vendorRef || null;
     if (brand !== undefined) updateData.brand = brand;
     if (model !== undefined) updateData.model = model;
-    if (processor !== undefined) updateData.processor = processor || null;
+    if (processor !== undefined) updateData.processor = normalizeProcessor(processor);
     if (ram !== undefined) updateData.ram = ram || null;
     if (storage !== undefined) updateData.storage = storage || null;
     if (os !== undefined) updateData.os = os || null;
