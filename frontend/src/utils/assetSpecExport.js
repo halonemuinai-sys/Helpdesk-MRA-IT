@@ -128,15 +128,20 @@ export const exportAssetSpecComparisonExcel = async ({
   aTitle.font = { name: 'Arial', size: 14, bold: true, color: { argb: C_TITLE_FONT } };
 
   // Calculate statistics
-  let intel = 0, amd = 0, apple = 0, otherCpu = 0;
+  let intelI3 = 0, intelI5 = 0, intelI7 = 0, intelI9 = 0, intelOther = 0;
+  let amd = 0, apple = 0, otherCpu = 0;
   let ram8 = 0, ram16 = 0, ram32 = 0;
   let win11 = 0, win10 = 0, macOs = 0, otherOs = 0;
 
   assets.forEach(a => {
     const p = (a.processor || '').toLowerCase();
-    if (p.includes('intel') || p.includes('i3') || p.includes('i5') || p.includes('i7') || p.includes('i9')) intel++;
+    if (p.includes('i3')) intelI3++;
+    else if (p.includes('i5')) intelI5++;
+    else if (p.includes('i7')) intelI7++;
+    else if (p.includes('i9')) intelI9++;
+    else if (p.includes('intel') || p.includes('celeror') || p.includes('pentium') || p.includes('xeon')) intelOther++;
     else if (p.includes('amd') || p.includes('ryzen')) amd++;
-    else if (p.includes('apple') || p.includes('m1') || p.includes('m2') || p.includes('m3')) apple++;
+    else if (p.includes('apple') || p.includes('m1') || p.includes('m2') || p.includes('m3') || p.includes('m4')) apple++;
     else if (p) otherCpu++;
 
     const r = (a.ram || '').toLowerCase();
@@ -151,6 +156,7 @@ export const exportAssetSpecComparisonExcel = async ({
     else if (o) otherOs++;
   });
 
+  const totalIntel = intelI3 + intelI5 + intelI7 + intelI9 + intelOther;
   const totalUnits = assets.length || 1;
 
   // Add Summary Tables
@@ -159,10 +165,20 @@ export const exportAssetSpecComparisonExcel = async ({
   const cpuRow = wsAnalysis.lastRow;
   cpuRow.font = { bold: true };
 
-  wsAnalysis.addRow(['Intel Core Series (i3/i5/i7/i9)', intel, `${((intel / totalUnits) * 100).toFixed(1)}%`]);
+  wsAnalysis.addRow(['TOTAL INTEL CORE SERIES', totalIntel, `${((totalIntel / totalUnits) * 100).toFixed(1)}%`]);
+  wsAnalysis.lastRow.font = { bold: true, color: { argb: '1E40AF' } };
+
+  wsAnalysis.addRow(['  ↳ Intel Core i5 Series (Mainstream Standard)', intelI5, `${((intelI5 / totalUnits) * 100).toFixed(1)}%`]);
+  wsAnalysis.addRow(['  ↳ Intel Core i3 Series (Basic / Light Office)', intelI3, `${((intelI3 / totalUnits) * 100).toFixed(1)}%`]);
+  wsAnalysis.addRow(['  ↳ Intel Core i7 Series (High Performance)', intelI7, `${((intelI7 / totalUnits) * 100).toFixed(1)}%`]);
+  wsAnalysis.addRow(['  ↳ Intel Core i9 Series (Flagship Workstation)', intelI9, `${((intelI9 / totalUnits) * 100).toFixed(1)}%`]);
+  if (intelOther > 0) {
+    wsAnalysis.addRow(['  ↳ Intel Other (Celeron/Pentium/Xeon)', intelOther, `${((intelOther / totalUnits) * 100).toFixed(1)}%`]);
+  }
+
   wsAnalysis.addRow(['AMD Ryzen Series', amd, `${((amd / totalUnits) * 100).toFixed(1)}%`]);
-  wsAnalysis.addRow(['Apple Silicon (M1/M2/M3)', apple, `${((apple / totalUnits) * 100).toFixed(1)}%`]);
-  wsAnalysis.addRow(['Lainnya / Tidak Tercatat', otherCpu, `${((otherCpu / totalUnits) * 100).toFixed(1)}%`]);
+  wsAnalysis.addRow(['Apple Silicon (M1/M2/M3/M4)', apple, `${((apple / totalUnits) * 100).toFixed(1)}%`]);
+  wsAnalysis.addRow(['Lainnya / Perangkat Seluler / Unspecified', otherCpu, `${((otherCpu / totalUnits) * 100).toFixed(1)}%`]);
 
   wsAnalysis.addRow([]);
   wsAnalysis.addRow(['2. DISTRIBUSI MEMORI (RAM)', 'JUMLAH UNIT', 'PERSENTASE (%)']);

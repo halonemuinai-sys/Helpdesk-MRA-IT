@@ -49,15 +49,20 @@ export default function SpecComparisonWidget({
 
   // Compute Spec Distribution KPI Statistics
   const specStats = useMemo(() => {
-    let intelCount = 0, amdCount = 0, appleCount = 0, otherCpuCount = 0;
+    let intelI3 = 0, intelI5 = 0, intelI7 = 0, intelI9 = 0, intelOther = 0;
+    let amdCount = 0, appleCount = 0, otherCpuCount = 0;
     let ram8gbOrLess = 0, ram16gb = 0, ram32gbPlus = 0;
     let win11Count = 0, win10Count = 0, macOsCount = 0, otherOsCount = 0;
 
     hardwareAssets.forEach(a => {
       const proc = (a.processor || '').toLowerCase();
-      if (proc.includes('intel') || proc.includes('i3') || proc.includes('i5') || proc.includes('i7') || proc.includes('i9')) intelCount++;
+      if (proc.includes('i3')) intelI3++;
+      else if (proc.includes('i5')) intelI5++;
+      else if (proc.includes('i7')) intelI7++;
+      else if (proc.includes('i9')) intelI9++;
+      else if (proc.includes('intel')) intelOther++;
       else if (proc.includes('amd') || proc.includes('ryzen')) amdCount++;
-      else if (proc.includes('apple') || proc.includes('m1') || proc.includes('m2') || proc.includes('m3')) appleCount++;
+      else if (proc.includes('apple') || proc.includes('m1') || proc.includes('m2') || proc.includes('m3') || proc.includes('m4')) appleCount++;
       else if (proc) otherCpuCount++;
 
       const ram = (a.ram || '').toLowerCase();
@@ -72,9 +77,12 @@ export default function SpecComparisonWidget({
       else if (os) otherOsCount++;
     });
 
+    const intelCount = intelI3 + intelI5 + intelI7 + intelI9 + intelOther;
+
     return {
       total: hardwareAssets.length,
-      intelCount, amdCount, appleCount, otherCpuCount,
+      intelCount, intelI3, intelI5, intelI7, intelI9,
+      amdCount, appleCount, otherCpuCount,
       ram8gbOrLess, ram16gb, ram32gbPlus,
       win11Count, win10Count, macOsCount, otherOsCount
     };
@@ -169,15 +177,16 @@ export default function SpecComparisonWidget({
         <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between shadow-sm">
           <div>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-              Distribusi Processor
+              Distribusi Processor ({specStats.intelCount} Intel)
             </p>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400">Intel: {specStats.intelCount}</span>
-              <span className="text-sm font-extrabold text-rose-500">AMD: {specStats.amdCount}</span>
-              <span className="text-xs font-bold text-slate-400">Apple: {specStats.appleCount}</span>
+              <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400">i5: {specStats.intelI5}</span>
+              <span className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">i3: {specStats.intelI3}</span>
+              <span className="text-sm font-extrabold text-violet-600 dark:text-violet-400">i7: {specStats.intelI7}</span>
+              <span className="text-xs font-bold text-rose-500">i9: {specStats.intelI9}</span>
             </div>
             <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-              Intel vs AMD vs Apple Silicon
+              AMD: {specStats.amdCount} | Apple Silicon: {specStats.appleCount}
             </p>
           </div>
           <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center">
