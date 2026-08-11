@@ -457,12 +457,17 @@ model ITProjectBudget {
   
   // Anggaran & Realisasi
   fiscalYear              Int              // e.g. 2026, 2027
-  allocatedBudget         Float            // Pagu Anggaran (CAPEX/OPEX)
+  allocatedBudget         Float            // Pagu Anggaran dalam IDR (selalu IDR untuk kalkulasi)
   actualCost              Float            @default(0) // Realisasi Pengeluaran Saat Ini
   remainingBudget         Float            @default(0) // Sisa Anggaran
   budgetType              String           @default("CAPEX") // CAPEX vs OPEX
   accountType             String?          // e.g. "License & Permit", "Utilities", "Rental Expenses", "Repair & Maintenance"
   timeline                String?          // e.g. "Januari", "Oktober", "Q1"
+
+  // Multi-currency support
+  currency                String           @default("IDR") // "IDR" | "USD"
+  exchangeRate            Float            @default(1)     // IDR per 1 unit foreign currency (e.g. 15800)
+  allocatedBudgetForeign  Float?                           // Nilai asli dalam mata uang asing (null jika IDR)
   
   priority                BudgetPriority   @default(MEDIUM)
   status                  ProjectStatus    @default(PROPOSED)

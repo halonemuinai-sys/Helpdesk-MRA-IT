@@ -65,7 +65,10 @@ router.post('/', async (req, res) => {
       status,
       projectManager,
       vendor,
-      notes
+      notes,
+      currency,
+      exchangeRate,
+      allocatedBudgetForeign
     } = req.body;
 
     if (!projectName || !allocatedBudget || !fiscalYear) {
@@ -76,6 +79,7 @@ router.post('/', async (req, res) => {
     const count = await prisma.iTProjectBudget.count({ where: { fiscalYear: year } });
     const projectCode = `PRJ-${year}-${String(count + 1).padStart(3, '0')}`;
 
+    // allocatedBudget always stored as IDR
     const alloc = parseFloat(allocatedBudget) || 0;
 
     const budget = await prisma.iTProjectBudget.create({
@@ -98,7 +102,10 @@ router.post('/', async (req, res) => {
         status: status || 'PROPOSED',
         projectManager,
         vendor,
-        notes
+        notes,
+        currency: currency || 'IDR',
+        exchangeRate: exchangeRate ? parseFloat(exchangeRate) : 1,
+        allocatedBudgetForeign: allocatedBudgetForeign ? parseFloat(allocatedBudgetForeign) : null
       },
       include: { companyMaster: { select: { id: true, name: true } } }
     });
@@ -130,7 +137,10 @@ router.put('/:id', async (req, res) => {
       status,
       projectManager,
       vendor,
-      notes
+      notes,
+      currency,
+      exchangeRate,
+      allocatedBudgetForeign
     } = req.body;
 
     const alloc = allocatedBudget !== undefined ? parseFloat(allocatedBudget) : undefined;
@@ -161,7 +171,10 @@ router.put('/:id', async (req, res) => {
         ...(status ? { status } : {}),
         projectManager,
         vendor,
-        notes
+        notes,
+        ...(currency !== undefined ? { currency } : {}),
+        ...(exchangeRate !== undefined ? { exchangeRate: parseFloat(exchangeRate) } : {}),
+        ...(allocatedBudgetForeign !== undefined ? { allocatedBudgetForeign: allocatedBudgetForeign ? parseFloat(allocatedBudgetForeign) : null } : {})
       },
       include: { companyMaster: { select: { id: true, name: true } } }
     });

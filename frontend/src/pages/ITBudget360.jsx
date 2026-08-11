@@ -102,6 +102,10 @@ const formatCompactRupiah = (val) => {
   return val < 0 ? `-${formatted}` : formatted;
 };
 
+const _now = new Date();
+const CURRENT_YEAR = _now.getFullYear();
+const CURRENT_MONTH = _now.getMonth() + 1; // 1-12
+
 export default function ITBudget360() {
   const token = localStorage.getItem('token');
 
@@ -138,6 +142,9 @@ export default function ITBudget360() {
   const [formAccountType, setFormAccountType] = useState('Utilities');
   const [formAllocatedBudget, setFormAllocatedBudget] = useState('');
   const [formActualCost, setFormActualCost] = useState('0');
+  const [formCurrency, setFormCurrency] = useState('IDR');
+  const [formExchangeRate, setFormExchangeRate] = useState('15800');
+  const [formAllocatedBudgetForeign, setFormAllocatedBudgetForeign] = useState('');
   const [formPriority, setFormPriority] = useState('MEDIUM');
   const [formStatus, setFormStatus] = useState('PROPOSED');
   const [formVendor, setFormVendor] = useState('');
@@ -291,6 +298,9 @@ export default function ITBudget360() {
     setFormAccountType('Utilities');
     setFormAllocatedBudget('');
     setFormActualCost('0');
+    setFormCurrency('IDR');
+    setFormExchangeRate('15800');
+    setFormAllocatedBudgetForeign('');
     setFormPriority('MEDIUM');
     setFormStatus('PROPOSED');
     setFormVendor('');
@@ -311,6 +321,9 @@ export default function ITBudget360() {
     setFormAccountType(item.accountType || 'Utilities');
     setFormAllocatedBudget(String(item.allocatedBudget));
     setFormActualCost(String(item.actualCost || 0));
+    setFormCurrency(item.currency || 'IDR');
+    setFormExchangeRate(String(item.exchangeRate || 15800));
+    setFormAllocatedBudgetForeign(item.allocatedBudgetForeign ? String(item.allocatedBudgetForeign) : '');
     setFormPriority(item.priority || 'MEDIUM');
     setFormStatus(item.status || 'PROPOSED');
     setFormVendor(item.vendor || '');
@@ -341,7 +354,12 @@ export default function ITBudget360() {
         priority: formPriority,
         status: formStatus,
         vendor: formVendor,
-        notes: formNotes
+        notes: formNotes,
+        currency: formCurrency,
+        exchangeRate: parseFloat(formExchangeRate) || 1,
+        allocatedBudgetForeign: formCurrency !== 'IDR' && formAllocatedBudgetForeign
+          ? parseFloat(formAllocatedBudgetForeign)
+          : null
       };
 
       const url = editingId ? `${API_URL}/budgets/${editingId}` : `${API_URL}/budgets`;
@@ -1173,6 +1191,7 @@ export default function ITBudget360() {
                       <th className="py-3.5 px-4">Tipe Biaya</th>
                       <th className="py-3.5 px-4 text-right">Pagu Budget</th>
                       <th className="py-3.5 px-4 text-right">Realisasi Riil</th>
+                      <th className="py-3.5 px-4 text-right">Run Rate / Th</th>
                       <th className="py-3.5 px-4 text-center">Status</th>
                       <th className="py-3.5 px-4 text-center">Aksi</th>
                     </tr>
@@ -1180,7 +1199,7 @@ export default function ITBudget360() {
                   <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/50 text-xs">
                     {filteredProjects.length === 0 ? (
                       <tr>
-                        <td colSpan="8" className="py-12 text-center text-gray-400 font-semibold">
+                        <td colSpan="9" className="py-12 text-center text-gray-400 font-semibold">
                           Belum ada item anggaran terdaftar. Klik "+ Tambah Item Anggaran Baru" untuk menginput.
                         </td>
                       </tr>
@@ -1248,6 +1267,25 @@ export default function ITBudget360() {
                                 )}
                               </div>
                             </button>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            {(() => {
+                              if (parseInt(selectedYear) !== CURRENT_YEAR || !p.actualCost || CURRENT_MONTH < 1) return (
+                                <span className="text-slate-300 dark:text-slate-700 text-[10px]">—</span>
+                              );
+                              const runRate = (p.actualCost / CURRENT_MONTH) * 12;
+                              const overBudget = runRate > p.allocatedBudget;
+                              return (
+                                <div>
+                                  <div className={`font-black text-xs ${overBudget ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                    {formatCompactRupiah(runRate)}
+                                  </div>
+                                  <div className={`text-[9px] font-bold mt-0.5 ${overBudget ? 'text-rose-400' : 'text-slate-400'}`}>
+                                    {overBudget ? 'Proyeksi Over-Budget' : `${((runRate / p.allocatedBudget) * 100).toFixed(0)}% dari Pagu`}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="py-3.5 px-4 text-center">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -1755,6 +1793,12 @@ export default function ITBudget360() {
         setFormAccountType={setFormAccountType}
         formAllocatedBudget={formAllocatedBudget}
         setFormAllocatedBudget={setFormAllocatedBudget}
+        formCurrency={formCurrency}
+        setFormCurrency={setFormCurrency}
+        formExchangeRate={formExchangeRate}
+        setFormExchangeRate={setFormExchangeRate}
+        formAllocatedBudgetForeign={formAllocatedBudgetForeign}
+        setFormAllocatedBudgetForeign={setFormAllocatedBudgetForeign}
         formPriority={formPriority}
         setFormPriority={setFormPriority}
         formStatus={formStatus}
