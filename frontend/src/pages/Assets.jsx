@@ -22,6 +22,7 @@ export default function Assets({ user, token }) {
     searchQuery, setSearchQuery,
     selectedStatus, setSelectedStatus,
     selectedCompanyMasterId, setSelectedCompanyMasterId,
+    selectedCompanyMasterIds, setSelectedCompanyMasterIds,
     selectedCategory, setSelectedCategory,
     selectedOwnershipType, setSelectedOwnershipType,
     assetsLoaded,
@@ -172,6 +173,7 @@ export default function Assets({ user, token }) {
             selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
             selectedOwnershipType={selectedOwnershipType} setSelectedOwnershipType={setSelectedOwnershipType}
             selectedCompanyMasterId={selectedCompanyMasterId} setSelectedCompanyMasterId={setSelectedCompanyMasterId}
+            selectedCompanyMasterIds={selectedCompanyMasterIds} setSelectedCompanyMasterIds={setSelectedCompanyMasterIds}
             selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus}
             companyMasters={companyMasters}
             loading={loading}
