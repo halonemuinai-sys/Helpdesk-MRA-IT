@@ -200,6 +200,258 @@ export const exportAssetSpecComparisonExcel = async ({
 
   wsAnalysis.columns.forEach(col => col.width = 35);
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SHEET 3: ANALISA KONTRAK SEWA & ESTIMASI BIAYA HARDWARE (COST & DURASI)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const wsContract = wb.addWorksheet('Analisa Kontrak & Cost', {
+    views: [{ showGridLines: true }]
+  });
+
+  // Title Block
+  wsContract.mergeCells('A1:F1');
+  const cTitle = wsContract.getCell('A1');
+  cTitle.value = 'MRA GROUP — ANALISA DURASI KONTRAK & RATA-RATA BIAYA SEWA HARDWARE';
+  cTitle.font = { name: 'Arial', size: 14, bold: true, color: { argb: C_TITLE_FONT } };
+
+  wsContract.mergeCells('A2:F2');
+  const cSub = wsContract.getCell('A2');
+  cSub.value = `Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })} | Periode: ${filterLabel}`;
+  cSub.font = { name: 'Arial', size: 9, italic: true, color: { argb: '64748B' } };
+
+  wsContract.addRow([]); // Blank row 3
+
+  // Helper for contract calculations
+  const calculateAssetContract = (ast) => {
+    let durationMonths = 0;
+    if (ast.rentalStart && ast.rentalEnd) {
+      const s = new Date(ast.rentalStart);
+      const e = new Date(ast.rentalEnd);
+      if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
+        durationMonths = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24 * 30.4375)));
+      }
+    }
+    const costPerMonth = ast.ownershipType === 'RENTAL' ? (ast.rentalCost || 0) : 0;
+    const lifetimeValue = costPerMonth * durationMonths;
+    return { durationMonths, costPerMonth, lifetimeValue };
+  };
+
+  // Group assets by CPU categories
+  const cpuGroups = {
+    'Intel Core i5 Series': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'Intel Core i3 Series': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'Intel Core i7 Series': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'Intel Core i9 Series': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'AMD Ryzen Series': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'Apple Silicon (M1/M2/M3/M4)': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+  };
+
+  // Group assets by RAM categories
+  const ramGroups = {
+    'RAM 16 GB (Standar Utama)': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'RAM 32 GB / 64 GB (High Spec)': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'RAM 8 GB atau Kurang (Basic)': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+  };
+
+  assets.forEach(a => {
+    if (a.ownershipType !== 'RENTAL') return; // Analyze rental contracts
+    const { durationMonths, costPerMonth, lifetimeValue } = calculateAssetContract(a);
+
+    // CPU Grouping
+    const p = (a.processor || '').toLowerCase();
+    let cpuKey = null;
+    if (p.includes('i5')) cpuKey = 'Intel Core i5 Series';
+    else if (p.includes('i3')) cpuKey = 'Intel Core i3 Series';
+    else if (p.includes('i7')) cpuKey = 'Intel Core i7 Series';
+    else if (p.includes('i9')) cpuKey = 'Intel Core i9 Series';
+    else if (p.includes('amd') || p.includes('ryzen')) cpuKey = 'AMD Ryzen Series';
+    else if (p.includes('apple') || p.includes('m1') || p.includes('m2') || p.includes('m3') || p.includes('m4')) cpuKey = 'Apple Silicon (M1/M2/M3/M4)';
+
+    if (cpuKey && cpuGroups[cpuKey]) {
+      cpuGroups[cpuKey].units += 1;
+      cpuGroups[cpuKey].totalMonths += durationMonths;
+      cpuGroups[cpuKey].totalMonthlyCost += costPerMonth;
+      cpuGroups[cpuKey].totalLifetimeVal += lifetimeValue;
+    }
+
+    // RAM Grouping
+    const r = (a.ram || '').toLowerCase();
+    let ramKey = null;
+    if (r.includes('32') || r.includes('64') || r.includes('128')) ramKey = 'RAM 32 GB / 64 GB (High Spec)';
+    else if (r.includes('16')) ramKey = 'RAM 16 GB (Standar Utama)';
+    else if (r.includes('8') || r.includes('4')) ramKey = 'RAM 8 GB atau Kurang (Basic)';
+
+    if (ramKey && ramGroups[ramKey]) {
+      ramGroups[ramKey].units += 1;
+      ramGroups[ramKey].totalMonths += durationMonths;
+      ramGroups[ramKey].totalMonthlyCost += costPerMonth;
+      ramGroups[ramKey].totalLifetimeVal += lifetimeValue;
+    }
+  });
+
+  // Render Table 1: Rata-Rata Biaya & Durasi Kontrak per Intel/CPU
+  wsContract.addRow(['1. ANALISA RATA-RATA BIAYA SEWA & DURASI KONTRAK PER PROCESSOR']);
+  wsContract.lastRow.font = { name: 'Arial', size: 10, bold: true, color: { argb: C_TITLE_FONT } };
+
+  const table1Headers = [
+    'Kategori Processor', 'Unit Sewa', 'Avg Masa Kontrak (Bulan)',
+    'Avg Biaya Sewa / Bln (Rp)', 'Total Biaya Sewa / Bln (Rp)', 'Estimasi Lifetime Contract (Rp)'
+  ];
+
+  const t1HdrRow = wsContract.addRow(table1Headers);
+  t1HdrRow.height = 22;
+  t1HdrRow.eachCell(cell => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C_HEADER_FILL } };
+    cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: C_HEADER_FONT } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  let grandCpuUnits = 0, grandCpuMonthly = 0, grandCpuLifetime = 0;
+
+  Object.entries(cpuGroups).forEach(([catName, data]) => {
+    const avgMonths = data.units > 0 ? Math.round(data.totalMonths / data.units) : 0;
+    const avgMonthlyCost = data.units > 0 ? Math.round(data.totalMonthlyCost / data.units) : 0;
+
+    grandCpuUnits += data.units;
+    grandCpuMonthly += data.totalMonthlyCost;
+    grandCpuLifetime += data.totalLifetimeVal;
+
+    const row = wsContract.addRow([
+      catName,
+      data.units,
+      avgMonths > 0 ? `${avgMonths} Bulan` : '-',
+      avgMonthlyCost,
+      data.totalMonthlyCost,
+      data.totalLifetimeVal
+    ]);
+
+    row.height = 20;
+    row.eachCell((cell, colNum) => {
+      cell.font = { name: 'Arial', size: 9 };
+      cell.border = {
+        top: { style: 'thin', color: { argb: C_BORDER } },
+        bottom: { style: 'thin', color: { argb: C_BORDER } },
+        left: { style: 'thin', color: { argb: C_BORDER } },
+        right: { style: 'thin', color: { argb: C_BORDER } }
+      };
+      if (colNum === 2 || colNum === 3) cell.alignment = { horizontal: 'center' };
+      if (colNum >= 4) {
+        cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
+        cell.alignment = { horizontal: 'right' };
+      }
+      if (colNum === 4) cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '1E40AF' } }; // Blue Avg
+    });
+  });
+
+  // Table 1 Total Row
+  const t1Total = wsContract.addRow([
+    'TOTAL / RATA-RATA PROCESSOR SEWA',
+    grandCpuUnits,
+    '-',
+    grandCpuUnits > 0 ? Math.round(grandCpuMonthly / grandCpuUnits) : 0,
+    grandCpuMonthly,
+    grandCpuLifetime
+  ]);
+  t1Total.height = 22;
+  t1Total.eachCell((cell, colNum) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+    cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: '0F172A' } };
+    cell.border = {
+      top: { style: 'medium', color: { argb: '0F172A' } },
+      bottom: { style: 'medium', color: { argb: '0F172A' } },
+      left: { style: 'thin', color: { argb: C_BORDER } },
+      right: { style: 'thin', color: { argb: C_BORDER } }
+    };
+    if (colNum === 2) cell.alignment = { horizontal: 'center' };
+    if (colNum >= 4) {
+      cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
+      cell.alignment = { horizontal: 'right' };
+    }
+  });
+
+  wsContract.addRow([]); // Blank row
+
+  // Render Table 2: Rata-Rata Biaya & Durasi Kontrak per RAM
+  wsContract.addRow(['2. ANALISA RATA-RATA BIAYA SEWA & DURASI KONTRAK PER MEMORI (RAM)']);
+  wsContract.lastRow.font = { name: 'Arial', size: 10, bold: true, color: { argb: C_TITLE_FONT } };
+
+  const table2Headers = [
+    'Kategori Memori (RAM)', 'Unit Sewa', 'Avg Masa Kontrak (Bulan)',
+    'Avg Biaya Sewa / Bln (Rp)', 'Total Biaya Sewa / Bln (Rp)', 'Estimasi Lifetime Contract (Rp)'
+  ];
+
+  const t2HdrRow = wsContract.addRow(table2Headers);
+  t2HdrRow.height = 22;
+  t2HdrRow.eachCell(cell => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C_HEADER_FILL } };
+    cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: C_HEADER_FONT } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  let grandRamUnits = 0, grandRamMonthly = 0, grandRamLifetime = 0;
+
+  Object.entries(ramGroups).forEach(([catName, data]) => {
+    const avgMonths = data.units > 0 ? Math.round(data.totalMonths / data.units) : 0;
+    const avgMonthlyCost = data.units > 0 ? Math.round(data.totalMonthlyCost / data.units) : 0;
+
+    grandRamUnits += data.units;
+    grandRamMonthly += data.totalMonthlyCost;
+    grandRamLifetime += data.totalLifetimeVal;
+
+    const row = wsContract.addRow([
+      catName,
+      data.units,
+      avgMonths > 0 ? `${avgMonths} Bulan` : '-',
+      avgMonthlyCost,
+      data.totalMonthlyCost,
+      data.totalLifetimeVal
+    ]);
+
+    row.height = 20;
+    row.eachCell((cell, colNum) => {
+      cell.font = { name: 'Arial', size: 9 };
+      cell.border = {
+        top: { style: 'thin', color: { argb: C_BORDER } },
+        bottom: { style: 'thin', color: { argb: C_BORDER } },
+        left: { style: 'thin', color: { argb: C_BORDER } },
+        right: { style: 'thin', color: { argb: C_BORDER } }
+      };
+      if (colNum === 2 || colNum === 3) cell.alignment = { horizontal: 'center' };
+      if (colNum >= 4) {
+        cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
+        cell.alignment = { horizontal: 'right' };
+      }
+      if (colNum === 4) cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'B45309' } }; // Amber Avg RAM
+    });
+  });
+
+  // Table 2 Total Row
+  const t2Total = wsContract.addRow([
+    'TOTAL / RATA-RATA RAM SEWA',
+    grandRamUnits,
+    '-',
+    grandRamUnits > 0 ? Math.round(grandRamMonthly / grandRamUnits) : 0,
+    grandRamMonthly,
+    grandRamLifetime
+  ]);
+  t2Total.height = 22;
+  t2Total.eachCell((cell, colNum) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+    cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: '0F172A' } };
+    cell.border = {
+      top: { style: 'medium', color: { argb: '0F172A' } },
+      bottom: { style: 'medium', color: { argb: '0F172A' } },
+      left: { style: 'thin', color: { argb: C_BORDER } },
+      right: { style: 'thin', color: { argb: C_BORDER } }
+    };
+    if (colNum === 2) cell.alignment = { horizontal: 'center' };
+    if (colNum >= 4) {
+      cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
+      cell.alignment = { horizontal: 'right' };
+    }
+  });
+
+  wsContract.columns.forEach(col => col.width = 32);
+
   // Generate workbook buffer & trigger native browser download
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
