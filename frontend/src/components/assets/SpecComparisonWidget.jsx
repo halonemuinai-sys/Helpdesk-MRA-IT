@@ -551,11 +551,11 @@ export default function SpecComparisonWidget({
                   <th className="py-4 px-4 text-center w-10">Pilih</th>
                   <th className="py-4 px-6">Perangkat / Tag Aset</th>
                   <th className="py-4 px-6">Pengguna &amp; Entitas PT</th>
-                  <th className="py-4 px-6">⚡ PROCESSOR</th>
-                  <th className="py-4 px-6">💾 RAM</th>
-                  <th className="py-4 px-6">💽 HARDISK / STORAGE</th>
-                  <th className="py-4 px-6">💻 WINDOWS / OS</th>
-                  <th className="py-4 px-6">💰 BIAYA SEWA / BLN</th>
+                  <th className="py-4 px-6">PROCESSOR</th>
+                  <th className="py-4 px-6">RAM</th>
+                  <th className="py-4 px-6">HARDISK / STORAGE</th>
+                  <th className="py-4 px-6">WINDOWS / OS</th>
+                  <th className="py-4 px-6">BIAYA SEWA / BLN</th>
                   <th className="py-4 px-6 text-center">Status</th>
                 </tr>
               </thead>
@@ -622,7 +622,7 @@ export default function SpecComparisonWidget({
                         {asset.processor ? (
                           <div className="inline-flex flex-col">
                             <span className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 font-extrabold text-[11px] font-mono">
-                              ⚡ {asset.processor}
+                              {asset.processor}
                             </span>
                           </div>
                         ) : (
@@ -634,7 +634,7 @@ export default function SpecComparisonWidget({
                       <td className="py-4 px-6 font-mono">
                         {asset.ram ? (
                           <span className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/50 font-extrabold text-[11px]">
-                            💾 {asset.ram}
+                            {asset.ram}
                           </span>
                         ) : (
                           <span className="text-slate-400 italic text-[11px]">-</span>
@@ -645,7 +645,7 @@ export default function SpecComparisonWidget({
                       <td className="py-4 px-6 font-mono">
                         {asset.storage ? (
                           <span className="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50 font-extrabold text-[11px]">
-                            💽 {asset.storage}
+                            {asset.storage}
                           </span>
                         ) : (
                           <span className="text-slate-400 italic text-[11px]">-</span>
@@ -656,7 +656,7 @@ export default function SpecComparisonWidget({
                       <td className="py-4 px-6">
                         {asset.os ? (
                           <span className="px-2.5 py-1 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/50 font-bold text-[11px]">
-                            💻 {asset.os}
+                            {asset.os}
                           </span>
                         ) : (
                           <span className="text-slate-400 italic text-[11px]">-</span>
