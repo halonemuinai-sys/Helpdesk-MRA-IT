@@ -307,9 +307,11 @@ export default function SpecComparisonWidget({
       // OS Quick Filter
       if (osFilter) {
         const osStr = (a.os || '').toLowerCase();
+        const brandStr = (a.brand || '').toLowerCase();
+        const modelStr = (a.model || '').toLowerCase();
         if (osFilter === 'win11' && !osStr.includes('11')) return false;
         if (osFilter === 'win10' && !osStr.includes('10')) return false;
-        if (osFilter === 'mac' && !osStr.includes('mac') && !osStr.includes('osx')) return false;
+        if (osFilter === 'mac' && !osStr.includes('mac') && !osStr.includes('osx') && !brandStr.includes('apple') && !modelStr.includes('mac')) return false;
       }
       // Search text
       if (searchQuery) {
