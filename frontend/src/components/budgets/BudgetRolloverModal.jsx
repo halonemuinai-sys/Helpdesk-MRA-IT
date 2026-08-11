@@ -16,16 +16,10 @@ const BUDGET_TYPE_COLOR = {
   CAPEX: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
 };
 
-const LAPTOP_KEYWORDS = ['laptop', 'notebook', 'thinkpad', 'pavilion', 'latitude', 'inspiron', 'vostro', 'probook', 'elitebook', 'macbook', 'ideapad', 'vivobook', 'zenbook', 'omen', 'gram', 'swift', 'aspire', 'hp 14', 'hp 15', 'hp 16'];
-const SMARTPHONE_KEYWORDS = ['smartphone', 'iphone', 'samsung', 'galaxy', 'oppo', 'vivo', 'xiaomi', 'realme', 'infinix', 'iqoo', 'handphone', 'android', 'redmi'];
-const PRINTER_KEYWORDS = ['printer', 'print', 'epson', 'canon', 'fuji', 'xerox', 'laserjet', 'smart tank'];
-
-const inferDeviceType = (projectName = '') => {
-  const n = projectName.toLowerCase();
-  if (PRINTER_KEYWORDS.some(k => n.includes(k))) return 'PRINTER';
-  if (SMARTPHONE_KEYWORDS.some(k => n.includes(k))) return 'SMARTPHONE';
-  if (LAPTOP_KEYWORDS.some(k => n.includes(k))) return 'LAPTOP';
-  return null;
+const DEVICE_BADGE = {
+  LAPTOP:     'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+  SMARTPHONE: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+  PRINTER:    'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
 };
 
 export default function BudgetRolloverModal({ isOpen, onClose, companies, token, onSuccess }) {
@@ -111,7 +105,7 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
   const addToSelection = (ids) => setSelectedIds(prev => new Set([...prev, ...ids]));
   const selectByDeviceType = (type) => {
     const ids = visiblePreview
-      .filter(i => !i.isDuplicate && inferDeviceType(i.projectName) === type)
+      .filter(i => !i.isDuplicate && i.deviceCategory === type)
       .map(i => i.sourceId);
     addToSelection(ids);
   };
@@ -348,16 +342,11 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
                           <td className="px-3 py-2">
                             <div className="font-medium text-slate-800 dark:text-slate-200 leading-tight flex items-center gap-1.5 flex-wrap">
                               {item.projectName}
-                              {(() => {
-                                const dt = inferDeviceType(item.projectName);
-                                if (!dt) return null;
-                                const badge = dt === 'LAPTOP'
-                                  ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
-                                  : dt === 'SMARTPHONE'
-                                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
-                                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
-                                return <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${badge}`}>{dt}</span>;
-                              })()}
+                              {item.deviceCategory && (
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${DEVICE_BADGE[item.deviceCategory] || ''}`}>
+                                  {item.deviceCategory}
+                                </span>
+                              )}
                             </div>
                             <div className="text-slate-400 dark:text-slate-500">{item.projectCode}</div>
                           </td>

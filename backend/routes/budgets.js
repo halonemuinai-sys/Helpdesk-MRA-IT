@@ -197,7 +197,10 @@ router.get('/rollover-preview', async (req, res) => {
         fiscalYear: fy,
         ...(companyMasterId ? { companyMasterId: parseInt(companyMasterId) } : {})
       },
-      include: { companyMaster: { select: { id: true, name: true } } },
+      include: {
+        companyMaster: { select: { id: true, name: true } },
+        expenses: { select: { sourceType: true, sourceCategory: true, amount: true } }
+      },
       orderBy: [{ budgetType: 'asc' }, { accountType: 'asc' }]
     });
 
@@ -212,24 +215,45 @@ router.get('/rollover-preview', async (req, res) => {
       existingInTarget.map(e => `${e.projectName}__${e.companyMasterId}`)
     );
 
-    const preview = sourceItems.map(item => ({
-      sourceId: item.id,
-      projectCode: item.projectCode,
-      projectName: item.projectName,
-      company: item.companyMaster?.name || '-',
-      companyMasterId: item.companyMasterId,
-      brand: item.brand,
-      department: item.department,
-      category: item.category,
-      budgetType: item.budgetType,
-      accountType: item.accountType || '-',
-      priority: item.priority,
-      fromYearAllocated: item.allocatedBudget,
-      fromYearActual: item.actualCost,
-      // Proposed base: actual if realized, otherwise allocated
-      proposedBase: item.actualCost > 0 ? item.actualCost : item.allocatedBudget,
-      isDuplicate: existingKeys.has(`${item.projectName}__${item.companyMasterId}`)
-    }));
+    const preview = sourceItems.map(item => {
+      // Build expense source breakdown from actual tagged transactions
+      const sourceBreakdown = {};
+      for (const exp of item.expenses) {
+        const key = exp.sourceType === 'ASSET'
+          ? `ASSET_${(exp.sourceCategory || 'OTHER').toUpperCase()}`
+          : (exp.sourceType || 'MANUAL');
+        sourceBreakdown[key] = (sourceBreakdown[key] || 0) + (exp.amount || 0);
+      }
+
+      // Derive primary device category from actual expense records
+      const assetCategories = item.expenses
+        .filter(e => e.sourceType === 'ASSET')
+        .map(e => (e.sourceCategory || '').toUpperCase());
+      const deviceCategory = assetCategories.includes('SMARTPHONE') ? 'SMARTPHONE'
+        : assetCategories.includes('LAPTOP') ? 'LAPTOP'
+        : assetCategories.includes('PRINTER') ? 'PRINTER'
+        : null;
+
+      return {
+        sourceId: item.id,
+        projectCode: item.projectCode,
+        projectName: item.projectName,
+        company: item.companyMaster?.name || '-',
+        companyMasterId: item.companyMasterId,
+        brand: item.brand,
+        department: item.department,
+        category: item.category,
+        budgetType: item.budgetType,
+        accountType: item.accountType || '-',
+        priority: item.priority,
+        fromYearAllocated: item.allocatedBudget,
+        fromYearActual: item.actualCost,
+        proposedBase: item.actualCost > 0 ? item.actualCost : item.allocatedBudget,
+        sourceBreakdown,
+        deviceCategory,
+        isDuplicate: existingKeys.has(`${item.projectName}__${item.companyMasterId}`)
+      };
+    });
 
     res.json({ preview, fromYear: fy, toYear: ty });
   } catch (err) {
