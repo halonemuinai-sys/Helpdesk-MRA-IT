@@ -9,6 +9,7 @@ import AssetBastModal from '../components/assets/AssetBastModal';
 import AssetDetailDrawer from '../components/assets/AssetDetailDrawer';
 import RentalMonitoringWidget from '../components/assets/RentalMonitoringWidget';
 import CompanyBreakdownWidget from '../components/assets/CompanyBreakdownWidget';
+import SpecComparisonWidget from '../components/assets/SpecComparisonWidget';
 import AssetBulkImport from '../components/assets/AssetBulkImport';
 
 export default function Assets({ user, token }) {
@@ -149,6 +150,19 @@ export default function Assets({ user, token }) {
         >
           Breakdown Perusahaan
         </button>
+        <button
+          onClick={() => setActiveTab('specComparison')}
+          className={`pb-3 text-xs font-black font-outfit border-b-2 transition duration-150 flex items-center gap-1.5 ${
+            activeTab === 'specComparison'
+              ? 'border-rose-500 text-rose-500 dark:text-rose-455'
+              : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-350'
+          }`}
+        >
+          <span>Komparasi Spesifikasi</span>
+          <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-rose-500/10 text-rose-500">
+            Hardware
+          </span>
+        </button>
       </div>
 
       {activeTab === 'list' && (
@@ -201,6 +215,16 @@ export default function Assets({ user, token }) {
           assets={assets}
           companyMasters={companyMasters}
           formatRupiah={formatRupiah}
+        />
+      )}
+
+      {activeTab === 'specComparison' && (
+        <SpecComparisonWidget
+          assets={assets}
+          companyMasters={companyMasters}
+          formatRupiah={formatRupiah}
+          onEditAsset={handleOpenEditModal}
+          onOpenBast={handleOpenBastModal}
         />
       )}
 
