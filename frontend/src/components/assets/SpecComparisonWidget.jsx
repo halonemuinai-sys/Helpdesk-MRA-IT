@@ -17,6 +17,7 @@ import {
   Zap,
   Tag
 } from 'lucide-react';
+import { exportAssetSpecComparisonExcel } from '../../utils/assetSpecExport';
 
 export default function SpecComparisonWidget({
   assets = [],
@@ -291,6 +292,17 @@ export default function SpecComparisonWidget({
               <option value="win10">Windows 10</option>
               <option value="mac">macOS</option>
             </select>
+
+            {/* Export Excel */}
+            <button
+              type="button"
+              onClick={() => exportAssetSpecComparisonExcel({ assets: filteredAssets, companyMasters, filterLabel: 'Terfilter' })}
+              className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl shadow-md hover:shadow-lg transition shrink-0"
+              title="Ekspor Laporan Matriks Komparasi Hardware ke Excel"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>Export Excel</span>
+            </button>
           </div>
 
         </div>
