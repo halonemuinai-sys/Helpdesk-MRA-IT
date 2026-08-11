@@ -537,7 +537,10 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
         rentalEnd: { gte: rangeStart },
         ...(parsedCompanyMasterId ? { companyMasterId: parsedCompanyMasterId } : {})
       },
-      include: { companyMaster: { select: { name: true } } }
+      include: {
+        companyMaster: { select: { name: true } },
+        user: { select: { name: true, department: true } }
+      }
     });
 
     // 3. Subscriptions & ISP active at any point within the window (including INACTIVE ones that incurred costs)
@@ -674,11 +677,70 @@ router.get('/it-cost-overview', verifyToken, async (req, res, next) => {
       total: acc.total + m.total
     }), { peripherals: 0, assetsRental: 0, subscriptions: 0, isp: 0, total: 0 });
 
+    const breakdownDetails = {
+      invoices: invoices.map(inv => ({
+        id: inv.id,
+        invoiceNumber: inv.invoiceNumber,
+        purchaseDate: inv.purchaseDate,
+        vendor: inv.vendorName || 'N/A',
+        totalCost: inv.totalCost,
+        companyName: inv.companyMaster?.name || 'Tanpa Entitas',
+      })),
+      rentalAssets: rentalAssets.map(ast => ({
+        id: ast.id,
+        assetTag: ast.assetTag,
+        name: ast.name,
+        model: ast.model,
+        serialNumber: ast.serialNumber,
+        rentalCost: ast.rentalCost,
+        rentalStart: ast.rentalStart,
+        rentalEnd: ast.rentalEnd,
+        status: ast.status,
+        companyName: ast.companyMaster?.name || 'Tanpa Entitas',
+        userName: ast.user?.name || 'Unassigned',
+        userDept: ast.user?.department || '',
+      })),
+      subscriptions: subscriptions.filter(s => s.category !== 'ISP').map(sub => ({
+        id: sub.id,
+        name: sub.name,
+        vendor: sub.vendor,
+        category: sub.category,
+        cost: sub.cost,
+        currency: sub.currency,
+        costUSD: sub.costUSD,
+        exchangeRate: sub.exchangeRate,
+        billingCycle: sub.billingCycle,
+        startDate: sub.startDate,
+        expiryDate: sub.expiryDate,
+        status: sub.status,
+        companyName: sub.companyMaster?.name || 'Tanpa Entitas',
+        brand: sub.brand || '',
+      })),
+      isp: subscriptions.filter(s => s.category === 'ISP').map(sub => ({
+        id: sub.id,
+        name: sub.name,
+        vendor: sub.vendor,
+        contractNumber: sub.contractNumber,
+        bandwidth: sub.bandwidth,
+        cost: sub.cost,
+        currency: sub.currency,
+        costUSD: sub.costUSD,
+        exchangeRate: sub.exchangeRate,
+        billingCycle: sub.billingCycle,
+        startDate: sub.startDate,
+        expiryDate: sub.expiryDate,
+        status: sub.status,
+        companyName: sub.companyMaster?.name || 'Tanpa Entitas',
+        brand: sub.brand || '',
+      })),
+    };
+
     res.json({
       currentMonthSummary,
       grandTotal,
       monthlyTrend,
-      byEntity
+      byEntity,
+      breakdownDetails
     });
   } catch (err) {
     next(err);

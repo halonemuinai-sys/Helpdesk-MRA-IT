@@ -14,8 +14,10 @@ import {
   Wifi,
   FileDown,
   FileSpreadsheet,
+  ListFilter,
 } from 'lucide-react';
 import PendingProcessPlaceholder from '../components/PendingProcessPlaceholder';
+import ITCostBreakdownModal from '../components/itCost/ITCostBreakdownModal';
 import { exportPDF, exportExcel } from '../utils/itCostExport';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -34,6 +36,17 @@ export default function ITCostOverview({ user, token, darkMode }) {
   const [selectedCompanyMasterId, setSelectedCompanyMasterId] = useState('');
   const [selectedYear, setSelectedYear] = useState(''); // '' = rolling trailing 12 months (default)
   const [exporting, setExporting] = useState(null); // 'pdf' | 'excel' | null
+
+  // Breakdown Modal state
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
+  const [breakdownTab, setBreakdownTab] = useState('ALL');
+  const [breakdownEntityFilter, setBreakdownEntityFilter] = useState('');
+
+  const handleOpenBreakdown = (tab = 'ALL', entityFilter = '') => {
+    setBreakdownTab(tab);
+    setBreakdownEntityFilter(entityFilter);
+    setIsBreakdownOpen(true);
+  };
 
   // Company master list is just a filter lookup, safe to load on mount (the main
   // cost data itself still only loads via the "Proses / Muat Data" button)
@@ -264,9 +277,17 @@ export default function ITCostOverview({ user, token, darkMode }) {
             </select>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {overview && (
             <>
+              <button
+                onClick={() => handleOpenBreakdown('ALL')}
+                title="Lihat Rincian Transaksi Riil"
+                className="flex items-center justify-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-md hover:shadow-lg transition"
+              >
+                <ListFilter className="w-3.5 h-3.5" />
+                Rincian Breakdown
+              </button>
               <button
                 onClick={handleExportExcel}
                 disabled={!!exporting}
@@ -310,89 +331,114 @@ export default function ITCostOverview({ user, token, darkMode }) {
         </div>
       ) : (
         <>
-          {/* KPI Cards */}
+          {/* KPI Cards (Interactive Clickable) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
+            <div
+              onClick={() => handleOpenBreakdown('ALL')}
+              className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-lg hover:border-rose-300 dark:hover:border-rose-800 transition cursor-pointer group"
+              title="Klik untuk lihat rincian transaksi"
+            >
               <div>
-                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider group-hover:text-rose-500 transition">
                   {selectedYear ? `Total Biaya (${selectedYear})` : 'Total Bulan Terakhir'}
                 </p>
                 <h3 className="text-md font-black text-rose-500 dark:text-rose-455 mt-1.5 truncate max-w-[150px]">
                   {formatRupiah(selectedYear ? overview.grandTotal.total : overview.currentMonthSummary.total)}
                 </h3>
-                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">
-                  {selectedYear ? `Akumulasi 12 Bulan ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}
+                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5 flex items-center gap-1">
+                  <span>{selectedYear ? `Akumulasi 12 Bulan ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}</span>
+                  <span className="text-rose-500 font-bold opacity-0 group-hover:opacity-100 transition">🔍 Rincian</span>
                 </p>
               </div>
-              <div className="w-9 h-9 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-455 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-455 rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <Wallet className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
+            <div
+              onClick={() => handleOpenBreakdown('PERIPHERALS')}
+              className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-800 transition cursor-pointer group"
+              title="Klik untuk rincian Peripherals"
+            >
               <div>
-                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider group-hover:text-blue-600 transition">
                   {selectedYear ? `Peripherals (${selectedYear})` : 'Peripherals (Bulan Ini)'}
                 </p>
                 <h3 className="text-md font-black text-blue-600 dark:text-blue-400 mt-1.5 truncate max-w-[150px]">
                   {formatRupiah(selectedYear ? overview.grandTotal.peripherals : overview.currentMonthSummary.peripherals)}
                 </h3>
-                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">
-                  {selectedYear ? `Total Periferal ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}
+                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5 flex items-center gap-1">
+                  <span>{selectedYear ? `Total Periferal ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}</span>
+                  <span className="text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition">🔍 Rincian</span>
                 </p>
               </div>
-              <div className="w-9 h-9 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-455 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-455 rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <Package className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
+            <div
+              onClick={() => handleOpenBreakdown('RENTAL')}
+              className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-lg hover:border-amber-300 dark:hover:border-amber-800 transition cursor-pointer group"
+              title="Klik untuk rincian Sewa Aset"
+            >
               <div>
-                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider group-hover:text-amber-600 transition">
                   {selectedYear ? `Sewa Aset (${selectedYear})` : 'Sewa Aset (Bulan Ini)'}
                 </p>
                 <h3 className="text-md font-black text-amber-500 dark:text-amber-400 mt-1.5 truncate max-w-[150px]">
                   {formatRupiah(selectedYear ? overview.grandTotal.assetsRental : overview.currentMonthSummary.assetsRental)}
                 </h3>
-                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">
-                  {selectedYear ? `Total Sewa Laptop ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}
+                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5 flex items-center gap-1">
+                  <span>{selectedYear ? `Total Sewa Laptop ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}</span>
+                  <span className="text-amber-600 font-bold opacity-0 group-hover:opacity-100 transition">🔍 Rincian</span>
                 </p>
               </div>
-              <div className="w-9 h-9 bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-455 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-455 rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <Laptop className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
+            <div
+              onClick={() => handleOpenBreakdown('SUBSCRIPTION')}
+              className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-lg hover:border-emerald-300 dark:hover:border-emerald-800 transition cursor-pointer group"
+              title="Klik untuk rincian Subskripsi"
+            >
               <div>
-                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider group-hover:text-emerald-600 transition">
                   {selectedYear ? `Subscription (${selectedYear})` : 'Subscription (Bulan Ini)'}
                 </p>
                 <h3 className="text-md font-black text-emerald-600 dark:text-emerald-450 mt-1.5 truncate max-w-[150px]">
                   {formatRupiah(selectedYear ? overview.grandTotal.subscriptions : overview.currentMonthSummary.subscriptions)}
                 </h3>
-                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">
-                  {selectedYear ? `Total Subskripsi ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}
+                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5 flex items-center gap-1">
+                  <span>{selectedYear ? `Total Subskripsi ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}</span>
+                  <span className="text-emerald-600 font-bold opacity-0 group-hover:opacity-100 transition">🔍 Rincian</span>
                 </p>
               </div>
-              <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-455 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-455 rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <CreditCard className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-md transition">
+            <div
+              onClick={() => handleOpenBreakdown('ISP')}
+              className="bg-white/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 flex items-center justify-between hover:shadow-lg hover:border-cyan-300 dark:hover:border-cyan-800 transition cursor-pointer group"
+              title="Klik untuk rincian Internet ISP"
+            >
               <div>
-                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider group-hover:text-cyan-600 transition">
                   {selectedYear ? `Internet ISP (${selectedYear})` : 'Internet ISP (Bulan Ini)'}
                 </p>
                 <h3 className="text-md font-black text-cyan-600 dark:text-cyan-400 mt-1.5 truncate max-w-[150px]">
                   {formatRupiah(selectedYear ? overview.grandTotal.isp : (overview.currentMonthSummary.isp || 0))}
                 </h3>
-                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5">
-                  {selectedYear ? `Total Biaya ISP ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}
+                <p className="text-[9px] text-gray-450 dark:text-slate-500 font-semibold mt-0.5 flex items-center gap-1">
+                  <span>{selectedYear ? `Total Biaya ISP ${selectedYear}` : formatMonthLabel(overview.currentMonthSummary.yearMonth)}</span>
+                  <span className="text-cyan-600 font-bold opacity-0 group-hover:opacity-100 transition">🔍 Rincian</span>
                 </p>
               </div>
-              <div className="w-9 h-9 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <Wifi className="w-4 h-4" />
               </div>
             </div>
@@ -410,10 +456,13 @@ export default function ITCostOverview({ user, token, darkMode }) {
 
           {/* Breakdown by Entity */}
           <div className="bg-white/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/40 space-y-4">
-            <h3 className="font-bold text-xs text-gray-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-wider pb-2 border-b border-gray-100 dark:border-slate-800">
-              <Building2 className="w-4 h-4 text-rose-500" />
-              <span>Pengeluaran per Entitas ({periodLabel})</span>
-            </h3>
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-800">
+              <h3 className="font-bold text-xs text-gray-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-wider">
+                <Building2 className="w-4 h-4 text-rose-500" />
+                <span>Pengeluaran per Entitas ({periodLabel})</span>
+              </h3>
+              <span className="text-[10px] text-gray-400 italic">💡 Klik sel mana saja untuk melihat rincian transaksi entitas tersebut</span>
+            </div>
 
             {byEntity.length === 0 ? (
               <p className="text-center text-xs text-gray-455 italic py-6">Tidak ada data entitas.</p>
@@ -433,12 +482,48 @@ export default function ITCostOverview({ user, token, darkMode }) {
                   <tbody className="divide-y divide-gray-100 dark:divide-slate-800/40 text-gray-700 dark:text-slate-300">
                     {byEntity.map((entity) => (
                       <tr key={entity.name} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/25 transition">
-                        <td className="py-3 px-3 font-extrabold text-gray-900 dark:text-white">{entity.name}</td>
-                        <td className="py-3 px-3 text-right text-blue-600 dark:text-blue-400">{formatRupiah(entity.peripherals)}</td>
-                        <td className="py-3 px-3 text-right text-amber-600 dark:text-amber-400">{formatRupiah(entity.assetsRental)}</td>
-                        <td className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">{formatRupiah(entity.subscriptions)}</td>
-                        <td className="py-3 px-3 text-right text-cyan-600 dark:text-cyan-400">{formatRupiah(entity.isp || 0)}</td>
-                        <td className="py-3 px-3 text-right font-black text-rose-500 dark:text-rose-455">{formatRupiah(entity.total)}</td>
+                        <td
+                          className="py-3 px-3 font-extrabold text-gray-900 dark:text-white hover:text-rose-500 cursor-pointer transition"
+                          onClick={() => handleOpenBreakdown('ALL', entity.name)}
+                          title={`Lihat semua transaksi ${entity.name}`}
+                        >
+                          {entity.name}
+                        </td>
+                        <td
+                          className="py-3 px-3 text-right text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                          onClick={() => handleOpenBreakdown('PERIPHERALS', entity.name)}
+                          title={`Lihat peripherals ${entity.name}`}
+                        >
+                          {formatRupiah(entity.peripherals)}
+                        </td>
+                        <td
+                          className="py-3 px-3 text-right text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                          onClick={() => handleOpenBreakdown('RENTAL', entity.name)}
+                          title={`Lihat sewa aset ${entity.name}`}
+                        >
+                          {formatRupiah(entity.assetsRental)}
+                        </td>
+                        <td
+                          className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                          onClick={() => handleOpenBreakdown('SUBSCRIPTION', entity.name)}
+                          title={`Lihat subscription ${entity.name}`}
+                        >
+                          {formatRupiah(entity.subscriptions)}
+                        </td>
+                        <td
+                          className="py-3 px-3 text-right text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
+                          onClick={() => handleOpenBreakdown('ISP', entity.name)}
+                          title={`Lihat ISP ${entity.name}`}
+                        >
+                          {formatRupiah(entity.isp || 0)}
+                        </td>
+                        <td
+                          className="py-3 px-3 text-right font-black text-rose-500 dark:text-rose-455 hover:underline cursor-pointer"
+                          onClick={() => handleOpenBreakdown('ALL', entity.name)}
+                          title={`Lihat total transaksi ${entity.name}`}
+                        >
+                          {formatRupiah(entity.total)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -458,6 +543,18 @@ export default function ITCostOverview({ user, token, darkMode }) {
           </div>
         </>
       )}
+
+      {/* Breakdown Modal Component */}
+      <ITCostBreakdownModal
+        isOpen={isBreakdownOpen}
+        onClose={() => setIsBreakdownOpen(false)}
+        breakdownDetails={overview?.breakdownDetails}
+        initialTab={breakdownTab}
+        initialEntityFilter={breakdownEntityFilter}
+        formatRupiah={formatRupiah}
+        periodLabel={periodLabel}
+      />
+
     </div>
   );
 }
