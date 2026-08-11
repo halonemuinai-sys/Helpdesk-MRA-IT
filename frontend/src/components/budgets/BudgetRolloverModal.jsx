@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   X, Copy, RefreshCw, CheckSquare, Square, AlertTriangle,
-  TrendingUp, ChevronRight, Check, Loader2
+  ChevronRight, Check, Loader2, Trash2
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -25,6 +25,7 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
   const [preview, setPreview] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [customBudgets, setCustomBudgets] = useState({});
+  const [removedIds, setRemovedIds] = useState(new Set());
 
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -54,6 +55,7 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
       );
       setSelectedIds(defaultSelected);
       setCustomBudgets({});
+      setRemovedIds(new Set());
       setPreviewLoaded(true);
     } catch (e) {
       setError(e.message);
@@ -70,6 +72,7 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
       setError(null);
       setSelectedIds(new Set());
       setCustomBudgets({});
+      setRemovedIds(new Set());
       setAdjPct(5);
     }
   }, [isOpen]);
@@ -82,9 +85,16 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
     });
   };
 
-  const selectAll = () => setSelectedIds(new Set(preview.filter(i => !i.isDuplicate).map(i => i.sourceId)));
+  const removeItem = (sourceId) => {
+    setRemovedIds(prev => new Set([...prev, sourceId]));
+    setSelectedIds(prev => { const next = new Set(prev); next.delete(sourceId); return next; });
+  };
+
+  const visiblePreview = preview.filter(i => !removedIds.has(i.sourceId));
+
+  const selectAll = () => setSelectedIds(new Set(visiblePreview.filter(i => !i.isDuplicate).map(i => i.sourceId)));
   const deselectAll = () => setSelectedIds(new Set());
-  const selectOpex = () => setSelectedIds(new Set(preview.filter(i => i.budgetType === 'OPEX' && !i.isDuplicate).map(i => i.sourceId)));
+  const selectOpex = () => setSelectedIds(new Set(visiblePreview.filter(i => i.budgetType === 'OPEX' && !i.isDuplicate).map(i => i.sourceId)));
 
   const proposedFor = (item) => {
     if (customBudgets[item.sourceId] !== undefined && customBudgets[item.sourceId] !== '')
@@ -92,8 +102,8 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
     return Math.round(item.proposedBase * (1 + adjPct / 100));
   };
 
-  const selectedCount = preview.filter(i => selectedIds.has(i.sourceId)).length;
-  const totalEstimated = preview
+  const selectedCount = visiblePreview.filter(i => selectedIds.has(i.sourceId)).length;
+  const totalEstimated = visiblePreview
     .filter(i => selectedIds.has(i.sourceId))
     .reduce((s, i) => s + proposedFor(i), 0);
 
@@ -250,7 +260,18 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
             <div className="px-6 py-4">
               {/* Quick select buttons */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs text-slate-500">{selectedCount} dari {preview.length} item dipilih</span>
+                <span className="text-xs text-slate-500">
+                  {selectedCount} dari {visiblePreview.length} item dipilih
+                  {removedIds.size > 0 && (
+                    <span className="ml-2 text-slate-400">
+                      · {removedIds.size} dihapus dari daftar
+                      <button
+                        onClick={() => setRemovedIds(new Set())}
+                        className="ml-1 text-indigo-500 hover:underline"
+                      >reset</button>
+                    </span>
+                  )}
+                </span>
                 <button onClick={selectOpex} className="px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 hover:bg-blue-200 transition">OPEX Semua</button>
                 <button onClick={selectAll} className="px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 transition">Pilih Semua</button>
                 <button onClick={deselectAll} className="px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 transition">Hapus Pilihan</button>
@@ -271,10 +292,11 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
                       <th className="px-3 py-2.5 text-right font-semibold">Pagu {fromYear}</th>
                       <th className="px-3 py-2.5 text-right font-semibold">Realisasi {fromYear}</th>
                       <th className="px-3 py-2.5 text-right font-semibold">Estimasi {toYear}</th>
+                      <th className="w-8 px-3 py-2.5"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {preview.map((item, idx) => {
+                    {visiblePreview.map((item, idx) => {
                       const isSelected = selectedIds.has(item.sourceId);
                       const estimated = proposedFor(item);
                       const isDup = item.isDuplicate;
@@ -331,6 +353,15 @@ export default function BudgetRolloverModal({ isOpen, onClose, companies, token,
                                 className="w-36 text-right px-2 py-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-300 focus:outline-none tabular-nums"
                               />
                             )}
+                          </td>
+                          <td className="px-2 py-2 text-center" onClick={e => e.stopPropagation()}>
+                            <button
+                              onClick={() => removeItem(item.sourceId)}
+                              className="p-1 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+                              title="Hapus dari daftar rollover"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </td>
                         </tr>
                       );
