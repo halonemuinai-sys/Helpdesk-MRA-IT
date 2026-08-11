@@ -366,6 +366,7 @@ export default function SpecComparisonWidget({
                   <th className="py-4 px-6">💾 RAM</th>
                   <th className="py-4 px-6">💽 HARDISK / STORAGE</th>
                   <th className="py-4 px-6">💻 WINDOWS / OS</th>
+                  <th className="py-4 px-6">💰 BIAYA SEWA / BLN</th>
                   <th className="py-4 px-6 text-center">Status</th>
                 </tr>
               </thead>
@@ -470,6 +471,20 @@ export default function SpecComparisonWidget({
                           </span>
                         ) : (
                           <span className="text-slate-400 italic text-[11px]">-</span>
+                        )}
+                      </td>
+
+                      {/* Biaya Sewa Bulanan */}
+                      <td className="py-4 px-6 font-mono font-bold">
+                        {isRental ? (
+                          <div className="text-amber-600 dark:text-amber-400 font-extrabold text-xs">
+                            {formatRupiah(asset.rentalCost)}
+                            <span className="text-[9px] text-slate-400 font-semibold block">/ Bulan</span>
+                          </div>
+                        ) : (
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            Milik Sendiri
+                          </span>
                         )}
                       </td>
 

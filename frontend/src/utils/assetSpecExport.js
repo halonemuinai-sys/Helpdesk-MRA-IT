@@ -22,13 +22,13 @@ export const exportAssetSpecComparisonExcel = async ({
   });
 
   // Title Block
-  wsData.mergeCells('A1:M1');
+  wsData.mergeCells('A1:N1');
   const titleCell = wsData.getCell('A1');
-  titleCell.value = 'MRA GROUP — MATRIKS KOMPARASI SPESIFIKASI HARDWARE IT';
+  titleCell.value = 'MRA GROUP — MATRIKS KOMPARASI SPESIFIKASI & BIAYA SEWA HARDWARE IT';
   titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: C_TITLE_FONT } };
   titleCell.alignment = { vertical: 'middle', horizontal: 'left' };
 
-  wsData.mergeCells('A2:M2');
+  wsData.mergeCells('A2:N2');
   const subCell = wsData.getCell('A2');
   subCell.value = `Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })} | Periode: ${filterLabel}`;
   subCell.font = { name: 'Arial', size: 9, italic: true, color: { argb: '64748B' } };
@@ -39,7 +39,7 @@ export const exportAssetSpecComparisonExcel = async ({
   const headers = [
     'No', 'Tag Aset', 'Nama / Model Perangkat', 'Kategori',
     'Entitas PT Induk', 'Pengguna (User)', 'Departemen', 'Kepemilikan',
-    'Processor (CPU)', 'Memori (RAM)', 'Storage / Hardisk', 'Windows / OS', 'Status Unit'
+    'Biaya Sewa / Bln (Rp)', 'Processor (CPU)', 'Memori (RAM)', 'Storage / Hardisk', 'Windows / OS', 'Status Unit'
   ];
 
   const headerRow = wsData.addRow(headers);
@@ -67,6 +67,7 @@ export const exportAssetSpecComparisonExcel = async ({
       ast.user?.name || 'Unassigned (Spare)',
       ast.user?.department || '-',
       ast.ownershipType === 'RENTAL' ? 'Sewa (Rental)' : 'Milik Sendiri (Owned)',
+      ast.ownershipType === 'RENTAL' ? (ast.rentalCost || 0) : 0,
       ast.processor || '-',
       ast.ram || '-',
       ast.storage || '-',
@@ -91,15 +92,20 @@ export const exportAssetSpecComparisonExcel = async ({
         cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '991B1B' } };
       }
       else if (colNum === 9) {
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '1E40AF' } }; // Blue Processor
+        cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
+        cell.alignment = { horizontal: 'right' };
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'D97706' } }; // Amber Rental Cost
       }
       else if (colNum === 10) {
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'B45309' } }; // Amber RAM
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '1E40AF' } }; // Blue Processor
       }
       else if (colNum === 11) {
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '047857' } }; // Emerald Storage
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'B45309' } }; // Amber RAM
       }
       else if (colNum === 12) {
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '047857' } }; // Emerald Storage
+      }
+      else if (colNum === 13) {
         cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '0E7490' } }; // Cyan OS
       }
     });
