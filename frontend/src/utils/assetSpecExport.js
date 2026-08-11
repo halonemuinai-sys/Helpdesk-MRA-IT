@@ -235,6 +235,14 @@ export const exportAssetSpecComparisonExcel = async ({
     return { durationMonths, costPerMonth, lifetimeValue };
   };
 
+  // Group assets by Contract Duration Clusters (12, 24, 36, and others)
+  const contractClusters = {
+    'Kontrak 12 Bulan (1 Tahun)': { units: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'Kontrak 24 Bulan (2 Tahun)': { units: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'Kontrak 36 Bulan (3 Tahun)': { units: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+    'Kontrak >36 Bulan / Fleksibel / Lainnya': { units: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
+  };
+
   // Group assets by CPU categories
   const cpuGroups = {
     'Intel Core i5 Series': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
@@ -252,9 +260,23 @@ export const exportAssetSpecComparisonExcel = async ({
     'RAM 8 GB atau Kurang (Basic)': { units: 0, totalMonths: 0, totalMonthlyCost: 0, totalLifetimeVal: 0 },
   };
 
+  let totalRentalUnitsCount = 0;
+
   assets.forEach(a => {
     if (a.ownershipType !== 'RENTAL') return; // Analyze rental contracts
     const { durationMonths, costPerMonth, lifetimeValue } = calculateAssetContract(a);
+
+    totalRentalUnitsCount += 1;
+
+    // Duration Cluster Grouping
+    let clusterKey = 'Kontrak >36 Bulan / Fleksibel / Lainnya';
+    if (durationMonths >= 11 && durationMonths <= 13) clusterKey = 'Kontrak 12 Bulan (1 Tahun)';
+    else if (durationMonths >= 23 && durationMonths <= 25) clusterKey = 'Kontrak 24 Bulan (2 Tahun)';
+    else if (durationMonths >= 35 && durationMonths <= 37) clusterKey = 'Kontrak 36 Bulan (3 Tahun)';
+
+    contractClusters[clusterKey].units += 1;
+    contractClusters[clusterKey].totalMonthlyCost += costPerMonth;
+    contractClusters[clusterKey].totalLifetimeVal += lifetimeValue;
 
     // CPU Grouping
     const p = (a.processor || '').toLowerCase();
@@ -288,8 +310,90 @@ export const exportAssetSpecComparisonExcel = async ({
     }
   });
 
-  // Render Table 1: Rata-Rata Biaya & Durasi Kontrak per Intel/CPU
-  wsContract.addRow(['1. ANALISA RATA-RATA BIAYA SEWA & DURASI KONTRAK PER PROCESSOR']);
+  // Render Table 1: CLUSTER DURASI KONTRAK SEWA (12, 24, 36 BULAN & LAINNYA)
+  wsContract.addRow(['1. CLUSTER DURASI KONTRAK SEWA (12 BULAN, 24 BULAN, 36 BULAN, LAINNYA)']);
+  wsContract.lastRow.font = { name: 'Arial', size: 10, bold: true, color: { argb: C_TITLE_FONT } };
+
+  const tableClusterHeaders = [
+    'Cluster Masa Kontrak', 'Jumlah Unit', 'Persentase (%)',
+    'Avg Biaya Sewa / Bln (Rp)', 'Total Biaya Sewa / Bln (Rp)', 'Estimasi Lifetime Contract (Rp)'
+  ];
+
+  const tClustHdrRow = wsContract.addRow(tableClusterHeaders);
+  tClustHdrRow.height = 22;
+  tClustHdrRow.eachCell(cell => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C_HEADER_FILL } };
+    cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: C_HEADER_FONT } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  let grandClusterUnits = 0, grandClusterMonthly = 0, grandClusterLifetime = 0;
+
+  Object.entries(contractClusters).forEach(([cName, data]) => {
+    const pct = totalRentalUnitsCount > 0 ? ((data.units / totalRentalUnitsCount) * 100).toFixed(1) + '%' : '0%';
+    const avgMonthlyCost = data.units > 0 ? Math.round(data.totalMonthlyCost / data.units) : 0;
+
+    grandClusterUnits += data.units;
+    grandClusterMonthly += data.totalMonthlyCost;
+    grandClusterLifetime += data.totalLifetimeVal;
+
+    const row = wsContract.addRow([
+      cName,
+      data.units,
+      pct,
+      avgMonthlyCost,
+      data.totalMonthlyCost,
+      data.totalLifetimeVal
+    ]);
+
+    row.height = 20;
+    row.eachCell((cell, colNum) => {
+      cell.font = { name: 'Arial', size: 9 };
+      cell.border = {
+        top: { style: 'thin', color: { argb: C_BORDER } },
+        bottom: { style: 'thin', color: { argb: C_BORDER } },
+        left: { style: 'thin', color: { argb: C_BORDER } },
+        right: { style: 'thin', color: { argb: C_BORDER } }
+      };
+      if (colNum === 2 || colNum === 3) cell.alignment = { horizontal: 'center' };
+      if (colNum >= 4) {
+        cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
+        cell.alignment = { horizontal: 'right' };
+      }
+      if (colNum === 4) cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '047857' } }; // Emerald Avg Cluster
+    });
+  });
+
+  // Table 1 Total Row
+  const tClustTotal = wsContract.addRow([
+    'TOTAL CLUSTER KONTRAK SEWA',
+    grandClusterUnits,
+    '100.0%',
+    grandClusterUnits > 0 ? Math.round(grandClusterMonthly / grandClusterUnits) : 0,
+    grandClusterMonthly,
+    grandClusterLifetime
+  ]);
+  tClustTotal.height = 22;
+  tClustTotal.eachCell((cell, colNum) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+    cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: '0F172A' } };
+    cell.border = {
+      top: { style: 'medium', color: { argb: '0F172A' } },
+      bottom: { style: 'medium', color: { argb: '0F172A' } },
+      left: { style: 'thin', color: { argb: C_BORDER } },
+      right: { style: 'thin', color: { argb: C_BORDER } }
+    };
+    if (colNum === 2 || colNum === 3) cell.alignment = { horizontal: 'center' };
+    if (colNum >= 4) {
+      cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
+      cell.alignment = { horizontal: 'right' };
+    }
+  });
+
+  wsContract.addRow([]); // Blank row
+
+  // Render Table 2: Rata-Rata Biaya & Durasi Kontrak per Intel/CPU
+  wsContract.addRow(['2. ANALISA RATA-RATA BIAYA SEWA & DURASI KONTRAK PER PROCESSOR']);
   wsContract.lastRow.font = { name: 'Arial', size: 10, bold: true, color: { argb: C_TITLE_FONT } };
 
   const table1Headers = [
