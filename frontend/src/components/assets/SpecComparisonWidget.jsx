@@ -231,14 +231,9 @@ export default function SpecComparisonWidget({
   const [selectedAssetIds, setSelectedAssetIds] = useState([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
 
-  // Filter computers & laptops (exclude purely non-hardware like printers/switches if needed, but include all IT assets with specs)
+  // Filter assets list for spec comparison matrix
   const hardwareAssets = useMemo(() => {
-    return assets.filter(a => {
-      // Keep laptops, desktops, workstations, servers, macs, or any asset with processor/ram/storage/os filled
-      const isComputer = !a.deviceCategory || ['LAPTOP', 'PC_DESKTOP', 'WORKSTATION', 'SERVER', 'MAC', 'TABLET'].includes(a.deviceCategory);
-      const hasSpecData = a.processor || a.ram || a.storage || a.os;
-      return isComputer || hasSpecData;
-    });
+    return assets;
   }, [assets]);
 
   // Compute Spec Distribution KPI Statistics
@@ -294,8 +289,24 @@ export default function SpecComparisonWidget({
         return false;
       }
       // Category
-      if (selectedCategory && a.deviceCategory !== selectedCategory) {
-        return false;
+      if (selectedCategory) {
+        const brandLower = (a.brand || '').toLowerCase();
+        const modelLower = (a.model || '').toLowerCase();
+        const osLower = (a.os || '').toLowerCase();
+        const devRefLower = (a.deviceRef || '').toLowerCase();
+
+        const isPhone = (brandLower === 'apple' && modelLower.includes('iphone')) ||
+                        osLower.includes('ios') || osLower.includes('android') ||
+                        ['samsung', 'oppo', 'vivo', 'xiaomi', 'realme', 'infinix', 'iqoo'].includes(brandLower) ||
+                        a.deviceCategory === 'SMARTPHONE';
+
+        const isPrn = osLower === 'printer os' || devRefLower.startsWith('prn') || modelLower.includes('printer') ||
+                      ['epson', 'canon', 'fuji', 'brother', 'hp laserjet', 'smart tank'].some(b => brandLower.includes(b)) ||
+                      a.deviceCategory === 'PRINTER';
+
+        if (selectedCategory === 'SMARTPHONE' && !isPhone) return false;
+        if (selectedCategory === 'PRINTER' && !isPrn) return false;
+        if (selectedCategory === 'LAPTOP' && (isPhone || isPrn)) return false;
       }
       // RAM Quick Filter
       if (ramFilter) {
@@ -451,6 +462,18 @@ export default function SpecComparisonWidget({
           {/* Select Filters */}
           <div className="flex flex-wrap items-center gap-2">
             
+            {/* Category Filter */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50/70 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-850/50 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 cursor-pointer font-bold text-rose-600 dark:text-rose-400"
+            >
+              <option value="">Semua Kategori Perangkat</option>
+              <option value="LAPTOP">Laptop / PC</option>
+              <option value="SMARTPHONE">Smartphone</option>
+              <option value="PRINTER">Printer</option>
+            </select>
+
             {/* Entity Multi-Select */}
             <CustomCompanyMultiSelect
               options={companyMasters.map(m => ({ value: String(m.id), label: m.name }))}
