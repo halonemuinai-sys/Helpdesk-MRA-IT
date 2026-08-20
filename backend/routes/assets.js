@@ -493,6 +493,7 @@ router.put('/:id', verifyToken, async (req, res, next) => {
       rentalCost,
       rentalStart,
       rentalEnd,
+      deviceCategory,
       isBudgeted,
       notes,
       userId,
@@ -543,10 +544,27 @@ router.put('/:id', verifyToken, async (req, res, next) => {
     if (office !== undefined) updateData.office = office || null;
     if (ownershipType !== undefined) updateData.ownershipType = ownershipType;
     if (status !== undefined) updateData.status = status;
-    if (rentalCost !== undefined) updateData.rentalCost = parseFloat(rentalCost);
-    if (rentalStart !== undefined) updateData.rentalStart = new Date(rentalStart);
-    if (rentalEnd !== undefined) updateData.rentalEnd = new Date(rentalEnd);
-    if (deviceCategory !== undefined) updateData.deviceCategory = deviceCategory;
+    if (rentalCost !== undefined) {
+      const cleanCost = typeof rentalCost === 'number' ? rentalCost : parseFloat(String(rentalCost || '0').replace(/[^0-9.]/g, ''));
+      updateData.rentalCost = isNaN(cleanCost) ? 0 : cleanCost;
+    }
+    if (rentalStart !== undefined) {
+      if (rentalStart) {
+        const d = new Date(rentalStart);
+        updateData.rentalStart = isNaN(d.getTime()) ? null : d;
+      } else {
+        updateData.rentalStart = null;
+      }
+    }
+    if (rentalEnd !== undefined) {
+      if (rentalEnd) {
+        const d = new Date(rentalEnd);
+        updateData.rentalEnd = isNaN(d.getTime()) ? null : d;
+      } else {
+        updateData.rentalEnd = null;
+      }
+    }
+    if (deviceCategory !== undefined) updateData.deviceCategory = deviceCategory || 'LAPTOP';
     if (isBudgeted !== undefined) updateData.isBudgeted = Boolean(isBudgeted);
     if (notes !== undefined) updateData.notes = notes || null;
     if (vendor !== undefined) updateData.vendor = vendor || null;
