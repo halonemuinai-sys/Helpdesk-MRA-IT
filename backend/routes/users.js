@@ -376,20 +376,10 @@ const updateUserProfileHandler = async (req, res, next) => {
 
     let updatedUser;
     if (targetId !== currentId) {
-      // Use transaction to update FKs and User ID
-      await prisma.$transaction(async (tx) => {
-        await tx.$executeRawUnsafe(`UPDATE glc_mra.marketing_plans SET creator_id = $1 WHERE creator_id = $2`, targetId, currentId).catch(() => {});
-        await tx.$executeRawUnsafe(`UPDATE glc_mra.payment_requests SET creator_id = $1 WHERE creator_id = $2`, targetId, currentId).catch(() => {});
-        await tx.$executeRawUnsafe(`UPDATE glc_mra.approval_history SET approver_id = $1 WHERE approver_id = $2`, targetId, currentId).catch(() => {});
-        await tx.$executeRawUnsafe(`UPDATE glc_mra.marketing_plan_amendments SET creator_id = $1 WHERE creator_id = $2`, targetId, currentId).catch(() => {});
-        await tx.$executeRawUnsafe(`UPDATE glc_mra.device_rentals SET user_id = $1 WHERE user_id = $2`, targetId, currentId).catch(() => {});
-
-        // Update User row
-        await tx.$executeRawUnsafe(
-          `UPDATE "User" SET id = $1, name = $2, department = $3, "jobPosition" = $4 WHERE id = $5`,
-          targetId, name.trim(), finalDepartment, finalJobPosition, currentId
-        );
-      });
+      await prisma.$executeRawUnsafe(
+        `UPDATE "User" SET id = $1, name = $2, department = $3, "jobPosition" = $4 WHERE id = $5`,
+        targetId, name.trim(), finalDepartment, finalJobPosition, currentId
+      );
 
       updatedUser = await prisma.user.findUnique({
         where: { id: targetId },
