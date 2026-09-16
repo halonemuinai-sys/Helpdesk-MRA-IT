@@ -1,5 +1,6 @@
 {
-  "lastScan": "2026-07-10",
+  "lastScan": "2026-09-12",
+  "lastScanActual": "2026-09-12",
   "artifactUrl": "https://claude.ai/code/artifact/f15a62b2-1f3d-4548-807d-9d0c8d44ba00",
   "completed": [
     {
@@ -73,5 +74,16 @@
       "hook": "frontend/src/hooks/useTicketsSummary.js"
     }
   ],
-  "pending": []
+  "pending": [
+    { "page": "frontend/src/pages/ITBudget360.jsx",  "lines": 1732, "priority": "Tinggi" },
+    { "page": "backend/routes/tickets.js",            "lines": 1033, "priority": "Sedang" }
+  ],
+  "pantau": [
+    { "page": "frontend/src/components/TicketDetailsModal.jsx",        "lines": 895 },
+    { "page": "frontend/src/pages/Users.jsx",                          "lines": 888 },
+    { "page": "frontend/src/pages/InputTicket.jsx",                    "lines": 877 },
+    { "page": "frontend/src/components/assets/SpecComparisonWidget.jsx","lines": 820 },
+    { "page": "frontend/src/pages/AgentPerformance.jsx",               "lines": 820 },
+    { "page": "backend/routes/peripherals.js",                         "lines": 867 }
+  ]
 }

@@ -375,6 +375,7 @@ router.post('/', verifyToken, async (req, res, next) => {
       rentalCost,
       rentalStart,
       rentalEnd,
+      deviceCategory,
       isBudgeted,
       notes,
       userId,
@@ -413,6 +414,10 @@ router.post('/', verifyToken, async (req, res, next) => {
     const finalStatus = status || 'AVAILABLE';
     const finalOwnershipType = ownershipType || 'RENTAL';
 
+    // Parse rentalCost safely
+    const cleanCost = typeof rentalCost === 'number' ? rentalCost : parseFloat(String(rentalCost || '0').replace(/[^0-9.]/g, ''));
+    const parsedRentalCost = isNaN(cleanCost) ? 0 : cleanCost;
+
     // Initial journey entry
     const todayStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const agentName = req.user ? req.user.name : 'IT Support';
@@ -439,7 +444,7 @@ router.post('/', verifyToken, async (req, res, next) => {
         office: office || null,
         ownershipType: finalOwnershipType,
         status: finalStatus,
-        rentalCost: parseFloat(rentalCost),
+        rentalCost: parsedRentalCost,
         rentalStart: new Date(rentalStart),
         rentalEnd: new Date(rentalEnd),
         deviceCategory: deviceCategory || 'LAPTOP',
