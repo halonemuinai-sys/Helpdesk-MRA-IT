@@ -217,8 +217,8 @@ export default function Users({ user: currentUser, token }) {
       setEditProfileError(null);
       setEditProfileSubmitting(true);
 
-      if (!editProfileId.trim() || !editProfileName.trim() || !editProfileDepartment.trim() || !editProfileJobPosition.trim()) {
-        throw new Error('Employee ID, Full Name, Department, and Job Position are all required.');
+      if (!editProfileId.trim() || !editProfileName.trim()) {
+        throw new Error('Employee ID and Full Name are required fields.');
       }
 
       const res = await fetch(`${API_URL}/users/${editProfileUser.id}/profile`, {
@@ -1072,10 +1072,9 @@ export default function Users({ user: currentUser, token }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Department</label>
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Department (Optional)</label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. Finance & Accounting"
                     value={editProfileDepartment}
                     onChange={(e) => setEditProfileDepartment(e.target.value)}
@@ -1084,10 +1083,9 @@ export default function Users({ user: currentUser, token }) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Job Position</label>
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">Job Position (Optional)</label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. Operational Staff"
                     value={editProfileJobPosition}
                     onChange={(e) => setEditProfileJobPosition(e.target.value)}

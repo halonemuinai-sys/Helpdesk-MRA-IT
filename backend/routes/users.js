@@ -342,11 +342,13 @@ const updateUserProfileHandler = async (req, res, next) => {
     const currentId = req.params.id;
     const { newId, name, department, jobPosition } = req.body;
 
-    if (!name || !name.trim() || !department || !department.trim() || !jobPosition || !jobPosition.trim()) {
-      return res.status(400).json({ error: 'Full Name, Department, and Job Position are required fields.' });
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Full Name is a required field.' });
     }
 
     const targetId = (newId && newId.trim()) ? newId.trim() : currentId;
+    const finalDepartment = (department && department.trim()) ? department.trim() : '-';
+    const finalJobPosition = (jobPosition && jobPosition.trim()) ? jobPosition.trim() : '-';
 
     // Check if user exists
     const userExists = await prisma.user.findUnique({
@@ -385,7 +387,7 @@ const updateUserProfileHandler = async (req, res, next) => {
         // Update User row
         await tx.$executeRawUnsafe(
           `UPDATE "User" SET id = $1, name = $2, department = $3, "jobPosition" = $4 WHERE id = $5`,
-          targetId, name.trim(), department.trim(), jobPosition.trim(), currentId
+          targetId, name.trim(), finalDepartment, finalJobPosition, currentId
         );
       });
 
@@ -398,8 +400,8 @@ const updateUserProfileHandler = async (req, res, next) => {
         where: { id: currentId },
         data: {
           name: name.trim(),
-          department: department.trim(),
-          jobPosition: jobPosition.trim()
+          department: finalDepartment,
+          jobPosition: finalJobPosition
         },
         include: { company: true }
       });
