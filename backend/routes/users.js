@@ -335,6 +335,98 @@ router.patch('/:id/location', verifyToken, checkRole(['ADMIN', 'AGENT']), async 
   }
 });
 
+// PUT /api/users/:id or PATCH /api/users/:id/profile
+// Update user profile details (Employee ID, Name, Department, Job Position)
+const updateUserProfileHandler = async (req, res, next) => {
+  try {
+    const currentId = req.params.id;
+    const { newId, name, department, jobPosition } = req.body;
+
+    if (!name || !name.trim() || !department || !department.trim() || !jobPosition || !jobPosition.trim()) {
+      return res.status(400).json({ error: 'Full Name, Department, and Job Position are required fields.' });
+    }
+
+    const targetId = (newId && newId.trim()) ? newId.trim() : currentId;
+
+    // Check if user exists
+    const userExists = await prisma.user.findUnique({
+      where: { id: currentId },
+      include: { company: true }
+    });
+    if (!userExists) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Restriction: IT Agents are not allowed to update Administrators
+    if (userExists.role === 'ADMIN' && req.user.role === 'AGENT') {
+      return res.status(403).json({ error: 'Access denied. IT Agents are not allowed to update details of an Administrator.' });
+    }
+
+    // If Employee ID is changing, check if new ID is already taken
+    if (targetId !== currentId) {
+      const duplicateId = await prisma.user.findUnique({
+        where: { id: targetId }
+      });
+      if (duplicateId) {
+        return res.status(400).json({ error: `Employee ID '${targetId}' is already in use by another user.` });
+      }
+    }
+
+    let updatedUser;
+    if (targetId !== currentId) {
+      // Use transaction to update FKs and User ID
+      await prisma.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(`UPDATE glc_mra.marketing_plans SET creator_id = $1 WHERE creator_id = $2`, targetId, currentId).catch(() => {});
+        await tx.$executeRawUnsafe(`UPDATE glc_mra.payment_requests SET creator_id = $1 WHERE creator_id = $2`, targetId, currentId).catch(() => {});
+        await tx.$executeRawUnsafe(`UPDATE glc_mra.approval_history SET approver_id = $1 WHERE approver_id = $2`, targetId, currentId).catch(() => {});
+        await tx.$executeRawUnsafe(`UPDATE glc_mra.marketing_plan_amendments SET creator_id = $1 WHERE creator_id = $2`, targetId, currentId).catch(() => {});
+        await tx.$executeRawUnsafe(`UPDATE glc_mra.device_rentals SET user_id = $1 WHERE user_id = $2`, targetId, currentId).catch(() => {});
+
+        // Update User row
+        await tx.$executeRawUnsafe(
+          `UPDATE "User" SET id = $1, name = $2, department = $3, "jobPosition" = $4 WHERE id = $5`,
+          targetId, name.trim(), department.trim(), jobPosition.trim(), currentId
+        );
+      });
+
+      updatedUser = await prisma.user.findUnique({
+        where: { id: targetId },
+        include: { company: true }
+      });
+    } else {
+      updatedUser = await prisma.user.update({
+        where: { id: currentId },
+        data: {
+          name: name.trim(),
+          department: department.trim(),
+          jobPosition: jobPosition.trim()
+        },
+        include: { company: true }
+      });
+    }
+
+    // Write system log
+    await prisma.systemAuditLog.create({
+      data: {
+        action: 'USER_PROFILE_UPDATED',
+        details: `User profile updated for "${updatedUser.name}" (ID: ${currentId}${targetId !== currentId ? ` -> ${targetId}` : ''}, Dept: "${updatedUser.department}", Position: "${updatedUser.jobPosition}") by ${req.user.name}.`,
+        performedBy: `${req.user.name} (${req.user.email})`
+      }
+    }).catch(err => console.error("Failed to log audit event:", err));
+
+    const { password, ...safeUser } = updatedUser;
+    res.json({
+      message: `User ${safeUser.name} profile updated successfully.`,
+      user: safeUser
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+router.put('/:id', verifyToken, checkRole(['ADMIN', 'AGENT']), updateUserProfileHandler);
+router.patch('/:id/profile', verifyToken, checkRole(['ADMIN', 'AGENT']), updateUserProfileHandler);
+
 // GET /api/users/:id
 // Get user by ID (verifyToken)
 router.get('/:id', verifyToken, async (req, res, next) => {
