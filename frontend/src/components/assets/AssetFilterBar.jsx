@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Laptop, Building2, Clock, Loader2, ChevronDown, Check, Tag, CheckSquare, Square } from 'lucide-react';
+import { Search, Laptop, Building2, Clock, Loader2, ChevronDown, Check, Tag, CheckSquare, Square, FileSpreadsheet } from 'lucide-react';
 import { STATUS_OPTIONS, OWNERSHIP_OPTIONS } from './constants';
 
 const DROP_ANIM = `
@@ -265,6 +265,7 @@ export default function AssetFilterBar({
   loading,
   handleResetFilters,
   handleRefreshData,
+  handleExportExcel,
 }) {
   const currentCompanyVal = selectedCompanyMasterIds && selectedCompanyMasterIds.length > 0
     ? selectedCompanyMasterIds
@@ -293,7 +294,7 @@ export default function AssetFilterBar({
             placeholder="Cari Brand, Model, Tag Aset, NIP, LP..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-950/30 border border-gray-200 dark:border-slate-850/50 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+            className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold rounded-xl bg-gray-50/70 dark:bg-slate-955/30 border border-gray-200 dark:border-slate-850/50 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
           />
         </div>
 
@@ -315,7 +316,7 @@ export default function AssetFilterBar({
       </div>
 
       {/* Action Row */}
-      <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
+      <div className="flex flex-wrap justify-end items-center gap-3 pt-3 border-t border-gray-150 dark:border-slate-800/60">
         {hasActiveFilter && (
           <button
             onClick={handleResetFilters}
@@ -332,6 +333,17 @@ export default function AssetFilterBar({
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
           Proses / Muat Data
         </button>
+        {handleExportExcel && (
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 duration-150"
+            title="Download Matriks Spesifikasi Hardware & Data Aset ke Excel (.xlsx)"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Ekspor Excel Spek</span>
+          </button>
+        )}
       </div>
 
     </div>

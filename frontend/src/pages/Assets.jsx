@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, AlertTriangle, Upload } from 'lucide-react';
+import { Plus, AlertTriangle, Upload, FileSpreadsheet } from 'lucide-react';
 import useAssets from '../hooks/useAssets';
 import AssetKpiStats from '../components/assets/AssetKpiStats';
 import AssetFilterBar from '../components/assets/AssetFilterBar';
@@ -11,6 +11,7 @@ import RentalMonitoringWidget from '../components/assets/RentalMonitoringWidget'
 import CompanyBreakdownWidget from '../components/assets/CompanyBreakdownWidget';
 import SpecComparisonWidget from '../components/assets/SpecComparisonWidget';
 import AssetBulkImport from '../components/assets/AssetBulkImport';
+import { exportAssetSpecComparisonExcel } from '../utils/assetSpecExport';
 
 export default function Assets({ user, token }) {
   const {
@@ -79,6 +80,15 @@ export default function Assets({ user, token }) {
   const [activeTab, setActiveTab] = useState('list');
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
+  const handleExportExcel = () => {
+    const listToExport = filteredAssets && filteredAssets.length > 0 ? filteredAssets : assets;
+    exportAssetSpecComparisonExcel({
+      assets: listToExport,
+      companyMasters,
+      filterLabel: (searchQuery || selectedStatus || selectedCategory || selectedOwnershipType || (selectedCompanyMasterIds && selectedCompanyMasterIds.length > 0)) ? 'Data Aset Terfilter' : 'Keseluruhan Aset IT'
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
 
@@ -92,7 +102,16 @@ export default function Assets({ user, token }) {
             Kelola inventarisasi perangkat IT sewa (rentals) maupun milik sendiri (owned), spesifikasi hardware, status, serta serah terima unit karyawan MRA Group.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 duration-200"
+            title="Download Matriks Spesifikasi Hardware & Data Aset ke Excel (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Export Excel Spek
+          </button>
           <button
             onClick={() => setBulkImportOpen(true)}
             className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-600 text-gray-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200"
@@ -179,6 +198,7 @@ export default function Assets({ user, token }) {
             loading={loading}
             handleResetFilters={handleResetFilters}
             handleRefreshData={handleRefreshData}
+            handleExportExcel={handleExportExcel}
           />
 
           <AssetTable

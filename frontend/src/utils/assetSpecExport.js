@@ -37,9 +37,11 @@ export const exportAssetSpecComparisonExcel = async ({
 
   // Headers (Row 4)
   const headers = [
-    'No', 'Tag Aset', 'Nama / Model Perangkat', 'Kategori',
-    'Entitas PT Induk', 'Pengguna (User)', 'Departemen', 'Kepemilikan',
-    'Biaya Sewa / Bln (Rp)', 'Processor (CPU)', 'Memori (RAM)', 'Storage / Hardisk', 'Windows / OS', 'Status Unit'
+    'No', 'Tag Aset', 'No. Seri LP / Device Ref', 'Vendor Billing Ref', 'Kategori Perangkat',
+    'Brand', 'Model Perangkat', 'Processor (CPU)', 'Memori (RAM)', 'Storage / Hardisk',
+    'Windows / OS', 'Microsoft Office', 'Pengguna (User)', 'NIP Karyawan', 'Departemen',
+    'Jabatan (Position)', 'Entitas PT Induk', 'Kantor Cabang / Perusahaan', 'Vendor Sewa',
+    'Skema Kepemilikan', 'Biaya Sewa / Bln (Rp)', 'Mulai Sewa', 'Selesai Sewa', 'Status Unit', 'Catatan / Notes'
   ];
 
   const headerRow = wsData.addRow(headers);
@@ -56,23 +58,44 @@ export const exportAssetSpecComparisonExcel = async ({
     };
   });
 
+  // Helper for date formatting YYYY-MM-DD
+  const fmtDate = (d) => {
+    if (!d) return '-';
+    try {
+      return String(d).split('T')[0];
+    } catch (e) {
+      return '-';
+    }
+  };
+
   // Data Rows
   assets.forEach((ast, idx) => {
     const row = wsData.addRow([
       idx + 1,
       ast.assetTag || '-',
-      ast.name || `${ast.brand || ''} ${ast.model || ''}`.trim() || '-',
+      ast.deviceRef || '-',
+      ast.vendorRef || '-',
       ast.deviceCategory || 'LAPTOP',
-      ast.companyMaster?.name || 'Tanpa Entitas',
-      ast.user?.name || 'Unassigned (Spare)',
-      ast.user?.department || '-',
-      ast.ownershipType === 'RENTAL' ? 'Sewa (Rental)' : 'Milik Sendiri (Owned)',
-      ast.ownershipType === 'RENTAL' ? (ast.rentalCost || 0) : 0,
+      ast.brand || '-',
+      ast.model || '-',
       ast.processor || '-',
       ast.ram || '-',
       ast.storage || '-',
       ast.os || '-',
-      ast.status === 'ASSIGNED' ? 'Terpakai (In Use)' : ast.status === 'MAINTENANCE' ? 'Perbaikan' : 'Tersedia (Spare)'
+      ast.office || '-',
+      ast.user?.name || 'Unassigned (Spare)',
+      ast.user?.id || '-',
+      ast.user?.department || '-',
+      ast.user?.jobPosition || '-',
+      ast.companyMaster?.name || 'Tanpa Entitas',
+      ast.company?.name || '-',
+      ast.vendor || '-',
+      ast.ownershipType === 'RENTAL' ? 'Sewa (Rental)' : 'Milik Sendiri (Owned)',
+      ast.ownershipType === 'RENTAL' ? (ast.rentalCost || 0) : 0,
+      fmtDate(ast.rentalStart),
+      fmtDate(ast.rentalEnd),
+      ast.status === 'ASSIGNED' ? 'Terpakai (In Use)' : ast.status === 'MAINTENANCE' ? 'Perbaikan' : ast.status === 'DISPOSED' ? 'Disposed' : 'Tersedia (Spare)',
+      ast.notes || '-'
     ]);
 
     row.height = 20;
@@ -86,27 +109,29 @@ export const exportAssetSpecComparisonExcel = async ({
       };
 
       // Alignment & Column formatting
-      if (colNum === 1) cell.alignment = { horizontal: 'center' };
+      if (colNum === 1 || colNum === 22 || colNum === 23) {
+        cell.alignment = { horizontal: 'center' };
+      }
       else if (colNum === 2) {
         cell.alignment = { horizontal: 'center' };
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '991B1B' } };
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '991B1B' } }; // Tag Aset Rose
+      }
+      else if (colNum === 8) {
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '1E40AF' } }; // CPU Blue
       }
       else if (colNum === 9) {
-        cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
-        cell.alignment = { horizontal: 'right' };
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'D97706' } }; // Amber Rental Cost
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'B45309' } }; // RAM Amber
       }
       else if (colNum === 10) {
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '1E40AF' } }; // Blue Processor
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '047857' } }; // Storage Emerald
       }
       else if (colNum === 11) {
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'B45309' } }; // Amber RAM
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '0E7490' } }; // OS Cyan
       }
-      else if (colNum === 12) {
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '047857' } }; // Emerald Storage
-      }
-      else if (colNum === 13) {
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '0E7490' } }; // Cyan OS
+      else if (colNum === 21) {
+        cell.numFmt = 'Rp #,##0;[Red](Rp #,##0);"-"';
+        cell.alignment = { horizontal: 'right' };
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'D97706' } }; // Rental Cost Amber
       }
     });
   });
