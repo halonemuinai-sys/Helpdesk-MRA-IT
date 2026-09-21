@@ -6,6 +6,8 @@ export default function AssetBastModal({
   isBastModalOpen, bastAsset, onClose,
   bastDocNum, setBastDocNum,
   bastAgentName, setBastAgentName,
+  bastAgentJobPosition, setBastAgentJobPosition,
+  bastAgentDepartment, setBastAgentDepartment,
   bastNotes, setBastNotes,
   handlePrintBast,
   formatIndonesianDate,
@@ -40,13 +42,23 @@ export default function AssetBastModal({
                     className="w-full px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-955/40 border border-gray-250 dark:border-slate-800/80 text-gray-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition" required />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block">Yang Menyerahkan (IT Agent) *</label>
+                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block">Yang Menyerahkan (Nama) *</label>
                   <input type="text" value={bastAgentName} onChange={(e) => setBastAgentName(e.target.value)}
                     className="w-full px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-955/40 border border-gray-250 dark:border-slate-800/80 text-gray-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition" required />
                 </div>
                 <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block">Jabatan IT Support</label>
+                  <input type="text" value={bastAgentJobPosition} onChange={(e) => setBastAgentJobPosition(e.target.value)} placeholder="e.g. IT Business Partner"
+                    className="w-full px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-955/40 border border-gray-250 dark:border-slate-800/80 text-gray-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-450 dark:text-slate-500 uppercase tracking-wider block">Departemen IT Support</label>
+                  <input type="text" value={bastAgentDepartment} onChange={(e) => setBastAgentDepartment(e.target.value)} placeholder="e.g. Information & Technology"
+                    className="w-full px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-955/40 border border-gray-250 dark:border-slate-800/80 text-gray-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition" />
+                </div>
+                <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-455 dark:text-slate-500 uppercase tracking-wider block">Catatan Kelengkapan Unit</label>
-                  <textarea value={bastNotes} onChange={(e) => setBastNotes(e.target.value)} placeholder="e.g. Kondisi mulus, kelengkapan: Charger Adaptor, Tas Laptop, Mouse wireless..." rows="4"
+                  <textarea value={bastNotes} onChange={(e) => setBastNotes(e.target.value)} placeholder="e.g. Kondisi mulus, kelengkapan: Charger Adaptor, Tas Laptop, Mouse wireless..." rows="3"
                     className="w-full px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-955/40 border border-gray-250 dark:border-slate-800/80 text-gray-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 transition font-sans" />
                 </div>
               </div>
@@ -113,8 +125,8 @@ export default function AssetBastModal({
                     <table className="w-full text-left">
                       <tbody>
                         <tr><td className="w-16 font-semibold text-gray-500">Nama</td><td className="w-2">:</td><td className="font-bold text-black">{bastAgentName}</td></tr>
-                        <tr><td className="font-semibold text-gray-500">Jabatan</td><td>:</td><td className="font-medium text-black">{user?.jobPosition || 'IT Infrastructure Support'}</td></tr>
-                        <tr><td className="font-semibold text-gray-500">Departemen</td><td>:</td><td className="font-medium text-black">{user?.department || 'IT Department'}</td></tr>
+                        <tr><td className="font-semibold text-gray-500">Jabatan</td><td>:</td><td className="font-medium text-black">{bastAgentJobPosition || user?.jobPosition || 'IT Infrastructure Support'}</td></tr>
+                        <tr><td className="font-semibold text-gray-500">Departemen</td><td>:</td><td className="font-medium text-black">{bastAgentDepartment || user?.department || 'IT Department'}</td></tr>
                       </tbody>
                     </table>
                   </div>

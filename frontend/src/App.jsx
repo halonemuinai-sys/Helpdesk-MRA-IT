@@ -30,6 +30,8 @@ import SetupCompany from './pages/SetupCompany';
 import PublicTicketForm from './pages/PublicTicketForm';
 import ITBudget360 from './pages/ITBudget360';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 function ProtectedRoute({ user, allowedRoles, children }) {
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -55,6 +57,19 @@ export default function App() {
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
+
+      // Asynchronously fetch latest user profile from server to sync updated Jabatan/Name/Department
+      fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${savedToken}` }
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(freshUser => {
+          if (freshUser) {
+            localStorage.setItem('user', JSON.stringify(freshUser));
+            setUser(freshUser);
+          }
+        })
+        .catch(() => {});
     }
 
     if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {

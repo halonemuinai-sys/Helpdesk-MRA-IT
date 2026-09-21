@@ -68,6 +68,8 @@ export default function Assets({ user, token }) {
     isBastModalOpen, setIsBastModalOpen, bastAsset,
     bastDocNum, setBastDocNum,
     bastAgentName, setBastAgentName,
+    bastAgentJobPosition, setBastAgentJobPosition,
+    bastAgentDepartment, setBastAgentDepartment,
     bastNotes, setBastNotes,
     // handlers
     handleRefreshData, handleResetFilters,
@@ -291,9 +293,11 @@ export default function Assets({ user, token }) {
       <AssetBastModal
         isBastModalOpen={isBastModalOpen}
         bastAsset={bastAsset}
-        onClose={() => { setIsBastModalOpen(false); setBastNotes(''); setBastDocNum(''); setBastAgentName(''); }}
+        onClose={() => { setIsBastModalOpen(false); setBastNotes(''); setBastDocNum(''); setBastAgentName(''); setBastAgentJobPosition(''); setBastAgentDepartment(''); }}
         bastDocNum={bastDocNum} setBastDocNum={setBastDocNum}
         bastAgentName={bastAgentName} setBastAgentName={setBastAgentName}
+        bastAgentJobPosition={bastAgentJobPosition} setBastAgentJobPosition={setBastAgentJobPosition}
+        bastAgentDepartment={bastAgentDepartment} setBastAgentDepartment={setBastAgentDepartment}
         bastNotes={bastNotes} setBastNotes={setBastNotes}
         handlePrintBast={handlePrintBast}
         formatIndonesianDate={formatIndonesianDate}

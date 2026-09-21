@@ -119,6 +119,8 @@ export default function useAssets({ token, user }) {
   const [bastAsset, setBastAsset] = useState(null);
   const [bastDocNum, setBastDocNum] = useState('');
   const [bastAgentName, setBastAgentName] = useState('');
+  const [bastAgentJobPosition, setBastAgentJobPosition] = useState('');
+  const [bastAgentDepartment, setBastAgentDepartment] = useState('');
   const [bastNotes, setBastNotes] = useState('');
 
   // ── Effects ────────────────────────────────────────────────────────────────
@@ -309,6 +311,8 @@ export default function useAssets({ token, user }) {
     setBastAsset(asset);
     setBastDocNum(`BAST/MRA/${year}/${month}/${rand}`);
     setBastAgentName(user ? user.name : 'IT Support Specialist');
+    setBastAgentJobPosition(user?.jobPosition || 'IT Business Partner');
+    setBastAgentDepartment(user?.department || 'Information & Technology');
     setBastNotes(asset.notes || '');
     setIsBastModalOpen(true);
   };
@@ -645,6 +649,8 @@ export default function useAssets({ token, user }) {
     isBastModalOpen, setIsBastModalOpen,
     bastAsset, bastDocNum, setBastDocNum,
     bastAgentName, setBastAgentName,
+    bastAgentJobPosition, setBastAgentJobPosition,
+    bastAgentDepartment, setBastAgentDepartment,
     bastNotes, setBastNotes,
     // handlers
     handleRefreshData, handleResetFilters,
