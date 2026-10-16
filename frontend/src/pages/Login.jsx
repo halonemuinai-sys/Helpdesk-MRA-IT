@@ -333,6 +333,14 @@ export default function Login({ onLogin }) {
           )}
 
         </div>
+
+        {/* Card Footer credit */}
+        <div className="mt-6 text-center text-xs text-slate-400 font-medium space-y-1 select-none">
+          <p className="text-slate-500 font-semibold">IT Helpdesk & Asset Management • MRA Group</p>
+          <p className="text-[11px] text-slate-400">
+            System Developed by <span className="text-blue-600 font-semibold">Aris Setiyono</span>
+          </p>
+        </div>
       </div>
     </div>
   );

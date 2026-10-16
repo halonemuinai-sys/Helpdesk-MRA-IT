@@ -167,8 +167,9 @@ export default function App() {
         )}
 
         {/* Content Area */}
-        <main className={`flex-1 ${user ? 'p-8 overflow-y-auto max-h-screen' : ''}`}>
-          <Routes>
+        <main className={`flex-1 ${user ? 'p-8 overflow-y-auto max-h-screen flex flex-col justify-between' : ''}`}>
+          <div className="flex-1">
+            <Routes>
             {/* Authenticated Routes */}
             <Route
               path="/dashboard"
@@ -350,6 +351,26 @@ export default function App() {
               element={<Navigate to={user ? (user.role === 'AUDITOR' ? '/approvals' : '/dashboard') : '/login'} replace />}
             />
           </Routes>
+          </div>
+
+          {/* Persistent Corporate Footer */}
+          {user && (
+            <footer className="mt-12 pt-6 pb-2 border-t border-gray-200/70 dark:border-slate-800/70 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 dark:text-slate-400 gap-3 select-none">
+              <div className="flex items-center space-x-2">
+                <span className="font-bold text-gray-800 dark:text-slate-200">MRA Group</span>
+                <span>•</span>
+                <span>IT Helpdesk & Asset Management</span>
+                <span className="hidden md:inline">•</span>
+                <span className="hidden md:inline text-gray-400 dark:text-slate-500">v1.2.0</span>
+              </div>
+              <div className="flex items-center space-x-1.5 text-xs text-gray-500 dark:text-slate-400">
+                <span>System Architect & Developer:</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200/60 dark:border-rose-900/40">
+                  Aris Setiyono
+                </span>
+              </div>
+            </footer>
+          )}
         </main>
       </div>
     </Router>

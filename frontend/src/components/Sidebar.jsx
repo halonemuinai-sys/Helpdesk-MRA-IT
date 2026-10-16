@@ -384,6 +384,16 @@ export default function Sidebar({ user, onLogout, darkMode, toggleDarkMode }) {
             </span>
           )}
         </button>
+
+        {/* Credit Badge */}
+        {!isCollapsed && (
+          <div className="pt-2.5 pb-0.5 text-center select-none border-t border-gray-100 dark:border-slate-800/60">
+            <p className="text-[10px] font-bold text-gray-700 dark:text-slate-300 tracking-wider">MRA GROUP</p>
+            <p className="text-[9.5px] text-gray-400 dark:text-slate-500">
+              By <span className="font-semibold text-rose-600 dark:text-rose-400">Aris Setiyono</span>
+            </p>
+          </div>
+        )}
       </div>
     </aside>
   );
