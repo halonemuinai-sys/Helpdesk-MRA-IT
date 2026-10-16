@@ -54,3 +54,7 @@ backups/
 docs/
 Excel/
 screenshots/
+
+# Local Server Maintenance & Deployment Scripts
+scripts/
+docker-compose.yml
