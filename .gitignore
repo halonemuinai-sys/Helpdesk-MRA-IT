@@ -36,3 +36,19 @@ helpdesk_backup.sql
 backup_supabase.ps1
 backups/
 
+# Microsoft Office Documents & Temporary Lock Files
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+~$*.docx
+~$*.xlsx
+~$*.doc
+~$*.xls
+
+# Local Documentation, Media Assets, & Excel Spreadsheets
+docs/
+Excel/
+screenshots/
