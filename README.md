@@ -23,22 +23,22 @@ Aplikasi **IT Helpdesk Perusahaan** modular ini terbagi menjadi **Frontend (Vite
 1. Buka folder **backend/**.
 2. Buat file `.env` dan isi dengan konfigurasi berikut:
    ```env
-   # Database connection strings (Supabase)
-   DATABASE_URL="postgresql://postgres.dfughwonwxowjjgfvhxu:Kmzway87aa%21%21@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&schema=helpdesk"
-   DIRECT_URL="postgresql://postgres.dfughwonwxowjjgfvhxu:Kmzway87aa%21%21@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres?schema=helpdesk"
+   # Database connection strings (Supabase / PostgreSQL)
+   DATABASE_URL="postgresql://postgres:YOUR_DB_PASSWORD@YOUR_DB_HOST:6543/postgres?pgbouncer=true&schema=helpdesk"
+   DIRECT_URL="postgresql://postgres:YOUR_DB_PASSWORD@YOUR_DB_HOST:5432/postgres?schema=helpdesk"
 
    # JWT Secret Key
-   JWT_SECRET="helpdesk-mra-super-secret-key-123"
+   JWT_SECRET="your_jwt_secret_key_here"
 
    # Port configuration
    PORT=5000
 
-   # Turbify Yahoo SMTP Settings (Notifikasi Email)
-   SMTP_HOST="smtp.bizmail.yahoo.com"
+   # SMTP Settings (Notifikasi Email)
+   SMTP_HOST="smtp.example.com"
    SMTP_PORT=465
-   SMTP_USER="helpdesk@mraretail.co.id"
-   SMTP_PASS="epsxvvjlalpjazav"
-   SMTP_FROM="helpdesk@mraretail.co.id"
+   SMTP_USER="helpdesk@example.com"
+   SMTP_PASS="your_smtp_password"
+   SMTP_FROM="helpdesk@example.com"
    ```
 
 ### Langkah B: Instalasi Dependensi Backend & Migrasi Database
